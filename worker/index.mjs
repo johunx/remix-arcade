@@ -59,7 +59,8 @@ async function handleStorage(request, env) {
     const prefix = url.searchParams.get("prefix");
     if (key !== null) {
       if (!isValidKey(key)) return json({ error: "Invalid key." }, 400);
-      const row = await env.DB.prepare("SELECT value FROM storage WHERE key = ?").bind(key).first();
+      const result = await env.DB.prepare("SELECT value FROM storage WHERE key = ?").bind(key).all();
+      const row = (result.results || [])[0];
       return json({ value: row ? row.value : null });
     }
     if (prefix !== null) {
@@ -71,7 +72,7 @@ async function handleStorage(request, env) {
   }
 
   if (request.method === "POST") {
-    const body = await request.json().catch(() => null);
+    const body = await request.text().then((text) => JSON.parse(text)).catch(() => null);
     const key = body && body.key;
     const value = body && body.value;
     if (!isValidKey(key)) return json({ error: "Invalid key." }, 400);
@@ -83,8 +84,7 @@ async function handleStorage(request, env) {
     if (value === null) {
       await env.DB.prepare("DELETE FROM storage WHERE key = ?").bind(key).run();
     } else {
-      await env.DB.prepare(`INSERT INTO storage (key, value, updated_at) VALUES (?, ?, ?)
-        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`)
+      await env.DB.prepare("INSERT OR REPLACE INTO storage (key, value, updated_at) VALUES (?, ?, ?)")
         .bind(key, value, Date.now()).run();
     }
     return json({ ok: true });
@@ -139,12 +139,13 @@ async function ipHash(request) {
 }
 
 async function incrementUsage(env, bucket, resetAt, now) {
-  await env.DB.prepare(`INSERT INTO ai_usage (bucket, count, reset_at) VALUES (?, 1, ?)
-    ON CONFLICT(bucket) DO UPDATE SET
-      count = CASE WHEN ai_usage.reset_at <= ? THEN 1 ELSE ai_usage.count + 1 END,
-      reset_at = CASE WHEN ai_usage.reset_at <= ? THEN excluded.reset_at ELSE ai_usage.reset_at END`)
-    .bind(bucket, resetAt, now, now).run();
-  return env.DB.prepare("SELECT count FROM ai_usage WHERE bucket = ?").bind(bucket).first();
+  const result = await env.DB.prepare("SELECT count, reset_at FROM ai_usage WHERE bucket = ?").bind(bucket).all();
+  const current = (result.results || [])[0];
+  const count = !current || Number(current.reset_at) <= now ? 1 : Number(current.count) + 1;
+  const nextResetAt = !current || Number(current.reset_at) <= now ? resetAt : Number(current.reset_at);
+  await env.DB.prepare("INSERT OR REPLACE INTO ai_usage (bucket, count, reset_at) VALUES (?, ?, ?)")
+    .bind(bucket, count, nextResetAt).run();
+  return { count };
 }
 
 async function checkAiLimit(request, env) {
@@ -268,7 +269,7 @@ async function handleAi(request, env) {
   const limited = await checkAiLimit(request, env);
   if (limited) return json({ error: limited.message }, 429);
 
-  const raw = await request.json().catch(() => null);
+  const raw = await request.text().then((text) => JSON.parse(text)).catch(() => null);
   if (!raw) return json({ error: "Invalid JSON." }, 400);
   const body = cleanAiRequest(raw, env);
   if (!body.messages.length) return json({ error: "Missing messages." }, 400);
@@ -365,10 +366,10 @@ export const apiWorker = {
     try {
       const url = new URL(request.url);
       if (url.pathname === "/healthz") return json({ ok: true });
-      if (url.pathname === "/api/debug") return handleDebug(request, env);
+      if (url.pathname === "/api/debug") return await handleDebug(request, env);
       if (url.pathname === "/api/ai/status") return aiStatus(env);
-      if (url.pathname === "/api/storage") return handleStorage(request, env);
-      if (url.pathname === "/api/anthropic/messages") return handleAi(request, env);
+      if (url.pathname === "/api/storage") return await handleStorage(request, env);
+      if (url.pathname === "/api/anthropic/messages") return await handleAi(request, env);
       return env.ASSETS.fetch(request);
     } catch (error) {
       console.error(error);
