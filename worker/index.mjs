@@ -322,7 +322,7 @@ function aiStatus(env) {
   });
 }
 
-export default {
+export const apiWorker = {
   async fetch(request, env) {
     try {
       const url = new URL(request.url);
