@@ -1,0 +1,21 @@
+{
+  "name": "remix-arcade",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "1.37.1",
+    "vite": "8.0.13",
+    "wrangler": "4.92.0"
+  }
+}
