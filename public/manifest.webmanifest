@@ -1,0 +1,20 @@
+{
+  "name": "Remix Arcade",
+  "short_name": "Remix Arcade",
+  "description": "Play, create, remix, and publish tiny games.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1E0F16",
+  "theme_color": "#1E0F16",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
