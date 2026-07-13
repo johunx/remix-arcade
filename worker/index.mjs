@@ -323,50 +323,11 @@ function aiStatus(env) {
   });
 }
 
-async function handleDebug(request, env) {
-  if (!env.DEBUG_TOKEN || request.headers.get("x-remix-debug") !== env.DEBUG_TOKEN) {
-    return json({ error: "Not found." }, 404);
-  }
-  const report = { method: request.method, bodyUsed: request.bodyUsed, checks: {} };
-  try {
-    await ensureSchema(env);
-    report.checks.schema = "ok";
-  } catch (error) {
-    report.checks.schema = String(error && (error.stack || error.message) || error);
-  }
-  try {
-    report.checks.first = await env.DB.prepare("SELECT value FROM storage WHERE key = ?").bind("debug:missing").first();
-  } catch (error) {
-    report.checks.first = String(error && (error.stack || error.message) || error);
-  }
-  try {
-    await env.DB.prepare("INSERT OR REPLACE INTO storage (key, value, updated_at) VALUES (?, ?, ?)").bind("debug:probe", "ok", Date.now()).run();
-    report.checks.write = "ok";
-  } catch (error) {
-    report.checks.write = String(error && (error.stack || error.message) || error);
-  }
-  try {
-    await env.DB.prepare("DELETE FROM storage WHERE key = ?").bind("debug:probe").run();
-    report.checks.delete = "ok";
-  } catch (error) {
-    report.checks.delete = String(error && (error.stack || error.message) || error);
-  }
-  if (request.method === "POST") {
-    try {
-      report.checks.body = await request.text();
-    } catch (error) {
-      report.checks.body = String(error && (error.stack || error.message) || error);
-    }
-  }
-  return json(report);
-}
-
 export const apiWorker = {
   async fetch(request, env) {
     try {
       const url = new URL(request.url);
       if (url.pathname === "/healthz") return json({ ok: true });
-      if (url.pathname === "/api/debug") return await handleDebug(request, env);
       if (url.pathname === "/api/ai/status") return aiStatus(env);
       if (url.pathname === "/api/storage") return await handleStorage(request, env);
       if (url.pathname === "/api/anthropic/messages") return await handleAi(request, env);
