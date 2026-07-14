@@ -368,13 +368,6 @@ body.gameplay-mode .rail-btn .bub{background:linear-gradient(160deg,rgba(255,255
 @keyframes dockCueLeft{0%,100%{transform:translateX(0);opacity:.45;}50%{transform:translateX(-3px);opacity:.95;}}
 @keyframes dockCueRight{0%,100%{transform:translateX(0);opacity:.45;}50%{transform:translateX(3px);opacity:.95;}}
 
-/* dock scrubber — makes the bar read as a horizontal slider (horizontal variant, play mode) */
-.dock-scrub{display:none;position:absolute;top:5px;left:30px;right:30px;height:4px;z-index:3;pointer-events:none;}
-body.horizontal-swipe.swipe-mode .dock-scrub:not(.hidden){display:block;}
-.dock-scrub-track{position:relative;height:100%;border-radius:99px;background:rgba(255,255,255,0.10);box-shadow:inset 0 1px 1px rgba(0,0,0,0.35);}
-.dock-scrub-thumb{position:absolute;top:-1px;left:0;height:6px;width:34px;border-radius:99px;background:linear-gradient(90deg,#FFBE8F,#FF9A5F);box-shadow:0 0 8px rgba(255,154,95,0.55),inset 0 1px 0 rgba(255,255,255,0.5);will-change:transform;}
-body.horizontal-swipe.swipe-mode #tabbar.dock-swiping .dock-scrub-thumb{box-shadow:0 0 14px rgba(255,154,95,0.9),inset 0 1px 0 rgba(255,255,255,0.6);}
-
 /* one-time coach bubble pointing at the bar */
 .dock-coach{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(118px + env(safe-area-inset-bottom));z-index:23;display:flex;align-items:center;gap:9px;padding:9px 14px;border-radius:999px;background:linear-gradient(160deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02)),rgba(45,23,31,0.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,154,95,0.4);box-shadow:inset 0 1px 0 var(--glass-edge),0 14px 34px -12px rgba(0,0,0,0.7);font-size:12.5px;font-weight:600;color:var(--text);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .35s ease;}
 .dock-coach.show{opacity:1;}
@@ -619,7 +612,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
         <div class="follow-chips" id="followingList"></div>
       </div>
       <div class="feed-grid" id="profGrid"></div>
-      <p class="build-tag">Remix Arcade · build v51</p>
+      <p class="build-tag">Remix Arcade · build v52</p>
     </section>
 
   </main>
@@ -636,7 +629,6 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 
   <div class="dock-coach" id="dockCoach" aria-hidden="true"><span class="coach-hand">👆</span><span>Swipe the bar to switch games</span></div>
   <nav id="tabbar">
-    <div class="dock-scrub hidden" id="dockScrub"><div class="dock-scrub-track"><div class="dock-scrub-thumb" id="dockScrubThumb"></div></div></div>
     <button class="tab active" id="playTab" data-screen="swipe"><span class="icon"><svg class="ic tab-play-icon" viewBox="0 0 24 24"><path d="M8.5 5.8c0-1.1 1.2-1.8 2.1-1.2l9 5.4c.9.6.9 1.9 0 2.4l-9 5.4c-.9.6-2.1-.1-2.1-1.2V5.8z"/></svg><svg class="ic tab-info-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle class="dot" cx="12" cy="7.8" r="1.2"/></svg></span><span class="tab-play-label">Play</span><span class="tab-info-label">Info</span></button>
     <button class="tab tab-browse" data-screen="feed"><span class="icon"><svg class="ic" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="2.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2.2"/></svg></span>Browse</button>
     <button class="tab tab-create" data-screen="create"><span class="icon"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span></button>
@@ -730,7 +722,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 <script>
 (function(){
 
-var BUILD = 'v51';
+var BUILD = 'v52';
 var HORIZONTAL_SWIPE = new URLSearchParams(location.search).get('nav')==='horizontal';
 document.body.classList.toggle('horizontal-swipe', HORIZONTAL_SWIPE);
 var META_PREFIX = 'ra-meta-';
@@ -1560,6 +1552,10 @@ function postGameComment(){
 
 /* ---- swipe game mode ---- */
 var swipeList = [], swipeActive = -1, codeCache = {};
+/* infinite feed: with 2+ games the pager gets a cover-only clone of the last
+   game before slide 0 and of the first game after the last, so swiping past
+   either end wraps around instead of hitting a wall. */
+var swipeLoop = false;
 var statsFlashTimer = null;
 var swipeTransitioning = false, swipeTransitionRaf = 0;
 var swipeReducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1589,6 +1585,14 @@ function slideHtml(m){
     +'<div class="slide-cover" style="'+coverStyleFor(m)+'">'+(m.cover?'':'<span class="card-glyph">'+glyphFor(m.id)+'</span>')+'</div>'
   +'</div>';
 }
+function loopSlideHtml(m){
+  return '<div class="swipe-slide loop" data-id="'+escapeHtml(m.id)+'" aria-hidden="true">'
+    +'<div class="slide-cover" style="'+coverStyleFor(m)+'">'+(m.cover?'':'<span class="card-glyph">'+glyphFor(m.id)+'</span>')+'</div>'
+  +'</div>';
+}
+function pagerAnchor(pager, i){
+  return (i + (swipeLoop ? 1 : 0)) * pagerUnit(pager);
+}
 function buildSwipe(){
   var pager = $('#swipePager');
   cancelHorizontalCue(false);
@@ -1599,19 +1603,27 @@ function buildSwipe(){
   var list = sortedFeed('foryou');
   if(!list.length){
     pager.innerHTML = '<div class="empty" style="padding-top:38vh"><div class="glyph"><svg class="brandmark lg" viewBox="0 0 24 24"><path class="tri" d="M4.8 6.4c0-1.4 1.5-2.2 2.7-1.5l9.4 5.6c1.1.7 1.1 2.3 0 3l-9.4 5.6c-1.2.7-2.7-.1-2.7-1.5V6.4z"/><path class="spark" d="M18.5 1.8l1.05 2.65L22.2 5.5l-2.65 1.05L18.5 9.2l-1.05-2.65L14.8 5.5l2.65-1.05z"/></svg></div><p>No games yet. Tap + to make the first one.</p></div>';
-    swipeList = []; swipeActive = -1;
+    swipeList = []; swipeActive = -1; swipeLoop = false;
     return;
   }
   swipeList = list;
   swipeActive = -1;
-  pager.innerHTML = list.map(slideHtml).join('');
+  swipeLoop = list.length > 1;
+  var inner = list.map(slideHtml).join('');
+  if(swipeLoop) inner = loopSlideHtml(list[list.length-1]) + inner + loopSlideHtml(list[0]);
+  swipeTransitioning = true;
+  pager.innerHTML = inner;
   pager.scrollTop = 0;
   pager.scrollLeft = 0;
-  requestAnimationFrame(function(){ setActiveSlide(0); scheduleHorizontalCue(); updateDockScrub(); scheduleDockCoach(); });
+  /* position synchronously (clientWidth forces layout) — rAF may never fire
+     if the app loads while backgrounded */
+  if(swipeLoop) setPagerPosition(pager, pagerAnchor(pager, 0));
+  swipeTransitioning = false;
+  setActiveSlide(0); scheduleHorizontalCue(); scheduleDockCoach();
 }
 function setActiveSlide(i){
   var pager = $('#swipePager');
-  var slides = pager.querySelectorAll('.swipe-slide');
+  var slides = pager.querySelectorAll('.swipe-slide:not(.loop)');
   if(!slides.length) return;
   i = Math.max(0, Math.min(slides.length-1, i));
   if(i===swipeActive) return;
@@ -1651,8 +1663,14 @@ function setActiveSlide(i){
   var sidebar = $('#swipeSidebar');
   if(sidebar){ sidebar.setAttribute('aria-valuenow', String(i+1)); sidebar.setAttribute('aria-valuemax', String(slides.length)); }
   if(railOpen) renderGameRail();
-  if(swipeList[i+1]) fetchCode(swipeList[i+1].id);
-  if(swipeList[i-1]) fetchCode(swipeList[i-1].id);
+  var n = swipeList.length;
+  if(swipeLoop){
+    fetchCode(swipeList[(i+1)%n].id);
+    fetchCode(swipeList[(i-1+n)%n].id);
+  } else {
+    if(swipeList[i+1]) fetchCode(swipeList[i+1].id);
+    if(swipeList[i-1]) fetchCode(swipeList[i-1].id);
+  }
 }
 function focusActiveGame(){
   var pager = $('#swipePager');
@@ -1693,7 +1711,7 @@ function cancelHorizontalCue(restore){
   if(horizontalCueRaf){ cancelAnimationFrame(horizontalCueRaf); horizontalCueRaf = 0; }
   var pager = $('#swipePager');
   if(horizontalCueActive && restore && pager && swipeActive>=0){
-    setPagerPosition(pager, swipeActive*pagerUnit(pager));
+    setPagerPosition(pager, pagerAnchor(pager, swipeActive));
   }
   horizontalCueActive = false;
   var tabbar = $('#tabbar');
@@ -1703,23 +1721,18 @@ function cancelHorizontalCue(restore){
     if(pager) pager.style.scrollSnapType = '';
   }
 }
+function interruptSwipeMotion(){
+  cancelHorizontalCue(true);
+  if(swipeTransitionRaf){
+    cancelAnimationFrame(swipeTransitionRaf);
+    swipeTransitionRaf = 0;
+  }
+  swipeTransitioning = false;
+  var pager = $('#swipePager');
+  if(pager) pager.style.scrollSnapType = '';
+}
 var dockCoachTimer = 0, dockCoachHideTimer = 0, dockCoachLearned = false;
 try{ dockCoachLearned = localStorage.getItem('ra-dock-coach-done')==='1'; }catch(e){}
-function updateDockScrub(){
-  var scrub = $('#dockScrub');
-  if(!scrub) return;
-  if(!HORIZONTAL_SWIPE || swipeList.length<2){ scrub.classList.add('hidden'); return; }
-  scrub.classList.remove('hidden');
-  var pager = $('#swipePager');
-  var track = scrub.firstElementChild;
-  var thumb = $('#dockScrubThumb');
-  var tw = track.clientWidth || 1;
-  var w = Math.max(26, Math.round(tw/swipeList.length));
-  thumb.style.width = w+'px';
-  var max = Math.max(1, pager.scrollWidth - pager.clientWidth);
-  var p = Math.max(0, Math.min(1, pagerPosition(pager)/max));
-  thumb.style.transform = 'translateX('+Math.round(p*(tw-w))+'px)';
-}
 function hideDockCoach(learned){
   if(dockCoachTimer){ clearTimeout(dockCoachTimer); dockCoachTimer = 0; }
   if(dockCoachHideTimer){ clearTimeout(dockCoachHideTimer); dockCoachHideTimer = 0; }
@@ -1749,8 +1762,8 @@ function scheduleHorizontalCue(){
     if(!document.body.classList.contains('swipe-mode') || swipeTransitioning || swipeActive<0) return;
     var pager = $('#swipePager');
     var unit = pagerUnit(pager);
-    var direction = swipeActive<swipeList.length-1 ? 1 : -1;
-    var base = swipeActive*unit;
+    var direction = (swipeLoop || swipeActive<swipeList.length-1) ? 1 : -1;
+    var base = pagerAnchor(pager, swipeActive);
     var travel = Math.min(48, unit*0.12);
     var started = performance.now();
     var duration = 900;
@@ -1781,12 +1794,23 @@ function scheduleHorizontalCue(){
 }
 function snapToGame(i){
   var pager = $('#swipePager');
-  if(!pager.children.length) return;
+  if(!pager.children.length || !swipeList.length) return;
   cancelHorizontalCue(true);
-  var target = Math.max(0, Math.min(pager.children.length-1, i));
+  var n = swipeList.length;
+  var target, end;
   var unit = pagerUnit(pager);
+  if(swipeLoop){
+    /* one step past either end animates into the clone, then teleports to the
+       matching real slide (identical cover, so the jump is invisible) */
+    var requested = Math.max(-1, Math.min(n, i));
+    target = ((requested%n)+n)%n;
+    end = (requested+1)*unit;
+  } else {
+    target = Math.max(0, Math.min(n-1, i));
+    end = target*unit;
+  }
+  var settled = swipeLoop ? (target+1)*unit : end;
   var start = pagerPosition(pager);
-  var end = target*unit;
   closeGameRail();
   if(swipeTransitionRaf) cancelAnimationFrame(swipeTransitionRaf);
   swipeTransitionRaf = 0;
@@ -1799,11 +1823,12 @@ function snapToGame(i){
   function finish(){
     swipeTransitionRaf = 0;
     setPagerPosition(pager, end);
+    if(settled!==end) setPagerPosition(pager, settled);
     if(target!==swipeActive) setActiveSlide(target);
     swipeTransitioning = false;
     pager.style.scrollSnapType = '';
     requestAnimationFrame(function(){
-      setPagerPosition(pager, end);
+      setPagerPosition(pager, settled);
       focusActiveGame();
     });
     setTimeout(focusActiveGame, 120);
@@ -2628,11 +2653,6 @@ function init(){
   window.addEventListener('keyup', function(e){ forwardKey(e, false); });
 
   var swipePager = $('#swipePager');
-  var scrubRaf = 0;
-  swipePager.addEventListener('scroll', function(){
-    if(!HORIZONTAL_SWIPE || scrubRaf) return;
-    scrubRaf = requestAnimationFrame(function(){ scrubRaf = 0; updateDockScrub(); });
-  });
   var swipeRaf = false;
   swipePager.addEventListener('scroll', function(){
     if(swipeTransitioning || swipeRaf) return;
@@ -2641,8 +2661,21 @@ function init(){
       swipeRaf = false;
       if(swipeTransitioning) return;
       var unit = pagerUnit(swipePager);
-      setActiveSlide(Math.round(pagerPosition(swipePager) / unit));
+      var pos = pagerPosition(swipePager);
+      var dom = Math.round(pos / unit);
+      if(!swipeLoop){ setActiveSlide(dom); return; }
+      var n = swipeList.length;
+      var logical = ((dom-1)%n+n)%n;
+      /* native scroll settled on a clone: teleport to the real slide */
+      if((dom===0 || dom===n+1) && Math.abs(pos-dom*unit)<2){
+        setPagerPosition(swipePager, (logical+1)*unit);
+      }
+      setActiveSlide(logical);
     });
+  });
+  addEventListener('resize', function(){
+    if(!document.body.classList.contains('swipe-mode') || swipeActive<0 || swipeTransitioning) return;
+    setPagerPosition(swipePager, pagerAnchor(swipePager, swipeActive));
   });
   var swipeSidebar = $('#swipeSidebar');
   var sidebarPointer = null, sidebarStartY = 0, sidebarStartX = 0, sidebarStartScroll = 0, sidebarWheelAt = 0;
@@ -2651,7 +2684,8 @@ function init(){
     swipeSidebar.classList.remove('dragging');
   }
   swipeSidebar.addEventListener('pointerdown', function(e){
-    if(e.isPrimary===false || swipeTransitioning){ e.preventDefault(); return; }
+    if(e.isPrimary===false){ e.preventDefault(); return; }
+    interruptSwipeMotion();
     sidebarPointer = e.pointerId;
     sidebarStartY = e.clientY;
     sidebarStartX = e.clientX;
@@ -2688,7 +2722,7 @@ function init(){
     if(e.key==='ArrowUp' || e.key==='PageUp'){ e.preventDefault(); snapToGame(swipeActive-1); }
     else if(e.key==='ArrowDown' || e.key==='PageDown'){ e.preventDefault(); snapToGame(swipeActive+1); }
     else if(e.key==='Home'){ e.preventDefault(); snapToGame(0); }
-    else if(e.key==='End'){ e.preventDefault(); snapToGame($('#swipePager').children.length-1); }
+    else if(e.key==='End'){ e.preventDefault(); snapToGame(swipeList.length-1); }
   });
   swipeSidebar.addEventListener('wheel', function(e){
     e.preventDefault();
@@ -2723,8 +2757,7 @@ function init(){
   }
   tabbar.addEventListener('pointerdown', function(e){
     if(!HORIZONTAL_SWIPE || !document.body.classList.contains('swipe-mode') || e.isPrimary===false) return;
-    cancelHorizontalCue(true);
-    if(swipeTransitioning) return;
+    interruptSwipeMotion();
     dockPointer = e.pointerId;
     dockStartX = e.clientX;
     dockStartY = e.clientY;
