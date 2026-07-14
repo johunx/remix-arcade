@@ -83,6 +83,7 @@ svg.ic.solid path{fill:currentColor;stroke:none;}
 @keyframes shaftSway{from{transform:translateX(-1.2%);}to{transform:translateX(1.2%);}}
 #lightfx{position:fixed;inset:0;z-index:25;pointer-events:none;mix-blend-mode:screen;transition:opacity .4s ease;}
 body.swipe-mode #lightfx, body.swipe-mode .rays{opacity:0;}
+body.swipe-mode .rays{animation-play-state:paused;}
 
 /* glass recipe */
 .g-glass{background:linear-gradient(160deg,rgba(255,255,255,0.05),rgba(255,255,255,0.01) 45%),var(--glass);backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%);border:1px solid var(--glass-border);box-shadow:inset 0 1px 0 var(--glass-edge),0 18px 40px -18px rgba(0,0,0,0.6);}
@@ -338,7 +339,7 @@ body.swipe-mode #screens{padding-bottom:0;overflow:hidden;}
 .screen.swipe{padding:0;height:calc(100vh - var(--playbar-h));height:calc(100dvh - var(--playbar-h) - env(safe-area-inset-bottom));position:relative;animation:none;}
 .swipe-pager{width:calc(100% - var(--swipe-lane-w));height:100%;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none;overscroll-behavior:contain;}
 .swipe-pager::-webkit-scrollbar{display:none;}
-.swipe-slide{height:100%;scroll-snap-align:start;scroll-snap-stop:always;position:relative;background:#000;overflow:hidden;}
+.swipe-slide{height:100%;scroll-snap-align:start;scroll-snap-stop:always;position:relative;background:#000;overflow:hidden;contain:layout paint;}
 .slide-frame{position:absolute;inset:0;}
 .slide-frame iframe{width:100%;height:100%;border:0;background:#000;display:block;}
 .slide-cover{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;background:var(--cover,#1E0F16);background-size:cover;background-position:center;transition:opacity .35s ease;}
@@ -359,7 +360,11 @@ body.horizontal-swipe.swipe-mode #tabbar{padding-left:24px;padding-right:24px;to
 body.horizontal-swipe.swipe-mode #tabbar::before,body.horizontal-swipe.swipe-mode #tabbar::after{position:absolute;top:50%;z-index:0;color:var(--mint);font-size:20px;line-height:1;opacity:.7;pointer-events:none;}
 body.horizontal-swipe.swipe-mode #tabbar::before{content:'\2039';left:7px;animation:dockCueLeft 1.8s ease-in-out 2;}
 body.horizontal-swipe.swipe-mode #tabbar::after{content:'\203A';right:7px;animation:dockCueRight 1.8s ease-in-out 2;}
-body.horizontal-swipe.swipe-mode #tabbar.dock-swiping{border-color:rgba(255,154,95,.48);box-shadow:inset 0 1px 0 var(--glass-edge),0 18px 38px -14px rgba(0,0,0,.78),0 0 0 3px rgba(255,154,95,.09);transform:translateX(-50%) scale(.985);}
+body.horizontal-swipe.swipe-mode #tabbar.dock-swiping,body.horizontal-swipe.swipe-mode #tabbar.dock-cue{border-color:rgba(255,154,95,.48);box-shadow:inset 0 1px 0 var(--glass-edge),0 18px 38px -14px rgba(0,0,0,.78),0 0 0 3px rgba(255,154,95,.09);transform:translateX(-50%) scale(.985);}
+body.horizontal-swipe.swipe-mode #tabbar.dock-cue::before,body.horizontal-swipe.swipe-mode #tabbar.dock-cue::after{opacity:1;}
+body.gameplay-mode #tabbar{background:linear-gradient(160deg,rgba(255,255,255,.065),rgba(255,255,255,.018)),rgba(39,20,27,.96);backdrop-filter:none;-webkit-backdrop-filter:none;}
+body.gameplay-mode .game-stats-flash{background:rgba(22,10,15,.94);backdrop-filter:none;-webkit-backdrop-filter:none;}
+body.gameplay-mode .rail-btn .bub{background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.015)),rgba(31,15,21,.94);backdrop-filter:none;-webkit-backdrop-filter:none;}
 @keyframes dockCueLeft{0%,100%{transform:translateX(0);opacity:.55;}50%{transform:translateX(-3px);opacity:1;}}
 @keyframes dockCueRight{0%,100%{transform:translateX(0);opacity:.55;}50%{transform:translateX(3px);opacity:1;}}
 .tab svg.tab-info-icon,.tab-info-label{display:none;}
@@ -600,7 +605,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
         <div class="follow-chips" id="followingList"></div>
       </div>
       <div class="feed-grid" id="profGrid"></div>
-      <p class="build-tag">Remix Arcade · build v49</p>
+      <p class="build-tag">Remix Arcade · build v50</p>
     </section>
 
   </main>
@@ -709,7 +714,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 <script>
 (function(){
 
-var BUILD = 'v49';
+var BUILD = 'v50';
 var HORIZONTAL_SWIPE = new URLSearchParams(location.search).get('nav')==='horizontal';
 document.body.classList.toggle('horizontal-swipe', HORIZONTAL_SWIPE);
 var META_PREFIX = 'ra-meta-';
@@ -1366,10 +1371,18 @@ function renderFriends(){
 function showScreen(name){
   $all('.screen').forEach(function(s){ s.classList.add('hidden'); });
   $('#screen-'+name).classList.remove('hidden');
-  if(name!=='swipe'){ closeGameInfo(); closeGameRail(); }
+  if(name!=='swipe'){ closeGameInfo(); closeGameRail(); releaseSwipeFrames(); }
+  if(name!=='game'){
+    var detailFrame = $('#gameFrame');
+    if(detailFrame && detailFrame.hasAttribute('srcdoc')){
+      detailFrame.removeAttribute('srcdoc');
+      detailFrame.src = 'about:blank';
+    }
+  }
   $all('.tab').forEach(function(t){ t.classList.toggle('active', t.dataset.screen===name); });
   document.body.classList.toggle('swipe-mode', name==='swipe');
   document.body.classList.toggle('gameplay-mode', name==='swipe' || name==='game');
+  if(window.setRemixAmbientActive) window.setRemixAmbientActive(name!=='swipe');
   if(name==='swipe') buildSwipe();
   if(name==='friends') renderFriends();
   if(name==='feed') renderFeed();
@@ -1534,6 +1547,9 @@ var swipeList = [], swipeActive = -1, codeCache = {};
 var statsFlashTimer = null;
 var swipeTransitioning = false, swipeTransitionRaf = 0;
 var swipeReducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+var horizontalCueTimer = 0, horizontalCueRaf = 0, horizontalCueActive = false;
+var horizontalCueSeen = false;
+try{ horizontalCueSeen = sessionStorage.getItem('ra-horizontal-cue-v1')==='1'; }catch(e){}
 function flashGameStats(meta){
   var flash = $('#gameStatsFlash');
   if(!flash || !document.body.classList.contains('swipe-mode')) return;
@@ -1559,7 +1575,8 @@ function slideHtml(m){
 }
 function buildSwipe(){
   var pager = $('#swipePager');
-  if(swipeTransitionRaf) clearTimeout(swipeTransitionRaf);
+  cancelHorizontalCue(false);
+  if(swipeTransitionRaf) cancelAnimationFrame(swipeTransitionRaf);
   swipeTransitionRaf = 0;
   swipeTransitioning = false;
   pager.style.scrollSnapType = '';
@@ -1574,7 +1591,7 @@ function buildSwipe(){
   pager.innerHTML = list.map(slideHtml).join('');
   pager.scrollTop = 0;
   pager.scrollLeft = 0;
-  requestAnimationFrame(function(){ setActiveSlide(0); });
+  requestAnimationFrame(function(){ setActiveSlide(0); scheduleHorizontalCue(); });
 }
 function setActiveSlide(i){
   var pager = $('#swipePager');
@@ -1590,7 +1607,7 @@ function setActiveSlide(i){
       (function(slide, frame){
         var id = slide.dataset.id;
         fetchCode(id).then(function(code){
-          if(slide.dataset.id!==swipeList[swipeActive].id) return;
+          if(!swipeList[swipeActive] || slide.dataset.id!==swipeList[swipeActive].id) return;
           currentGameCode = code;
           if(!slide.dataset.loaded && code){
             frame.onload = function(){
@@ -1619,6 +1636,7 @@ function setActiveSlide(i){
   if(sidebar){ sidebar.setAttribute('aria-valuenow', String(i+1)); sidebar.setAttribute('aria-valuemax', String(slides.length)); }
   if(railOpen) renderGameRail();
   if(swipeList[i+1]) fetchCode(swipeList[i+1].id);
+  if(swipeList[i-1]) fetchCode(swipeList[i-1].id);
 }
 function focusActiveGame(){
   var pager = $('#swipePager');
@@ -1628,6 +1646,21 @@ function focusActiveGame(){
   if(active && active!==frame && typeof active.blur==='function') active.blur();
   try{ if(frame.contentWindow) frame.contentWindow.focus(); }catch(e){}
   try{ frame.focus({preventScroll:true}); }catch(e){ frame.focus(); }
+}
+function releaseSwipeFrames(){
+  var pager = $('#swipePager');
+  if(!pager) return;
+  var slides = pager.querySelectorAll('.swipe-slide');
+  for(var i=0;i<slides.length;i++){
+    var frame = slides[i].querySelector('iframe');
+    if(slides[i].dataset.loaded && frame){
+      frame.removeAttribute('srcdoc');
+      frame.src = 'about:blank';
+      slides[i].dataset.loaded = '';
+    }
+    slides[i].classList.remove('live');
+  }
+  swipeActive = -1;
 }
 function pagerUnit(pager){
   return HORIZONTAL_SWIPE ? (pager.clientWidth || 1) : (pager.clientHeight || 1);
@@ -1639,15 +1672,68 @@ function setPagerPosition(pager, value){
   if(HORIZONTAL_SWIPE) pager.scrollLeft = value;
   else pager.scrollTop = value;
 }
+function cancelHorizontalCue(restore){
+  if(horizontalCueTimer){ clearTimeout(horizontalCueTimer); horizontalCueTimer = 0; }
+  if(horizontalCueRaf){ cancelAnimationFrame(horizontalCueRaf); horizontalCueRaf = 0; }
+  var pager = $('#swipePager');
+  if(horizontalCueActive && restore && pager && swipeActive>=0){
+    setPagerPosition(pager, swipeActive*pagerUnit(pager));
+  }
+  horizontalCueActive = false;
+  var tabbar = $('#tabbar');
+  if(tabbar) tabbar.classList.remove('dock-cue');
+  if(!swipeTransitionRaf){
+    swipeTransitioning = false;
+    if(pager) pager.style.scrollSnapType = '';
+  }
+}
+function scheduleHorizontalCue(){
+  if(!HORIZONTAL_SWIPE || swipeReducedMotion || horizontalCueSeen || swipeList.length<2) return;
+  horizontalCueTimer = setTimeout(function(){
+    horizontalCueTimer = 0;
+    if(!document.body.classList.contains('swipe-mode') || swipeTransitioning || swipeActive<0) return;
+    var pager = $('#swipePager');
+    var unit = pagerUnit(pager);
+    var direction = swipeActive<swipeList.length-1 ? 1 : -1;
+    var base = swipeActive*unit;
+    var travel = Math.min(48, unit*0.12);
+    var started = performance.now();
+    var duration = 900;
+    horizontalCueSeen = true;
+    try{ sessionStorage.setItem('ra-horizontal-cue-v1', '1'); }catch(e){}
+    horizontalCueActive = true;
+    swipeTransitioning = true;
+    pager.style.scrollSnapType = 'none';
+    $('#tabbar').classList.add('dock-cue');
+    function step(now){
+      var progress = Math.min((now-started)/duration, 1);
+      var offset = Math.sin(Math.PI*progress)*travel*direction;
+      setPagerPosition(pager, base+offset);
+      if(progress<1){
+        horizontalCueRaf = requestAnimationFrame(step);
+      } else {
+        horizontalCueRaf = 0;
+        setPagerPosition(pager, base);
+        horizontalCueActive = false;
+        swipeTransitioning = false;
+        pager.style.scrollSnapType = '';
+        $('#tabbar').classList.remove('dock-cue');
+        focusActiveGame();
+      }
+    }
+    horizontalCueRaf = requestAnimationFrame(step);
+  }, 500);
+}
 function snapToGame(i){
   var pager = $('#swipePager');
   if(!pager.children.length) return;
+  cancelHorizontalCue(true);
   var target = Math.max(0, Math.min(pager.children.length-1, i));
   var unit = pagerUnit(pager);
   var start = pagerPosition(pager);
   var end = target*unit;
   closeGameRail();
-  if(swipeTransitionRaf) clearTimeout(swipeTransitionRaf);
+  if(swipeTransitionRaf) cancelAnimationFrame(swipeTransitionRaf);
   swipeTransitionRaf = 0;
   swipeTransitioning = true;
   pager.style.scrollSnapType = 'none';
@@ -1668,14 +1754,14 @@ function snapToGame(i){
     setTimeout(focusActiveGame, 120);
   }
   if(!duration || distance<1){ finish(); return; }
-  function step(){
-    var progress = Math.min((performance.now()-started)/duration, 1);
+  function step(now){
+    var progress = Math.min((now-started)/duration, 1);
     var eased = 1-Math.pow(1-progress, 3);
     setPagerPosition(pager, start+(end-start)*eased);
-    if(progress<1) swipeTransitionRaf = setTimeout(step, 16);
+    if(progress<1) swipeTransitionRaf = requestAnimationFrame(step);
     else finish();
   }
-  swipeTransitionRaf = setTimeout(step, 0);
+  swipeTransitionRaf = requestAnimationFrame(step);
 }
 
 function openCreator(name){
@@ -2152,6 +2238,7 @@ function initLightFX(){
   fxResize(); addEventListener('resize', fxResize);
 
   var reduceFx = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var lightFxMobile = matchMedia('(pointer: coarse)').matches || innerWidth<700;
 
   // one light, drifting slowly above the screen — no pointer following
   var light = {x: innerWidth/2, y: -160};
@@ -2190,7 +2277,8 @@ function initLightFX(){
   }
 
   var dust = [];
-  for(var i=0;i<28;i++){
+  var dustCount = lightFxMobile ? 18 : 28;
+  for(var i=0;i<dustCount;i++){
     dust.push({x: Math.random()*innerWidth, y: Math.random()*innerHeight, vy: 0.12+Math.random()*0.32, ph: Math.random()*6.28, r: 0.6+Math.random()*1.4, tw: Math.random()*6.28});
   }
 
@@ -2198,7 +2286,7 @@ function initLightFX(){
   var targets = [];
   var needRefresh = false;
   function refreshTargets(){
-    targets = Array.prototype.slice.call(document.querySelectorAll(LIT_SEL)).slice(0, 70);
+    targets = Array.prototype.slice.call(document.querySelectorAll(LIT_SEL)).slice(0, lightFxMobile ? 45 : 70);
     for(var i=0;i<targets.length;i++){
       var el = targets[i];
       if(!el.classList.contains('lit')){
@@ -2248,22 +2336,26 @@ function initLightFX(){
     }
   }
 
-  var frame2 = 0;
+  var frame2 = 0, fxFrame = 0;
+  function startFx(){
+    if(reduceFx || fxFrame || document.body.classList.contains('swipe-mode')) return;
+    fxFrame = requestAnimationFrame(fxLoop);
+  }
   function fxLoop(t){
+    fxFrame = 0;
     frame2++;
-    // during gameplay the layer is hidden — do nothing but keep the clock alive
+    // Gameplay owns the frame budget, so the ambient loop stops completely.
     if(document.body.classList.contains('swipe-mode')){
-      if(frame2 % 30 === 0) lctx.clearRect(0,0,W2,H2);
-      requestAnimationFrame(fxLoop);
+      lctx.clearRect(0,0,W2,H2);
       return;
     }
     idleLight(t);
 
-    if(frame2 % 10 === 0) castLight();
+    if(frame2 % (lightFxMobile ? 24 : 10) === 0) castLight();
     if(frame2 % 90 === 0 || needRefresh){ needRefresh=false; refreshTargets(); }
 
-    // dust at 30fps
-    if(frame2 % 2 === 0){
+    // Dust runs at 30fps on desktop and 20fps on touch-first devices.
+    if(frame2 % (lightFxMobile ? 3 : 2) === 0){
       lctx.clearRect(0,0,W2,H2);
       lctx.globalCompositeOperation = 'lighter';
       for(var i=0;i<dust.length;i++){
@@ -2280,10 +2372,20 @@ function initLightFX(){
         lctx.fill();
       }
     }
-    requestAnimationFrame(fxLoop);
+    fxFrame = requestAnimationFrame(fxLoop);
   }
+  window.setRemixAmbientActive = function(active){
+    if(reduceFx) return;
+    if(!active){
+      if(fxFrame) cancelAnimationFrame(fxFrame);
+      fxFrame = 0;
+      lctx.clearRect(0,0,W2,H2);
+      return;
+    }
+    startFx();
+  };
   if(reduceFx){ castLight(); return; }
-  requestAnimationFrame(fxLoop);
+  startFx();
 }
 
 function init(){
@@ -2537,8 +2639,20 @@ function init(){
   }, {passive:false});
 
   var tabbar = $('#tabbar');
+  tabbar.setAttribute('aria-label', HORIZONTAL_SWIPE ? 'App navigation. Swipe left or right to change games.' : 'App navigation');
   var dockPointer = null, dockStartX = 0, dockStartY = 0, dockStartScroll = 0;
   var dockDragging = false, dockSuppressClick = false;
+  var dockMoveRaf = 0, dockNextScroll = 0;
+  function applyDockMove(){
+    dockMoveRaf = 0;
+    swipePager.scrollLeft = dockNextScroll;
+  }
+  function flushDockMove(){
+    if(!dockMoveRaf) return;
+    cancelAnimationFrame(dockMoveRaf);
+    dockMoveRaf = 0;
+    swipePager.scrollLeft = dockNextScroll;
+  }
   function clearDockDrag(pointerId){
     if(pointerId!==undefined && pointerId!==null){
       try{ tabbar.releasePointerCapture(pointerId); }catch(err){}
@@ -2548,11 +2662,14 @@ function init(){
     tabbar.classList.remove('dock-swiping');
   }
   tabbar.addEventListener('pointerdown', function(e){
-    if(!HORIZONTAL_SWIPE || !document.body.classList.contains('swipe-mode') || e.isPrimary===false || swipeTransitioning) return;
+    if(!HORIZONTAL_SWIPE || !document.body.classList.contains('swipe-mode') || e.isPrimary===false) return;
+    cancelHorizontalCue(true);
+    if(swipeTransitioning) return;
     dockPointer = e.pointerId;
     dockStartX = e.clientX;
     dockStartY = e.clientY;
     dockStartScroll = swipePager.scrollLeft;
+    dockNextScroll = dockStartScroll;
   });
   tabbar.addEventListener('pointermove', function(e){
     if(dockPointer!==e.pointerId) return;
@@ -2572,7 +2689,8 @@ function init(){
       try{ tabbar.setPointerCapture(e.pointerId); }catch(err){}
     }
     var max = Math.max(0, swipePager.scrollWidth-swipePager.clientWidth);
-    swipePager.scrollLeft = Math.max(0, Math.min(max, dockStartScroll-dx));
+    dockNextScroll = Math.max(0, Math.min(max, dockStartScroll-dx));
+    if(!dockMoveRaf) dockMoveRaf = requestAnimationFrame(applyDockMove);
     e.preventDefault();
   });
   tabbar.addEventListener('pointerup', function(e){
@@ -2580,6 +2698,7 @@ function init(){
     var dx = e.clientX-dockStartX;
     var dy = e.clientY-dockStartY;
     var wasDragging = dockDragging;
+    flushDockMove();
     clearDockDrag(e.pointerId);
     if(!wasDragging) return;
     dockSuppressClick = true;
@@ -2592,6 +2711,7 @@ function init(){
   tabbar.addEventListener('pointercancel', function(e){
     if(dockPointer!==e.pointerId) return;
     var wasDragging = dockDragging;
+    flushDockMove();
     clearDockDrag(e.pointerId);
     if(wasDragging) snapToGame(swipeActive);
   });
