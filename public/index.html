@@ -363,14 +363,16 @@ body.horizontal-swipe.swipe-mode #tabbar .tab.active{color:#8CF5E1;}
 body.horizontal-swipe.swipe-mode #tabbar .tab.active .icon svg.ic{filter:drop-shadow(0 0 8px rgba(89,223,198,.68));}
 body.horizontal-swipe.swipe-mode #tabbar .tab-create{color:var(--mint-ink)!important;}
 body.horizontal-swipe.swipe-mode .dock-swipe-demo.show{position:absolute;display:block;inset:-48px 0 0;z-index:5;pointer-events:none;}
-body.horizontal-swipe.swipe-mode .dock-swipe-finger{position:absolute;top:0;left:86%;font-family:Arial,sans-serif;font-size:34px;line-height:1;opacity:0;filter:drop-shadow(0 5px 8px rgba(0,0,0,.58));animation:dockFingerSwipe 1.5s ease-in-out forwards;will-change:transform,opacity;}
-body.horizontal-swipe.swipe-mode .dock-swipe-touch{position:absolute;top:39px;left:calc(86% + 7px);width:20px;height:20px;border:2px solid rgba(140,245,225,.85);border-radius:50%;opacity:0;box-shadow:0 0 12px rgba(89,223,198,.55);animation:dockTouchSwipe 1.5s ease-in-out forwards;will-change:transform,opacity;}
+body.horizontal-swipe.swipe-mode .dock-swipe-fog{position:absolute;top:48px;left:4px;right:4px;height:64px;z-index:0;border-radius:999px;opacity:0;background:radial-gradient(75% 110% at 48% 16%,rgba(220,255,249,.28),rgba(79,181,175,.16) 42%,rgba(7,28,31,.62) 100%),linear-gradient(90deg,rgba(9,38,41,.5),rgba(135,225,212,.12),rgba(9,38,41,.5));box-shadow:inset 0 1px 0 rgba(222,255,249,.16);animation:dockFogLesson 1.5s ease-in-out forwards;}
+body.horizontal-swipe.swipe-mode .dock-swipe-finger{position:absolute;top:0;left:32%;z-index:2;font-family:Arial,sans-serif;font-size:34px;line-height:1;opacity:0;filter:drop-shadow(0 5px 8px rgba(0,0,0,.58));animation:dockFingerSwipe 1.5s ease-in-out forwards;will-change:transform,opacity;}
+body.horizontal-swipe.swipe-mode .dock-swipe-touch{position:absolute;top:39px;left:calc(32% + 7px);z-index:1;width:20px;height:20px;border:2px solid rgba(140,245,225,.9);border-radius:50%;opacity:0;box-shadow:0 0 12px rgba(89,223,198,.6);animation:dockTouchSwipe 1.5s ease-in-out forwards;will-change:transform,opacity;}
 body.horizontal-swipe.swipe-mode #tabbar.dock-swiping,body.horizontal-swipe.swipe-mode #tabbar.dock-cue{border-color:rgba(140,245,225,.58);box-shadow:inset 0 1px 0 rgba(224,255,250,.28),0 18px 38px -14px rgba(0,0,0,.82),0 0 0 3px rgba(89,223,198,.1);transform:translateX(-50%) scale(.985);}
 body.gameplay-mode #tabbar{background:linear-gradient(160deg,rgba(255,255,255,.065),rgba(255,255,255,.018)),rgba(39,20,27,.96);backdrop-filter:none;-webkit-backdrop-filter:none;}
 body.gameplay-mode .game-stats-flash{background:rgba(22,10,15,.94);backdrop-filter:none;-webkit-backdrop-filter:none;}
 body.gameplay-mode .rail-btn .bub{background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.015)),rgba(31,15,21,.94);backdrop-filter:none;-webkit-backdrop-filter:none;}
-@keyframes dockFingerSwipe{0%{opacity:0;transform:translate(8px,-8px) scale(1);}14%{opacity:1;transform:translate(0,0) scale(1);}28%{opacity:1;transform:translate(0,14px) scale(.92);}72%{opacity:1;transform:translate(-72px,14px) scale(.92);}88%{opacity:1;transform:translate(-72px,0) scale(1);}100%{opacity:0;transform:translate(-78px,-5px) scale(1);}}
-@keyframes dockTouchSwipe{0%,20%{opacity:0;transform:translate(8px,-4px) scale(.35);}30%{opacity:.92;transform:translate(0,4px) scale(.55);}48%{opacity:.35;transform:translate(-26px,4px) scale(1.25);}72%{opacity:.72;transform:translate(-72px,4px) scale(.6);}100%{opacity:0;transform:translate(-78px,0) scale(1.35);}}
+@keyframes dockFogLesson{0%,100%{opacity:0;}14%,88%{opacity:1;}}
+@keyframes dockFingerSwipe{0%{opacity:0;transform:translate(-8px,-8px) scale(1);}14%{opacity:1;transform:translate(0,0) scale(1);}28%{opacity:1;transform:translate(0,14px) scale(.92);}72%{opacity:1;transform:translate(110px,14px) scale(.92);}88%{opacity:1;transform:translate(110px,0) scale(1);}100%{opacity:0;transform:translate(118px,-5px) scale(1);}}
+@keyframes dockTouchSwipe{0%,20%{opacity:0;transform:translate(-8px,-4px) scale(.35);}30%{opacity:.92;transform:translate(0,4px) scale(.55);}48%{opacity:.35;transform:translate(42px,4px) scale(1.25);}72%{opacity:.72;transform:translate(110px,4px) scale(.6);}100%{opacity:0;transform:translate(118px,0) scale(1.35);}}
 .tab svg.tab-info-icon,.tab-info-label{display:none;}
 body.swipe-mode .tab svg.tab-play-icon,body.swipe-mode .tab-play-label{display:none;}
 body.swipe-mode .tab svg.tab-info-icon,body.swipe-mode .tab-info-label{display:block;}
@@ -609,7 +611,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
         <div class="follow-chips" id="followingList"></div>
       </div>
       <div class="feed-grid" id="profGrid"></div>
-      <p class="build-tag">Remix Arcade · build v54</p>
+      <p class="build-tag">Remix Arcade · build v55</p>
     </section>
 
   </main>
@@ -625,7 +627,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
   </div>
 
   <nav id="tabbar">
-    <span class="dock-swipe-demo" id="dockSwipeDemo" aria-hidden="true"><span class="dock-swipe-touch"></span><span class="dock-swipe-finger">👇</span></span>
+    <span class="dock-swipe-demo" id="dockSwipeDemo" aria-hidden="true"><span class="dock-swipe-fog"></span><span class="dock-swipe-touch"></span><span class="dock-swipe-finger">👇</span></span>
     <button class="tab active" id="playTab" data-screen="swipe"><span class="icon"><svg class="ic tab-play-icon" viewBox="0 0 24 24"><path d="M8.5 5.8c0-1.1 1.2-1.8 2.1-1.2l9 5.4c.9.6.9 1.9 0 2.4l-9 5.4c-.9.6-2.1-.1-2.1-1.2V5.8z"/></svg><svg class="ic tab-info-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle class="dot" cx="12" cy="7.8" r="1.2"/></svg></span><span class="tab-play-label">Play</span><span class="tab-info-label">Info</span></button>
     <button class="tab tab-browse" data-screen="feed"><span class="icon"><svg class="ic" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="2.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2.2"/></svg></span>Browse</button>
     <button class="tab tab-create" data-screen="create"><span class="icon"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span></button>
@@ -719,7 +721,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 <script>
 (function(){
 
-var BUILD = 'v54';
+var BUILD = 'v55';
 var HORIZONTAL_SWIPE = new URLSearchParams(location.search).get('nav')==='horizontal';
 document.body.classList.toggle('horizontal-swipe', HORIZONTAL_SWIPE);
 var META_PREFIX = 'ra-meta-';
@@ -1769,7 +1771,7 @@ function scheduleHorizontalCue(force){
     if(!document.body.classList.contains('swipe-mode') || swipeTransitioning || swipeActive<0) return;
     var pager = $('#swipePager');
     var unit = pagerUnit(pager);
-    var direction = (swipeLoop || swipeActive<swipeList.length-1) ? 1 : -1;
+    var direction = force ? -1 : ((swipeLoop || swipeActive<swipeList.length-1) ? 1 : -1);
     var base = pagerAnchor(pager, swipeActive);
     var travel = Math.min(48, unit*0.12);
     var started = performance.now();
