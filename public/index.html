@@ -356,23 +356,27 @@ body.horizontal-swipe.swipe-mode .swipe-slide{width:100%;flex:0 0 100%;}
 body.horizontal-swipe.swipe-mode .swipe-sidebar{display:none;}
 body.horizontal-swipe.swipe-mode .game-stats-flash{right:10px;}
 body.horizontal-swipe.swipe-mode .game-rail{right:9px;}
-.dock-swipe-demo{display:none;}
+.dock-swipe-demo,.dock-drag-glow{display:none;}
 body.horizontal-swipe.swipe-mode #tabbar{padding-left:24px;padding-right:24px;touch-action:pan-y;user-select:none;background:linear-gradient(160deg,rgba(103,240,216,.16),rgba(42,166,158,.055)),rgba(12,42,45,.97);border-color:rgba(117,239,221,.34);box-shadow:inset 0 1px 0 rgba(213,255,247,.2),0 22px 48px -16px rgba(0,0,0,.82),0 0 0 1px rgba(55,198,185,.07);transition:border-color .2s ease,box-shadow .2s ease,transform .2s var(--spring),background .25s ease;}
 body.horizontal-swipe.swipe-mode #tabbar .tab{color:rgba(216,245,240,.56);}
 body.horizontal-swipe.swipe-mode #tabbar .tab.active{color:#8CF5E1;}
 body.horizontal-swipe.swipe-mode #tabbar .tab.active .icon svg.ic{filter:drop-shadow(0 0 8px rgba(89,223,198,.68));}
 body.horizontal-swipe.swipe-mode #tabbar .tab-create{color:var(--mint-ink)!important;}
+body.horizontal-swipe.swipe-mode .dock-drag-glow{position:absolute;display:block;inset:2px;z-index:1;overflow:hidden;pointer-events:none;border-radius:999px;opacity:0;transform:scale(.98);background:radial-gradient(86px 62px at var(--dock-glow-x,50%) 50%,rgba(185,255,240,.48),rgba(71,226,209,.22) 42%,rgba(41,173,166,.06) 64%,transparent 76%);transition:opacity .12s ease,transform .16s ease;}
 body.horizontal-swipe.swipe-mode .dock-swipe-demo.show{position:absolute;display:block;inset:-48px 0 0;z-index:5;pointer-events:none;}
 body.horizontal-swipe.swipe-mode .dock-swipe-fog{position:absolute;top:48px;left:4px;right:4px;height:64px;z-index:0;border-radius:999px;opacity:0;background:radial-gradient(75% 110% at 48% 16%,rgba(220,255,249,.28),rgba(79,181,175,.16) 42%,rgba(7,28,31,.62) 100%),linear-gradient(90deg,rgba(9,38,41,.5),rgba(135,225,212,.12),rgba(9,38,41,.5));box-shadow:inset 0 1px 0 rgba(222,255,249,.16);animation:dockFogLesson 1.5s ease-in-out forwards;}
 body.horizontal-swipe.swipe-mode .dock-swipe-finger{position:absolute;top:0;left:32%;z-index:2;font-family:Arial,sans-serif;font-size:34px;line-height:1;opacity:0;filter:drop-shadow(0 5px 8px rgba(0,0,0,.58));animation:dockFingerSwipe 1.5s ease-in-out forwards;will-change:transform,opacity;}
 body.horizontal-swipe.swipe-mode .dock-swipe-touch{position:absolute;top:39px;left:calc(32% + 7px);z-index:1;width:20px;height:20px;border:2px solid rgba(140,245,225,.9);border-radius:50%;opacity:0;box-shadow:0 0 12px rgba(89,223,198,.6);animation:dockTouchSwipe 1.5s ease-in-out forwards;will-change:transform,opacity;}
 body.horizontal-swipe.swipe-mode #tabbar.dock-swiping,body.horizontal-swipe.swipe-mode #tabbar.dock-cue{border-color:rgba(140,245,225,.58);box-shadow:inset 0 1px 0 rgba(224,255,250,.28),0 18px 38px -14px rgba(0,0,0,.82),0 0 0 3px rgba(89,223,198,.1);transform:translateX(-50%) scale(.985);}
+body.horizontal-swipe.swipe-mode #tabbar.dock-swiping{box-shadow:inset 0 1px 0 rgba(224,255,250,.32),0 18px 38px -14px rgba(0,0,0,.82),0 0 0 3px rgba(89,223,198,.14),0 0 26px rgba(58,224,206,.2);}
+body.horizontal-swipe.swipe-mode #tabbar.dock-swiping .dock-drag-glow{opacity:1;transform:scale(1);animation:dockDragGlowPulse .62s ease-in-out infinite alternate;}
 body.gameplay-mode #tabbar{background:linear-gradient(160deg,rgba(255,255,255,.065),rgba(255,255,255,.018)),rgba(39,20,27,.96);backdrop-filter:none;-webkit-backdrop-filter:none;}
 body.gameplay-mode .game-stats-flash{background:rgba(22,10,15,.94);backdrop-filter:none;-webkit-backdrop-filter:none;}
 body.gameplay-mode .rail-btn .bub{background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.015)),rgba(31,15,21,.94);backdrop-filter:none;-webkit-backdrop-filter:none;}
 @keyframes dockFogLesson{0%,100%{opacity:0;}14%,88%{opacity:1;}}
 @keyframes dockFingerSwipe{0%{opacity:0;transform:translate(-8px,-8px) scale(1);}14%{opacity:1;transform:translate(0,0) scale(1);}28%{opacity:1;transform:translate(0,14px) scale(.92);}72%{opacity:1;transform:translate(110px,14px) scale(.92);}88%{opacity:1;transform:translate(110px,0) scale(1);}100%{opacity:0;transform:translate(118px,-5px) scale(1);}}
 @keyframes dockTouchSwipe{0%,20%{opacity:0;transform:translate(-8px,-4px) scale(.35);}30%{opacity:.92;transform:translate(0,4px) scale(.55);}48%{opacity:.35;transform:translate(42px,4px) scale(1.25);}72%{opacity:.72;transform:translate(110px,4px) scale(.6);}100%{opacity:0;transform:translate(118px,0) scale(1.35);}}
+@keyframes dockDragGlowPulse{from{filter:brightness(.88);opacity:.72;}to{filter:brightness(1.18);opacity:1;}}
 .tab svg.tab-info-icon,.tab-info-label{display:none;}
 body.swipe-mode .tab svg.tab-play-icon,body.swipe-mode .tab-play-label{display:none;}
 body.swipe-mode .tab svg.tab-info-icon,body.swipe-mode .tab-info-label{display:block;}
@@ -611,7 +615,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
         <div class="follow-chips" id="followingList"></div>
       </div>
       <div class="feed-grid" id="profGrid"></div>
-      <p class="build-tag">Remix Arcade · build v56</p>
+      <p class="build-tag">Remix Arcade · build v57</p>
     </section>
 
   </main>
@@ -627,6 +631,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
   </div>
 
   <nav id="tabbar">
+    <span class="dock-drag-glow" aria-hidden="true"></span>
     <span class="dock-swipe-demo" id="dockSwipeDemo" aria-hidden="true"><span class="dock-swipe-fog"></span><span class="dock-swipe-touch"></span><span class="dock-swipe-finger">👇</span></span>
     <button class="tab active" id="playTab" data-screen="swipe"><span class="icon"><svg class="ic tab-play-icon" viewBox="0 0 24 24"><path d="M8.5 5.8c0-1.1 1.2-1.8 2.1-1.2l9 5.4c.9.6.9 1.9 0 2.4l-9 5.4c-.9.6-2.1-.1-2.1-1.2V5.8z"/></svg><svg class="ic tab-info-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle class="dot" cx="12" cy="7.8" r="1.2"/></svg></span><span class="tab-play-label">Play</span><span class="tab-info-label">Info</span></button>
     <button class="tab tab-browse" data-screen="feed"><span class="icon"><svg class="ic" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="2.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2.2"/></svg></span>Browse</button>
@@ -721,7 +726,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 <script>
 (function(){
 
-var BUILD = 'v56';
+var BUILD = 'v57';
 var HORIZONTAL_SWIPE = new URLSearchParams(location.search).get('nav')==='horizontal';
 document.body.classList.toggle('horizontal-swipe', HORIZONTAL_SWIPE);
 var META_PREFIX = 'ra-meta-';
@@ -2744,11 +2749,13 @@ function init(){
   var tabbar = $('#tabbar');
   tabbar.setAttribute('aria-label', HORIZONTAL_SWIPE ? 'App navigation. Swipe left or right to change games.' : 'App navigation');
   var dockPointer = null, dockStartX = 0, dockStartY = 0, dockStartScroll = 0;
+  var dockLeft = 0, dockWidth = 1;
   var dockDragging = false, dockSuppressClick = false;
-  var dockMoveRaf = 0, dockNextScroll = 0;
+  var dockMoveRaf = 0, dockNextScroll = 0, dockNextGlow = 50;
   function applyDockMove(){
     dockMoveRaf = 0;
     swipePager.scrollLeft = dockNextScroll;
+    tabbar.style.setProperty('--dock-glow-x', dockNextGlow+'%');
   }
   function flushDockMove(){
     if(!dockMoveRaf) return;
@@ -2763,6 +2770,7 @@ function init(){
     dockPointer = null;
     dockDragging = false;
     tabbar.classList.remove('dock-swiping');
+    tabbar.style.removeProperty('--dock-glow-x');
   }
   tabbar.addEventListener('pointerdown', function(e){
     if(!HORIZONTAL_SWIPE || !document.body.classList.contains('swipe-mode') || e.isPrimary===false) return;
@@ -2773,6 +2781,10 @@ function init(){
     dockStartY = e.clientY;
     dockStartScroll = swipePager.scrollLeft;
     dockNextScroll = dockStartScroll;
+    var dockRect = tabbar.getBoundingClientRect();
+    dockLeft = dockRect.left;
+    dockWidth = dockRect.width || 1;
+    dockNextGlow = Math.max(0, Math.min(100, (e.clientX-dockLeft)/dockWidth*100));
   });
   tabbar.addEventListener('pointermove', function(e){
     if(dockPointer!==e.pointerId) return;
@@ -2794,6 +2806,7 @@ function init(){
     }
     var max = Math.max(0, swipePager.scrollWidth-swipePager.clientWidth);
     dockNextScroll = Math.max(0, Math.min(max, dockStartScroll-dx));
+    dockNextGlow = Math.max(0, Math.min(100, (e.clientX-dockLeft)/dockWidth*100));
     if(!dockMoveRaf) dockMoveRaf = requestAnimationFrame(applyDockMove);
     e.preventDefault();
   });
