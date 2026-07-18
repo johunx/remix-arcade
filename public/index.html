@@ -531,7 +531,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
         <div class="rail-creator-wrap"><button class="rail-btn rail-creator" id="railCreator" aria-label="Open creator profile"><span class="bub"><span class="rail-avatar" id="railCreatorAvatar">R</span></span><span class="rail-count rail-creator-name" id="railCreatorName">Creator</span></button><button class="rail-follow-mark" id="railCreatorFollow" aria-label="Follow creator">+</button></div>
         <button class="rail-btn rail-like" id="railLike" aria-label="Like"><span class="bub"><svg class="ic hrt" viewBox="0 0 24 24"><path d="M12 20.3C6.5 16.6 3.5 13.4 3.5 9.9 3.5 7.2 5.6 5 8.2 5c1.5 0 3 .7 3.8 2 .8-1.3 2.3-2 3.8-2 2.6 0 4.7 2.2 4.7 4.9 0 3.5-3 6.7-8.5 10.4z"/></svg></span><span class="rail-count" id="railLikeCount">0</span></button>
         <button class="rail-btn" id="railComment" aria-label="Comments"><span class="bub"><svg class="ic" viewBox="0 0 24 24"><path d="M21 11.5c0 4.1-4 7.5-9 7.5-1 0-2-.13-2.9-.38L4 20l1.2-3.4C3.8 15.3 3 13.5 3 11.5 3 7.4 7 4 12 4s9 3.4 9 7.5z"/></svg></span><span class="rail-count" id="railCommentCount">0</span></button>
-        <button class="rail-btn" id="railRemix" aria-label="Remix"><span class="bub"><svg class="ic" viewBox="0 0 24 24"><path d="M12 21.5V13M12 13 5.5 6.5M12 13V4.8M12 13l6.5-6.5"/><circle class="dot" cx="5.5" cy="6" r="1.8"/><circle class="dot" cx="12" cy="4.2" r="1.8"/><circle class="dot" cx="18.5" cy="6" r="1.8"/></svg></span><span class="rail-count" id="railRemixCount">0</span></button>
+        <button class="rail-btn" id="railRemix" aria-label="Make your version"><span class="bub"><svg class="ic" viewBox="0 0 24 24"><path d="M12 21.5V13M12 13 5.5 6.5M12 13V4.8M12 13l6.5-6.5"/><circle class="dot" cx="5.5" cy="6" r="1.8"/><circle class="dot" cx="12" cy="4.2" r="1.8"/><circle class="dot" cx="18.5" cy="6" r="1.8"/></svg></span><span class="rail-count" id="railRemixCount">0</span></button>
         <button class="rail-btn" id="railScores" aria-label="Top scores"><span class="bub"><svg class="ic" viewBox="0 0 24 24"><path d="M7.5 4h9v3.6a4.5 4.5 0 0 1-9 0V4z"/><path d="M7.5 5.5H5a2.3 2.3 0 0 0 2.6 4M16.5 5.5H19a2.3 2.3 0 0 1-2.6 4"/><path d="M12 12.2V15M9 20h6M12 15c-1.3 0-2.2 1.8-2.2 5h4.4c0-3.2-.9-5-2.2-5z"/></svg></span><span class="rail-count">Top</span></button>
         <div class="rail-btn rail-views"><span class="bub"><svg class="ic solid" viewBox="0 0 24 24"><path d="M8 5.6c0-1.2 1.3-1.9 2.3-1.3l9.2 6.4c.9.6.9 2 0 2.6l-9.2 6.4c-1 .6-2.3-.1-2.3-1.3V5.6z"/></svg></span><span class="rail-count" id="railViewsCount">0</span></div>
       </div>
@@ -553,7 +553,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
         <button class="chip active" data-sort="foryou">✨ For You</button>
         <button class="chip" data-sort="hot">🔥 Hot Today</button>
         <button class="chip" data-sort="following">Following</button>
-        <button class="chip" data-sort="remixed">Most Remixed</button>
+        <button class="chip" data-sort="remixed">Most Versions</button>
         <button class="chip" data-sort="new">New</button>
         <button class="chip" data-sort="month">This Month</button>
         <button class="chip" data-sort="alltime">All-Time</button>
@@ -610,11 +610,11 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
       <div class="gameframe-wrap"><iframe id="gameFrame" sandbox="allow-scripts"></iframe></div>
       <div class="stat-row">
         <div class="stat-pill"><b id="statPlays">0</b><span>PLAYS</span></div>
-        <div class="stat-pill"><b id="statRemixes">0</b><span>REMIXES</span></div>
-        <div class="stat-pill"><b id="statTree">0</b><span>TREE</span></div>
+        <div class="stat-pill"><b id="statLikes">0</b><span>LIKES</span></div>
+        <div class="stat-pill"><b id="statVersions">0</b><span>VERSIONS</span></div>
       </div>
       <div class="action-row">
-        <button class="btn btn-blue" id="remixBtn">⑂ Remix</button>
+        <button class="btn btn-blue" id="remixBtn">⑂ Make yours</button>
         <button class="btn btn-ghost hidden" id="editBtn">✎ Edit</button>
         <button class="btn btn-ghost hidden" id="coverBtn">✦ Cover</button>
       </div>
@@ -631,7 +631,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
       <div class="stat-grid">
         <div class="stat-pill"><b id="creatorGames">0</b><span>GAMES</span></div>
         <div class="stat-pill"><b id="creatorPlays">0</b><span>PLAYS</span></div>
-        <div class="stat-pill"><b id="creatorRemixes">0</b><span>REMIXES</span></div>
+        <div class="stat-pill"><b id="creatorRemixes">0</b><span>VERSIONS</span></div>
       </div>
       <div class="feed-grid" id="creatorGrid"></div>
     </section>
@@ -654,14 +654,14 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
       <div class="stat-grid">
         <div class="stat-pill"><b id="profGames">0</b><span>GAMES</span></div>
         <div class="stat-pill"><b id="profPlays">0</b><span>PLAYS</span></div>
-        <div class="stat-pill"><b id="profRemixes">0</b><span>REMIXES</span></div>
+        <div class="stat-pill"><b id="profRemixes">0</b><span>VERSIONS</span></div>
       </div>
       <div class="follow-section">
         <div class="section-label">FOLLOWING</div>
         <div class="follow-chips" id="followingList"></div>
       </div>
       <div class="feed-grid" id="profGrid"></div>
-      <p class="build-tag">Remix Arcade · build v68</p>
+      <p class="build-tag">Remix Arcade · build v70</p>
     </section>
 
   </main>
@@ -699,12 +699,12 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
     <div class="game-info-stats">
       <div class="game-info-stat"><b id="gameInfoPlays">0</b><span>PLAYS</span></div>
       <div class="game-info-stat"><b id="gameInfoLikes">0</b><span>LIKES</span></div>
-      <div class="game-info-stat"><b id="gameInfoRemixes">0</b><span>REMIXES</span></div>
+      <div class="game-info-stat"><b id="gameInfoRemixes">0</b><span>VERSIONS</span></div>
     </div>
     <div class="game-info-lineage hidden" id="gameInfoLineage"></div>
     <div class="game-info-actions">
       <button class="game-info-action" id="gameInfoLike"><svg class="ic" viewBox="0 0 24 24"><path d="M12 20.3C6.5 16.6 3.5 13.4 3.5 9.9 3.5 7.2 5.6 5 8.2 5c1.5 0 3 .7 3.8 2 .8-1.3 2.3-2 3.8-2 2.6 0 4.7 2.2 4.7 4.9 0 3.5-3 6.7-8.5 10.4z"/></svg><span>Like</span></button>
-      <button class="game-info-action" id="gameInfoRemix"><svg class="ic" viewBox="0 0 24 24"><path d="M12 21.5V13M12 13 5.5 6.5M12 13V4.8M12 13l6.5-6.5"/><circle class="dot" cx="5.5" cy="6" r="1.8"/><circle class="dot" cx="12" cy="4.2" r="1.8"/><circle class="dot" cx="18.5" cy="6" r="1.8"/></svg><span>Remix</span></button>
+      <button class="game-info-action" id="gameInfoRemix"><svg class="ic" viewBox="0 0 24 24"><path d="M12 21.5V13M12 13 5.5 6.5M12 13V4.8M12 13l6.5-6.5"/><circle class="dot" cx="5.5" cy="6" r="1.8"/><circle class="dot" cx="12" cy="4.2" r="1.8"/><circle class="dot" cx="18.5" cy="6" r="1.8"/></svg><span>Make yours</span></button>
     </div>
     <div class="game-comments-head"><h3>Comments</h3><span class="game-comments-count" id="gameCommentsCount">0</span></div>
     <div class="game-comments-list" id="gameCommentsList"></div>
@@ -714,9 +714,9 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 
 <div id="remixModal" class="modal hidden">
   <div class="modal-sheet">
-    <h2 id="modalTitle">⑂ REMIX THIS GAME</h2>
-    <div class="field"><textarea id="modalInput" rows="3" placeholder="One sentence: what should change?"></textarea></div>
-    <button class="btn btn-primary btn-block" id="modalGo">Go</button>
+    <h2 id="modalTitle">⑂ MAKE YOUR VERSION</h2>
+    <div class="field"><textarea id="modalInput" rows="3" placeholder="What would you like to change?"></textarea></div>
+    <button class="btn btn-primary btn-block" id="modalGo">Create version</button>
   </div>
 </div>
 
@@ -819,7 +819,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 <script>
 (function(){
 
-var BUILD = 'v69';
+var BUILD = 'v70';
 var HORIZONTAL_SWIPE = new URLSearchParams(location.search).get('nav')==='horizontal';
 document.body.classList.toggle('horizontal-swipe', HORIZONTAL_SWIPE);
 var META_PREFIX = 'ra-meta-';
@@ -1441,7 +1441,7 @@ function hotCount(m, windowMs){
 function reasonFor(m){
   if(hotCount(m,86400000)>=3) return '🔥 Trending';
   if(Date.now()-(m.createdAt||0)<172800000) return '✨ New';
-  if((m._directRemixes||0)>=2) return '⑂ Remix magnet';
+  if((m._descendants||0)>=2) return '⑂ Inspiring versions';
   if(myFollows.indexOf(m.creator)>-1) return '💜 From '+m.creator;
   return '🎲 Wildcard';
 }
@@ -1463,7 +1463,7 @@ function sortedFeed(sort){
   else if(sort==='month') list.sort(function(a,b){ return hotCount(b,2592000000)-hotCount(a,2592000000); });
   else if(sort==='alltime') list.sort(function(a,b){ return (b.plays||0)-(a.plays||0); });
   else if(sort==='new') list.sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
-  else if(sort==='remixed') list.sort(function(a,b){ return (b._directRemixes||0)-(a._directRemixes||0); });
+  else if(sort==='remixed') list.sort(function(a,b){ return (b._descendants||0)-(a._descendants||0); });
   else if(sort==='mine') list = list.filter(function(m){ return m.creator===myName; }).sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
   return list;
 }
@@ -1484,22 +1484,22 @@ function coverStyleFor(m){
 function cardHtml(m){
   var hot = hotCount(m,86400000) >= 3;
   var lineageLine = '';
-  if(m.parentId && lineage.byId[m.parentId]) lineageLine = '<p class="card-lineage">⑂ from '+escapeHtml(lineage.byId[m.parentId].title)+'</p>';
+  if(m.parentId && lineage.byId[m.parentId]) lineageLine = '<p class="card-lineage">⑂ Version of '+escapeHtml(lineage.byId[m.parentId].title)+'</p>';
   return '<article class="card" data-id="'+escapeHtml(m.id)+'" style="'+coverStyleFor(m)+'">'
-    +'<div class="card-cover" style="'+coverStyleFor(m)+'">'+(hot?'<span class="badge-hot">🔥 HOT</span>':'')+(m.parentId?'<span class="badge-remix">⑂ REMIX</span>':'')+(m.cover?'':'<span class="card-glyph">'+glyphFor(m.id)+'</span>')+'</div>'
+    +'<div class="card-cover" style="'+coverStyleFor(m)+'">'+(hot?'<span class="badge-hot">🔥 HOT</span>':'')+(m.parentId?'<span class="badge-remix">⑂ VERSION</span>':'')+(m.cover?'':'<span class="card-glyph">'+glyphFor(m.id)+'</span>')+'</div>'
     +'<div class="card-body"><h3>'+escapeHtml(m.title)+'</h3>'+creatorLine(m)
     +lineageLine
-    +'<div class="card-stats"><span>'+ICONS.play+fmt(m.plays)+'</span><span>'+ICONS.branch+fmt(m._directRemixes)+'</span><span>'+ICONS.tree+fmt(m._descendants)+'</span></div>'
+    +'<div class="card-stats"><span title="Plays" aria-label="'+fmt(m.plays)+' plays">'+ICONS.play+fmt(m.plays)+'</span><span title="Likes" aria-label="'+fmt((m.likedBy||[]).length)+' likes">'+ICONS.heart+fmt((m.likedBy||[]).length)+'</span><span title="Versions" aria-label="'+fmt(m._descendants)+' versions">'+ICONS.branch+fmt(m._descendants)+'</span></div>'
     +'</div></article>';
 }
 function bigCardHtml(m){
   var lineageLine = '';
-  if(m.parentId && lineage.byId[m.parentId]) lineageLine = '<p class="card-lineage">⑂ from '+escapeHtml(lineage.byId[m.parentId].title)+'</p>';
+  if(m.parentId && lineage.byId[m.parentId]) lineageLine = '<p class="card-lineage">⑂ Version of '+escapeHtml(lineage.byId[m.parentId].title)+'</p>';
   return '<article class="card bigcard" data-id="'+escapeHtml(m.id)+'">'
-    +'<div class="card-cover big" style="'+coverStyleFor(m)+'">'+(m.parentId?'<span class="badge-remix">⑂ REMIX</span>':'')+(m.cover?'':'<span class="card-glyph">'+glyphFor(m.id)+'</span>')+'<span class="reason">'+reasonFor(m)+'</span></div>'
+    +'<div class="card-cover big" style="'+coverStyleFor(m)+'">'+(m.parentId?'<span class="badge-remix">⑂ VERSION</span>':'')+(m.cover?'':'<span class="card-glyph">'+glyphFor(m.id)+'</span>')+'<span class="reason">'+reasonFor(m)+'</span></div>'
     +'<div class="card-body"><h3>'+escapeHtml(m.title)+'</h3>'+creatorLine(m)
     +lineageLine
-    +'<div class="card-stats"><span>'+ICONS.play+fmt(m.plays)+'</span><span>'+ICONS.branch+fmt(m._directRemixes)+'</span><span>'+ICONS.tree+fmt(m._descendants)+'</span></div>'
+    +'<div class="card-stats"><span title="Plays" aria-label="'+fmt(m.plays)+' plays">'+ICONS.play+fmt(m.plays)+'</span><span title="Likes" aria-label="'+fmt((m.likedBy||[]).length)+' likes">'+ICONS.heart+fmt((m.likedBy||[]).length)+'</span><span title="Versions" aria-label="'+fmt(m._descendants)+' versions">'+ICONS.branch+fmt(m._descendants)+'</span></div>'
     +'</div></article>';
 }
 
@@ -1577,7 +1577,7 @@ function renderFriends(){
   var evs = [];
   allMetas.forEach(function(m){
     if(myFollows.indexOf(m.creator)>-1){
-      evs.push({t:m.createdAt||0, m:m, who:m.creator, verb:(m.parentId && lineage.byId[m.parentId]) ? 'remixed <b>'+escapeHtml(lineage.byId[m.parentId].title)+'</b> into' : 'made a new game'});
+      evs.push({t:m.createdAt||0, m:m, who:m.creator, verb:(m.parentId && lineage.byId[m.parentId]) ? 'made a version of <b>'+escapeHtml(lineage.byId[m.parentId].title)+'</b> called' : 'made a new game'});
     }
     (m.playLog||[]).forEach(function(e){
       if(myFollows.indexOf(e.by)>-1 && e.by!==m.creator) evs.push({t:e.t, m:m, who:e.by, verb:'played'});
@@ -1652,7 +1652,7 @@ function renderProfile(){
   var rk = rankFor(score);
   $('#profRank').textContent = rk.cur.name;
   $('#rankFill').style.width = Math.round(rk.progress*100)+'%';
-  $('#rankNext').textContent = rk.next ? (rk.next.at-score)+' to '+rk.next.name : 'Top of the tree.';
+  $('#rankNext').textContent = rk.next ? (rk.next.at-score)+' to '+rk.next.name : 'Top creator rank.';
   var fl = $('#followingList');
   if(myFollows.length){
     fl.innerHTML = myFollows.map(function(n){
@@ -1724,7 +1724,7 @@ function renderGameInfo(){
   $('#gameInfoCreator').textContent = 'by '+meta.creator;
   $('#gameInfoPlays').textContent = fmt(meta.plays||0);
   $('#gameInfoLikes').textContent = fmt((meta.likedBy||[]).length);
-  $('#gameInfoRemixes').textContent = fmt(meta._directRemixes||0);
+  $('#gameInfoRemixes').textContent = fmt(meta._descendants||0);
   var follow = $('#gameInfoFollow');
   if(meta.creator===myName) follow.classList.add('hidden');
   else { follow.classList.remove('hidden'); setFollowBtnState(follow, meta.creator); }
@@ -1733,7 +1733,7 @@ function renderGameInfo(){
   like.querySelector('span').textContent = isLikedByMe(meta) ? 'Liked' : 'Like';
   var lineageEl = $('#gameInfoLineage');
   if(meta.parentId && lineage.byId[meta.parentId]){
-    lineageEl.textContent = 'Remixed from '+lineage.byId[meta.parentId].title;
+    lineageEl.textContent = 'Version of '+lineage.byId[meta.parentId].title;
     lineageEl.classList.remove('hidden');
   } else lineageEl.classList.add('hidden');
   var comments = commentsFor(meta).slice().sort(function(a,b){ return (b.t||0)-(a.t||0); });
@@ -1768,7 +1768,7 @@ function renderGameRail(){
   creatorFollow.setAttribute('aria-label', (followingCreator ? 'Unfollow ' : 'Follow ')+creatorName);
   $('#railLikeCount').textContent = fmt((m.likedBy||[]).length);
   $('#railCommentCount').textContent = fmt(commentsFor(m).length);
-  $('#railRemixCount').textContent = fmt(m._directRemixes||0);
+  $('#railRemixCount').textContent = fmt(m._descendants||0);
   $('#railViewsCount').textContent = fmt(m.plays||0);
   $('#railLike').classList.toggle('on', isLikedByMe(m));
 }
@@ -1789,7 +1789,8 @@ function openCurrentRemix(){
   if(!currentGame) return;
   closeGameInfo();
   var proceed = function(){
-    $('#modalTitle').textContent = '⑂ REMIX THIS GAME';
+    $('#modalTitle').textContent = '⑂ MAKE YOUR VERSION';
+    $('#modalGo').textContent = 'Create version';
     $('#remixModal').dataset.mode = 'remix';
     $('#remixModal').classList.remove('hidden');
   };
@@ -1844,7 +1845,7 @@ function fetchCode(id){
 function slideTagHtml(m){
   if(m.parentId){
     var parent = lineage && lineage.byId && lineage.byId[m.parentId];
-    return '<span class="slide-tag">⑂ REMIX'+(parent?' · '+escapeHtml(parent.title):'')+'</span>';
+    return '<span class="slide-tag">⑂ VERSION'+(parent?' OF '+escapeHtml(parent.title):'')+'</span>';
   }
   return '<span class="slide-tag orig">✦ ORIGINAL</span>';
 }
@@ -1939,7 +1940,7 @@ function setActiveSlide(i){
   if(originTag){
     if(meta.parentId){
       var par = lineage && lineage.byId && lineage.byId[meta.parentId];
-      originTag.textContent = '⑂ REMIX'+(par?' of '+par.title:'');
+      originTag.textContent = '⑂ VERSION'+(par?' OF '+par.title:'');
       originTag.classList.remove('hidden');
     } else {
       originTag.classList.add('hidden');
@@ -2309,12 +2310,12 @@ function openGame(id){
     currentGameCode = code;
     $('#gameFrame').srcdoc = injectCrashGuard(injectScoreReporter(code)||'<body style="background:#1E0F16"></body>');
     $('#statPlays').textContent = fmt(meta.plays);
-    $('#statRemixes').textContent = fmt(meta._directRemixes);
-    $('#statTree').textContent = fmt(meta._descendants);
+    $('#statLikes').textContent = fmt((meta.likedBy||[]).length);
+    $('#statVersions').textContent = fmt(meta._descendants);
     var bar = $('#lineageBar');
     if(meta.parentId && lineage.byId[meta.parentId]){
       bar.classList.remove('hidden');
-      bar.textContent = '⑂ remixed from "'+lineage.byId[meta.parentId].title+'"';
+      bar.textContent = '⑂ Version of "'+lineage.byId[meta.parentId].title+'"';
     } else { bar.classList.add('hidden'); }
     $('#gameCreator').textContent = 'by '+meta.creator;
     $('#gameCreator').dataset.creator = meta.creator;
@@ -2518,7 +2519,7 @@ function finishBuild(b, job){
           failBuild(job, 'Saving paused. Your game is safe.', 'save');
         });
       }
-      failBuild(job, 'Only the creator can change this game. Use REMIX to make your own version.', 'save');
+      failBuild(job, 'Only the creator can change this game. Choose Make your version to create your own.', 'save');
       return;
     }
     lastBuild = b;
@@ -2694,7 +2695,7 @@ function handleCreate(){
 }
 
 function runRemixJob(job){
-  setBuildStage(job, 'building', job.kind==='edit' ? 'Updating the game…' : 'Building the remix…', 4);
+  setBuildStage(job, 'building', job.kind==='edit' ? 'Updating the game…' : 'Building your version…', 4);
   streamGame(job.system, buildUserMessage(job.messageMode, job.prompt, '', job.base), job.denom).then(function(code){
     if(buildJob!==job) return;
     if(!job.isEngine) return code;
@@ -3351,6 +3352,7 @@ function init(){
   $('#gameInfoLike').addEventListener('click', function(){
     if(!currentGame) return;
     toggleLike(currentGame);
+    if($('#statLikes')) $('#statLikes').textContent = fmt((currentGame.likedBy||[]).length);
     renderGameInfo();
     if(railOpen) renderGameRail();
   });
@@ -3370,6 +3372,7 @@ function init(){
   $('#railLike').addEventListener('click', function(){
     if(!currentGame) return;
     toggleLike(currentGame);
+    if($('#statLikes')) $('#statLikes').textContent = fmt((currentGame.likedBy||[]).length);
     renderGameRail();
     var bub = this.querySelector('.bub');
     bub.classList.remove('pop'); void bub.offsetWidth; bub.classList.add('pop');
@@ -3404,12 +3407,14 @@ function init(){
   });
 
   $('#remixBtn').addEventListener('click', function(){
-    $('#modalTitle').textContent = '⑂ REMIX THIS GAME';
+    $('#modalTitle').textContent = '⑂ MAKE YOUR VERSION';
+    $('#modalGo').textContent = 'Create version';
     $('#remixModal').dataset.mode = 'remix';
     $('#remixModal').classList.remove('hidden');
   });
   $('#editBtn').addEventListener('click', function(){
     $('#modalTitle').textContent = '✎ EDIT YOUR GAME';
+    $('#modalGo').textContent = 'Save changes';
     $('#remixModal').dataset.mode = 'edit';
     $('#remixModal').classList.remove('hidden');
   });
