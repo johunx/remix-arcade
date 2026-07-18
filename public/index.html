@@ -819,7 +819,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 <script>
 (function(){
 
-var BUILD = 'v68';
+var BUILD = 'v69';
 var HORIZONTAL_SWIPE = new URLSearchParams(location.search).get('nav')==='horizontal';
 document.body.classList.toggle('horizontal-swipe', HORIZONTAL_SWIPE);
 var META_PREFIX = 'ra-meta-';
@@ -830,24 +830,24 @@ var VISITED_KEY = 'ra-visited';
 var GLYPHS = ['🐍','🐸','👾','🚀','🎯','🪐','⚡','🔥','🎲','🦑','🛸','💥','🌀','🧿','🎮'];
 
 var SUGGESTIONS = [
-  'A frog dodging traffic while collecting stars, gets faster every 10 seconds',
-  'You are a paper plane gliding through office fans, tap to flap',
-  'Slice falling fruit with a swipe, but bombs end your run',
-  'A snake made of stars eating comets in space, grows with every bite',
-  'Stack falling blocks into the tallest tower before it topples',
-  'A cat on a rooftop jumping between chimneys at night, one tap to jump',
-  'Pop bubbles before they reach the top, chain pops for combos',
-  'Steer a submarine through glowing caves, walls close in over time',
-  'Catch falling pancakes on a plate, syrup bottles make it slippery',
-  'A ninja running up a wall dodging shurikens, swipe to switch sides'
+  'A cozy pond where I can raise frogs, decorate their islands, and discover rare colors',
+  'A first-person mystery inside an empty moon base with rooms, clues, and a locked exit',
+  'A city builder where I place roads and homes and keep the citizens happy',
+  'A two-player tabletop football game on one phone with simple touch controls',
+  'A drawing toy where every brush stroke grows into animated flowers',
+  'A turn-based wizard duel with four spells that counter each other',
+  'A tiny restaurant simulator where I cook orders and upgrade the kitchen',
+  'A physics puzzle about guiding water through movable pipes',
+  'A 3D driving playground with ramps, drifting, and no timer',
+  'A rhythm game where the whole screen becomes a musical instrument'
 ];
 
 var SPARKS = [
-  'A game about rain','A game where you can only move left','A game set inside a fridge',
-  'A game about being very small','A game where the floor is the enemy','A game about gravity flipping',
-  'A game starring a vegetable','A game that gets darker over time','A game about bouncing',
-  'A game where you are the obstacle','A game set on a moving train','A game about magnets',
-  'A game with only one button','A game about growing a tree'
+  'A quiet game about rain','A world where you can only move left','A mystery set inside a fridge',
+  'A sandbox about being very small','A puzzle where the floor is the enemy','A game about gravity flipping',
+  'A vegetable running a tiny shop','A story that gets darker over time','A musical toy about bouncing',
+  'A strategy game where you are the obstacle','A social game set on a moving train','A building game about magnets',
+  'A strange one-button adventure','A relaxing game about growing a tree'
 ];
 
 var RANKS = [
@@ -865,11 +865,28 @@ var SHELL_TOP = '<!DOCTYPE html>\n<html><head><meta charset="UTF-8"><meta name="
 
 var SHELL_BOTTOM = '\nsetTimeout(function(){try{var oc=document.createElement("canvas");var ow=240,oh=Math.round(ow*H/W)||340;oc.width=ow;oc.height=oh;oc.getContext("2d").drawImage(canvas,0,0,ow,oh);parent.postMessage({type:"ra-cover",data:oc.toDataURL("image/jpeg",0.55)},"*");}catch(e){}},3500);\nvar lastT=performance.now();\nfunction frame(t){\nvar dt=Math.min((t-lastT)/16.67,3);lastT=t;\nctx.save();\nif(shakeT>0){ctx.translate(rand(-shakeT,shakeT)*0.5,rand(-shakeT,shakeT)*0.5);shakeT*=0.85;if(shakeT<0.5)shakeT=0;}\nctx.fillStyle="#1E0F16";ctx.fillRect(-20,-20,W+40,H+40);\ntry{if(!over)update(dt);draw();}catch(e){crashScreen();return;}\nfor(var i=particles.length-1;i>=0;i--){var p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=0.15*dt;p.life-=0.03*dt;if(p.life<=0){particles.splice(i,1);continue;}ctx.globalAlpha=Math.max(p.life,0);ctx.fillStyle=p.col;ctx.fillRect(p.x-2,p.y-2,4,4);ctx.globalAlpha=1;}\nctx.fillStyle="#F7EEE4";ctx.font="bold 16px monospace";ctx.textAlign="left";ctx.fillText("SCORE "+Math.floor(score),14,26);\nif(over){ctx.fillStyle="rgba(32,16,22,0.75)";ctx.fillRect(-20,-20,W+40,H+40);ctx.textAlign="center";ctx.fillStyle="#FF5470";ctx.font="bold 22px monospace";ctx.fillText("GAME OVER",W/2,H/2-20);ctx.fillStyle="#FFC978";ctx.font="bold 16px monospace";ctx.fillText("SCORE "+Math.floor(score),W/2,H/2+10);ctx.fillStyle="#F7EEE4";ctx.font="14px monospace";ctx.fillText("tap to retry",W/2,H/2+40);}\nctx.restore();\ninput.justTapped=false;\nrequestAnimationFrame(frame);\n}\nresetGame();\nrequestAnimationFrame(frame);\n}catch(e){crashScreen();}\n})();\n</scr'+'ipt>\n</body></html>';
 
+/* New games use an adaptive shell. Stored games keep their original embedded
+   shell, so broadening the generator cannot change anything already published. */
+var ADAPTIVE_SHELL_TOP = SHELL_TOP
+  .replace('function crashScreen(){try{', 'function crashScreen(){try{parent.postMessage({type:"ra-crash"},"*");')
+  .replace('var particles=[],shakeT=0,score=0,over=false,audioC=null;', 'var particles=[],shakeT=0,score=0,scoreVisible=false,scoreLabel="SCORE",over=false,audioC=null;')
+  .replace('function addScore(n){score+=(n==null?1:n);}\nfunction getScore(){return score;}', 'function addScore(n){scoreVisible=true;score+=(n==null?1:n);}\nfunction setScore(n,label){score=Number(n)||0;scoreVisible=true;if(label)scoreLabel=String(label).slice(0,18);}\nfunction showScore(label){scoreVisible=true;if(label)scoreLabel=String(label).slice(0,18);}\nfunction hideScore(){scoreVisible=false;}\nfunction getScore(){return score;}')
+  .replace('var input={x:0,y:0,down:false,justTapped:false};', 'var input={x:0,y:0,down:false,justTapped:false,dragX:0,dragY:0};var inputStartX=0,inputStartY=0;')
+  .replace('input.down=true;input.justTapped=true;if(typeof onTap==="function")onTap(input.x,input.y);', 'inputStartX=input.x;inputStartY=input.y;input.dragX=0;input.dragY=0;input.down=true;input.justTapped=true;if(typeof onTap==="function")onTap(input.x,input.y);')
+  .replace('input.x=e.clientX-r.left;input.y=e.clientY-r.top;});\ncanvas.addEventListener("pointerup",function(){input.down=false;});', 'input.x=e.clientX-r.left;input.y=e.clientY-r.top;if(input.down){input.dragX=input.x-inputStartX;input.dragY=input.y-inputStartY;}});\nfunction finishPointer(){if(typeof onRelease==="function")onRelease(input.x,input.y,input.dragX,input.dragY);input.down=false;input.dragX=0;input.dragY=0;}\ncanvas.addEventListener("pointerup",finishPointer);canvas.addEventListener("pointercancel",finishPointer);')
+  .replace('function restart(){score=0;over=false;particles=[];resetGame();}', 'function restart(){score=0;scoreVisible=false;scoreLabel="SCORE";over=false;particles=[];resetGame();}');
+
+var ADAPTIVE_SHELL_BOTTOM = SHELL_BOTTOM
+  .replace('var lastT=performance.now();\nfunction frame(t){', 'var lastT=performance.now(),readySent=false;\nfunction frame(t){')
+  .replace('ctx.fillStyle="#F7EEE4";ctx.font="bold 16px monospace";ctx.textAlign="left";ctx.fillText("SCORE "+Math.floor(score),14,26);', 'if(scoreVisible){ctx.fillStyle="#F7EEE4";ctx.font="bold 16px monospace";ctx.textAlign="left";ctx.fillText(scoreLabel+" "+Math.floor(score),14,26);}')
+  .replace('ctx.fillText("SCORE "+Math.floor(score),W/2,H/2+10);', 'ctx.fillText(scoreLabel+" "+Math.floor(score),W/2,H/2+10);')
+  .replace('ctx.restore();\ninput.justTapped=false;', 'ctx.restore();\nif(!readySent){readySent=true;try{parent.postMessage({type:"ra-ready"},"*");}catch(e){}}\ninput.justTapped=false;');
+
 var GAME_START = '/*\u2442GAME-START*/';
 var GAME_END = '/*\u2442GAME-END*/';
 
 function assembleGame(js){
-  return SHELL_TOP + '\n' + GAME_START + '\n' + js + '\n' + GAME_END + SHELL_BOTTOM;
+  return ADAPTIVE_SHELL_TOP + '\n' + GAME_START + '\n' + js + '\n' + GAME_END + ADAPTIVE_SHELL_BOTTOM;
 }
 function extractGameJs(html){
   var a = html.indexOf(GAME_START), b = html.indexOf(GAME_END);
@@ -877,7 +894,7 @@ function extractGameJs(html){
   return html.slice(a+GAME_START.length, b).trim();
 }
 
-var SYS_JS = `You write the game-logic layer for Remix Arcade games. A prebuilt engine handles the canvas, the game loop, resizing, particles, screen shake, sound, score display, the game-over screen with retry, the branded boot flash, and crash recovery. You write ONLY the JavaScript game logic that plugs into it.
+var SYS_JS = `You create the game-logic layer for an adaptive 2D browser-game engine. The engine handles the canvas, frame loop, resizing, optional score and game-over UI, particles, screen shake, sound, the boot flash, and crash recovery. You write ONLY the JavaScript game logic that plugs into it.
 
 OUTPUT RULES (critical):
 - Respond with ONLY JavaScript code. No HTML, no markdown code fences, no commentary before or after.
@@ -888,28 +905,33 @@ YOU MUST DEFINE THESE FUNCTIONS:
 - update(dt) — advance the game one frame. dt is a frame-time factor (1 = one 60fps frame; multiply speeds by dt).
 - draw() — render the frame using ctx. The engine has already cleared the background to #1E0F16.
 Optionally define: onTap(x, y) — called once per tap/click with canvas coordinates.
+Optionally define: onRelease(x, y, dragX, dragY) — called when a touch/drag ends.
 
 ENGINE GLOBALS AND HELPERS AVAILABLE TO YOU:
 - W, H — current canvas width/height in pixels (updates on resize; read them fresh each frame).
 - ctx — the 2D canvas context.
-- input — {x, y, down, justTapped}: current pointer position, whether pressed, and whether a tap started this frame.
+- input — {x, y, down, justTapped, dragX, dragY}: pointer position, press state, tap-started-this-frame, and drag distance from press origin.
 - keys — object of currently held keys, e.g. keys['ArrowLeft'], keys['a'], keys[' '].
 - burst(x, y, color, n) — particle explosion. shake(power) — screen shake. beep(freq, seconds, type) — WebAudio tone ('square'/'sine'/'triangle').
-- addScore(n) — add to the score (engine draws it top-left). getScore() — read it. gameOver() — end the run (engine shows game over + retry automatically).
+- addScore(n), setScore(n, label), showScore(label), hideScore(), getScore(). The score HUD starts hidden and becomes visible when addScore/setScore/showScore is used.
+- gameOver() — optional. Use only when this game genuinely has a failed run and instant retry; it reports leaderboard scores automatically.
 - rand(a, b), clamp(v, a, b).
 
-GAME DESIGN REQUIREMENTS:
-- Playable instantly: the first tap or key press should already be gameplay, never a menu.
-- Mobile-first: touch (tap/drag via input/onTap) is the primary control; also support arrow keys/WASD/space via keys.
-- Ramp difficulty meaningfully every 15-20 seconds of play.
-- Juice generously: burst() on pickups and hits, shake() on impacts, beep() with different pitches for good/bad events.
-- Keep entity counts bounded (cap arrays; a mid-range phone must hold 60fps).
-- Palette: sunset orange #FF9A5F, sunset rose #FF8FAE, gold #FFC978, coral #FF5470 on the deep ember #1E0F16 background. High contrast, chunky readable shapes.
-- Content must be general-audience and kid-safe: no gore, no sexual or suggestive content, no hate symbols. Abstract/cartoon danger only.
+GENRE FIDELITY — HIGHEST PRIORITY:
+- Treat the creator's prompt as a contract. Infer its requested genre, perspective, core activity, controls, mood, progression, and win/loss structure before coding, then implement those things directly.
+- NEVER replace a requested game with an easier endless runner, dodger, tap-to-shoot target game, falling-object game, or generic score chase unless that is what the creator asked for.
+- The result may be an action game, puzzle, strategy game, simulation, builder, sandbox, virtual pet, drawing/music toy, story, mystery, turn-based game, sports game, educational game, or another interactive form. It does not need to feel like an arcade game.
+- Score, timers, game over, increasing speed, enemies, particles, screen shake, and sound are OPTIONAL. Use each only when it supports the requested experience. Calm or open-ended ideas should stay calm or open-ended.
+- A short title, contextual instruction, dialogue, or mode selection is allowed when the concept needs it. Avoid long explanation screens; make the first meaningful interaction available quickly.
+- Mobile touch is primary. Choose controls that fit the genre: tap targets, drag objects, paint, select tiles, hold/steer, or simple on-canvas buttons. Also support sensible keyboard controls where relevant.
+- Choose art direction and colors from the prompt. Do not force the platform's orange palette onto every game. Keep text and important objects readable on a portrait phone.
+- Scope intelligently: deliver one polished, recognizable version of the requested idea instead of many shallow systems. Initialize every variable in resetGame(), bound all arrays, and keep a mid-range phone near 60fps.
+- Use only engine globals documented above. Mentally check the startup path, first interaction, main loop, win/failure path if any, and retry before responding. The code must be syntactically complete.
+- Content must be general-audience and kid-safe: no gore, sexual or suggestive content, or hate symbols.
 
 Return nothing but the JavaScript.`;
 
-var SYS = `You generate complete, single-file HTML5 browser games for Remix Arcade.
+var SYS = `You generate complete, single-file HTML5 browser games for a platform where a game can be any interactive genre, not only an arcade game.
 
 OUTPUT RULES (critical):
 - Respond with ONLY a complete HTML document, starting with <!DOCTYPE html> and ending with </html>.
@@ -917,14 +939,15 @@ OUTPUT RULES (critical):
 - Everything inline in one file: no external scripts, stylesheets, fonts, images, or network requests. No CDNs.
 
 GAME REQUIREMENTS:
-- Use a canvas element and a requestAnimationFrame loop.
-- Controls must work with BOTH touch (tap/drag/swipe, whichever fits) and keyboard (arrow keys/WASD/space). Design mobile-first, assuming a phone screen and touch as the primary input.
-- The game must be playable within 2 seconds of load: no menus, settings, or instructions gating the first play. A tap, click, or key press starts play immediately.
-- Show a visible score or progress counter, and ramp difficulty meaningfully every 15-20 seconds.
-- Include juice: particle bursts on key events, brief screen shake on impact, and simple procedural sound via the WebAudio API (oscillator beeps/tones only, never external audio files).
-- On game over, show the score and an instant retry that restarts without a page reload.
+- Treat the creator's prompt as a contract. Implement its genre, perspective, core activity, controls, mood, progression, and win/loss structure faithfully. Never substitute an endless runner, dodger, falling-object game, or generic score chase unless requested.
+- The experience may be action, puzzle, strategy, simulation, builder, sandbox, virtual pet, creative toy, story, mystery, turn-based, sports, educational, or another interactive form.
+- Use canvas, DOM, or both — whichever best fits the requested experience. Use requestAnimationFrame only when continuous animation is needed.
+- Controls must be mobile-first and fit the genre, with keyboard support where relevant. Touch targets must be comfortably sized and the portrait layout must not overflow.
+- Score, timers, difficulty ramps, enemies, game over, instant retry, particles, screen shake, and sound are optional. Include only the systems the concept actually needs.
+- A concise menu, dialogue, instructions, inventory, or settings surface is allowed when the requested game needs it. Make the first meaningful interaction available quickly.
+- Choose the visual style and palette from the prompt instead of forcing a house palette. Keep all UI readable.
 - Never use localStorage, sessionStorage, cookies, or any persistence. The game must be stateless and safe in a sandboxed iframe with no storage access.
-- Wrap logic in try/catch, avoid unbounded loops, and cap particle counts at a few hundred so it runs smoothly on a mid-range phone.
+- Wrap startup in try/catch, avoid unbounded loops, cap dynamic entities, and keep it smooth on a mid-range phone. Verify the startup path and all named functions mentally before responding.
 - Content must be general-audience and kid-safe: no gore, no sexual or suggestive content, no hate symbols. Cartoon/abstract "danger" (dodging shapes, popping enemies) is fine; realistic graphic violence is not.
 
 BRAND RITUAL (mandatory, exact):
@@ -933,7 +956,7 @@ BRAND RITUAL (mandatory, exact):
 Return nothing but the HTML document.`;
 
 var THREE_SRC = 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js';
-var SYS_3D = `You generate complete, single-file HTML5 3D browser games for Remix Arcade, rendered with three.js (WebGL).
+var SYS_3D = `You generate complete, single-file HTML5 3D browser games rendered with three.js (WebGL). A game can be any interactive 3D genre, not only an arcade game.
 
 OUTPUT RULES (critical):
 - Respond with ONLY a complete HTML document, starting with <!DOCTYPE html> and ending with </html>. No markdown code fences, no commentary before or after.
@@ -941,13 +964,15 @@ OUTPUT RULES (critical):
 - Never use localStorage, sessionStorage, cookies, fetch, or any other network or persistence. The game runs in a sandboxed iframe.
 
 3D GAME REQUIREMENTS:
-- One clear arcade mechanic in 3D: lane runner, tunnel dodger, rolling-ball collector, block stacker, or similar. The first tap or key press is already gameplay — no menus.
-- Controls: touch first (tap, or drag horizontally to steer), plus arrow keys/WASD/space. Design for a phone held in portrait.
-- Camera: simple and readable — a chase cam or fixed angle that the game controls. Never require the player to move the camera.
-- Look: low-poly primitives (BoxGeometry, SphereGeometry, ConeGeometry, TorusGeometry), bright chunky colors from the palette sunset orange #FF9A5F, rose #FF8FAE, gold #FFC978, coral #FF5470 on the deep ember #1E0F16 background, THREE.Fog for depth, MeshLambertMaterial or MeshBasicMaterial only, one DirectionalLight plus one AmbientLight.
+- Treat the creator's prompt as a contract. Implement the requested genre, perspective, spatial layout, core activity, camera, controls, mood, and progression directly. Never turn a requested shooter, exploration game, driving game, builder, or puzzle into an endless runner or tap-to-shoot box gallery.
+- Valid forms include first- or third-person exploration, arena shooter, driving, platforming, puzzle, strategy, builder, sandbox, simulation, creative toy, mystery, or a simple 3D arcade game when requested.
+- Controls must be touch-first and genre-appropriate, plus keyboard support where relevant. A first-person game requires a visible left movement joystick, right-side drag to look, and a clear fire/interact control; desktop uses WASD plus mouse drag or arrows.
+- Camera behavior must match the requested perspective. First-person means the camera is the player; third-person means a readable follow/orbit camera; fixed or top-down cameras are fine when appropriate.
+- Build recognizable spaces rather than an empty void: floors, walls, rooms, ramps, landmarks, lanes, or boundaries appropriate to the idea. Use low-poly primitives and reuse geometry/materials.
+- Choose lighting, fog, colors, and visual style from the prompt. Do not force the platform palette onto every game.
 - Performance: renderer.setPixelRatio(Math.min(devicePixelRatio,2)), antialias:false, reuse geometries and materials, pool or cap active meshes to a few dozen. Must hold 60fps on a mid-range phone.
-- Show the score at all times (an HTML overlay div is fine), ramp difficulty meaningfully every 15-20 seconds, and on game over show the score with instant tap-to-retry that restarts without a page reload.
-- Juice: scale or flash effects on pickups, brief camera shake on impacts, procedural WebAudio beeps (oscillators only, different pitches for good/bad events).
+- Score, timers, difficulty ramps, enemies, game over, particles, shake, and sound are optional. Use only what the requested experience needs. Health, objectives, dialogue, inventory, or contextual instructions may replace score.
+- Scope intelligently: make one polished and recognizable core loop, not a broad collection of unfinished systems. Verify startup, controls, collisions, camera, and restart/continuation behavior mentally before responding.
 - Wrap setup and the frame loop in try/catch. If WebGL is unavailable or three.js fails to load, show a short friendly message on the #1E0F16 background instead of a blank or broken screen.
 - Content must be general-audience and kid-safe: no gore, no sexual or suggestive content, no hate symbols. Abstract/cartoon danger only.
 
@@ -957,7 +982,7 @@ BRAND RITUAL (mandatory, exact):
 Return nothing but the HTML document.`;
 
 function wants3D(text){
-  return /\b3[\s-]?d\b|\bthree[\s.-]?js\b|\bfirst[\s-]?person\b|\bthird[\s-]?person\b|\bfps\b/i.test(text||'');
+  return /\b3[\s-]?d\b|\bthree[\s.-]?js\b|\bfirst[\s-]?person\b|\bthird[\s-]?person\b|\bfps\b|\bdoom(?:like)?\b|\bvoxel\b/i.test(text||'');
 }
 function is3DGameHtml(html){
   return !!html && (html.indexOf('three.min.js')>-1 || /\bTHREE\./.test(html));
@@ -969,11 +994,24 @@ var SHELL3D_TOP = '<!DOCTYPE html>\n<html><head><meta charset="UTF-8"><meta name
 
 var SHELL3D_BOTTOM = '\nsetTimeout(function(){try{var oc=document.createElement("canvas");var ow=240,oh=Math.round(ow*H/W)||340;oc.width=ow;oc.height=oh;oc.getContext("2d").drawImage(renderer.domElement,0,0,ow,oh);parent.postMessage({type:"ra-cover",data:oc.toDataURL("image/jpeg",0.55)},"*");}catch(e){}},3500);\nvar lastT=performance.now();\nfunction frame(t){\nvar dt=Math.min((t-lastT)/16.67,3);lastT=t;\ntry{if(!over)update(dt);}catch(e){crashScreen();return;}\nfor(var i=particles.length-1;i>=0;i--){var p=particles[i];p.m.position.x+=p.vx*dt;p.m.position.y+=p.vy*dt;p.m.position.z+=p.vz*dt;p.vy-=0.012*dt;p.life-=0.03*dt;if(p.life<=0){scene.remove(p.m);p.m.material.dispose();particles.splice(i,1);continue;}p.m.scale.setScalar(Math.max(p.life,0.01));}\nhudEl.textContent="SCORE "+Math.floor(score);\nvar ox=0,oy=0;\nif(shakeT>0){ox=rand(-shakeT,shakeT)*0.02;oy=rand(-shakeT,shakeT)*0.02;shakeT*=0.85;if(shakeT<0.5)shakeT=0;}\ncamera.position.x+=ox;camera.position.y+=oy;\nrenderer.render(scene,camera);\ncamera.position.x-=ox;camera.position.y-=oy;\ninput.justTapped=false;look.dx=0;look.dy=0;\nrequestAnimationFrame(frame);\n}\nresetGame();\nrequestAnimationFrame(frame);\n}catch(e){crashScreen();}\n})();\n</scr'+'ipt>\n</body></html>';
 
+var ADAPTIVE_SHELL3D_TOP = SHELL3D_TOP
+  .replace('<div id="hud">SCORE 0</div>', '<div id="hud" style="display:none">SCORE 0</div>')
+  .replace('function crashScreen(){try{', 'function crashScreen(){try{parent.postMessage({type:"ra-crash"},"*");')
+  .replace('var particles=[],score=0,over=false,audioC=null,shakeT=0;', 'var particles=[],score=0,scoreVisible=false,scoreLabel="SCORE",over=false,audioC=null,shakeT=0;')
+  .replace('function addScore(n){score+=(n==null?1:n);}\nfunction getScore(){return score;}', 'function addScore(n){scoreVisible=true;score+=(n==null?1:n);}\nfunction setScore(n,label){score=Number(n)||0;scoreVisible=true;if(label)scoreLabel=String(label).slice(0,18);}\nfunction showScore(label){scoreVisible=true;if(label)scoreLabel=String(label).slice(0,18);}\nfunction hideScore(){scoreVisible=false;}\nfunction getScore(){return score;}')
+  .replace('fsEl.textContent="SCORE "+Math.floor(score);', 'fsEl.textContent=scoreLabel+" "+Math.floor(score);')
+  .replace('function restart(){score=0;over=false;overEl.style.display="none";', 'function restart(){score=0;scoreVisible=false;scoreLabel="SCORE";hudEl.style.display="none";over=false;overEl.style.display="none";');
+
+var ADAPTIVE_SHELL3D_BOTTOM = SHELL3D_BOTTOM
+  .replace('var lastT=performance.now();\nfunction frame(t){', 'var lastT=performance.now(),readySent=false;\nfunction frame(t){')
+  .replace('hudEl.textContent="SCORE "+Math.floor(score);', 'hudEl.style.display=scoreVisible?"block":"none";if(scoreVisible)hudEl.textContent=scoreLabel+" "+Math.floor(score);')
+  .replace('renderer.render(scene,camera);\ncamera.position.x-=ox;', 'renderer.render(scene,camera);\nif(!readySent){readySent=true;try{parent.postMessage({type:"ra-ready"},"*");}catch(e){}}\ncamera.position.x-=ox;');
+
 function assembleGame3D(js){
-  return SHELL3D_TOP + '\n' + GAME_START + '\n' + js + '\n' + GAME_END + SHELL3D_BOTTOM;
+  return ADAPTIVE_SHELL3D_TOP + '\n' + GAME_START + '\n' + js + '\n' + GAME_END + ADAPTIVE_SHELL3D_BOTTOM;
 }
 
-var SYS_3D_JS = `You write the game-logic layer for Remix Arcade 3D games. A prebuilt three.js engine handles the renderer, scene, camera, lights, fog, resizing, input, particles, camera shake, sound, the score HUD, the game-over screen with retry, the branded boot flash, and crash recovery. You write ONLY the JavaScript game logic that plugs into it.
+var SYS_3D_JS = `You create the game-logic layer for an adaptive three.js browser-game engine. The engine handles WebGL setup, the renderer, scene, camera, base lights, resizing, input, optional score and game-over UI, particles, camera shake, sound, the boot flash, and crash recovery. You write ONLY the JavaScript game logic that plugs into it.
 
 OUTPUT RULES (critical):
 - Respond with ONLY JavaScript code. No HTML, no markdown code fences, no commentary before or after.
@@ -991,7 +1029,8 @@ ENGINE GLOBALS AND HELPERS AVAILABLE TO YOU:
 - keys — currently held keys, e.g. keys['ArrowLeft'], keys['a'], keys[' '].
 - enableJoystick(), stick — {x, y, active}, look — {dx, dy}: mobile FPS controls, see FIRST-PERSON MODE below. Only call enableJoystick() for first-person games.
 - burst3d(x, y, z, color, n) — particle explosion at a world position (color is a hex number like 0xFF9A5F). shake(power) — camera shake. beep(freq, seconds, type) — WebAudio tone ('square'/'sine'/'triangle').
-- addScore(n) — add to the score (engine draws the HUD). getScore() — read it. gameOver() — end the run (engine shows game over + tap to retry automatically).
+- addScore(n), setScore(n, label), showScore(label), hideScore(), getScore(). The score HUD starts hidden and appears only when addScore/setScore/showScore is used.
+- gameOver() — optional. Use only for a genuine failed run with instant retry; it reports leaderboard scores automatically.
 - rand(a, b), clamp(v, a, b).
 
 FIRST-PERSON MODE (use when the idea asks for a shooter, FPS, or first-person game):
@@ -999,16 +1038,21 @@ FIRST-PERSON MODE (use when the idea asks for a shooter, FPS, or first-person ga
 - Drive the camera yourself: keep a yaw variable (and a small clamped pitch) updated from look.dx/look.dy, move the camera with stick relative to yaw, and aim shots straight out of the camera (a distance-plus-angle cone check against targets is enough — no physics engine).
 - Add a small crosshair in the screen center (an HTML overlay div is fine). Auto-fire or tap-to-fire both work; tap-to-fire uses onTap.
 - On desktop also support WASD/arrows to move and holding a mouse drag to turn.
+- Give the player real navigable space with a floor, boundaries and recognizable rooms, corridors, cover, ramps, or landmarks. Add collision so the camera cannot simply walk through walls.
+- A shooter needs an actual combat loop: movement, aiming, firing feedback, targets that react or pursue, health or another failure condition, and an objective. Never replace it with automatic forward movement or stationary tap targets.
 - Targets stay abstract and kid-safe: blocky drones, crystals, robots that pop with burst3d — never humans, never blood.
 
-GAME DESIGN REQUIREMENTS:
-- One clear 3D arcade mechanic: lane runner, tunnel dodger, rolling-ball collector, block stacker, first-person arena shooter (see FIRST-PERSON MODE), or similar. The first tap or key press is already gameplay — never a menu.
-- Touch first: steer with input.dragX or input.x, act with onTap; also support arrow keys/WASD/space via keys. Design for a phone held in portrait.
-- Camera simple and readable — chase cam, fixed angle, or first-person via FIRST-PERSON MODE; YOUR code controls it. Never demand extra camera fiddling from the player.
+GENRE FIDELITY — HIGHEST PRIORITY:
+- Treat the creator's prompt as a contract. Implement the requested genre, perspective, spatial layout, core activity, camera, controls, mood, and progression directly.
+- NEVER replace a requested game with an easier endless runner, tunnel dodger, rolling-ball collector, lane game, or tap-to-shoot box gallery unless that is what the creator requested.
+- Valid forms include first- or third-person exploration, arena shooter, driving, platforming, puzzle, strategy, builder, sandbox, simulation, creative toy, mystery, or a simple 3D arcade game when requested.
+- Touch controls must fit the genre; also support sensible keyboard controls. Camera behavior must match the perspective: first-person camera-as-player, third-person follow/orbit, top-down, or fixed as appropriate.
+- Build recognizable space rather than an empty void: floors, walls, rooms, ramps, landmarks, lanes, or boundaries appropriate to the idea.
 - Low-poly primitives only (BoxGeometry, SphereGeometry, ConeGeometry, CylinderGeometry, TorusGeometry, PlaneGeometry) with MeshLambertMaterial or MeshBasicMaterial. Create shared geometries/materials once with var, reuse them across meshes.
-- Palette: sunset orange 0xFF9A5F, rose 0xFF8FAE, gold 0xFFC978, coral 0xFF5470 on the deep ember background. Chunky, readable shapes.
+- Choose scene background, fog, lighting colors, and materials from the prompt. Do not force the platform palette onto every game. Keep important shapes and UI readable on a portrait phone.
 - Keep at most a few dozen active meshes; recycle instead of endlessly creating. Must hold 60fps on a mid-range phone.
-- Ramp difficulty meaningfully every 15-20 seconds. Juice generously: burst3d on pickups and hits, shake on impacts, beep with different pitches for good/bad events.
+- Score, timers, difficulty ramps, enemies, game over, particles, shake, and sound are optional. Use only the systems the requested experience needs. Health, objectives, dialogue, inventory, or contextual instructions may replace score.
+- Scope intelligently: deliver one polished, recognizable version of the requested idea. Initialize every variable in resetGame(), keep meshes bounded, and mentally check startup, first interaction, camera, collision, objective, and retry/continuation behavior. The code must be syntactically complete.
 - Content must be general-audience and kid-safe: no gore, no sexual or suggestive content, no hate symbols. Abstract/cartoon danger only.
 
 Return nothing but the JavaScript.`;
@@ -2284,11 +2328,11 @@ function openGame(id){
   });
 }
 
-var COVER_SYS = `You create SVG cover art for arcade games on Remix Arcade.
+var COVER_SYS = `You create SVG cover art for games on Remix Arcade. The game may be any genre: action, cozy, story, puzzle, strategy, simulation, sandbox, creative toy, or something unusual.
 
 OUTPUT: ONLY a single <svg> element. No markdown fences, no commentary. viewBox="0 0 300 188". Everything self-contained: no scripts, no event attributes, no external references, no href attributes, no <image>, no <foreignObject>.
 
-STYLE: Bold, iconic, poster-like box art depicting the game's subject with geometric shapes. Dramatic composition, strong silhouettes, depth via layered shapes and gradients (defs allowed). Deep ember dusk background #1E0F16. Accents: sunset orange #FF9A5F, rose pink #FF8FAE, gold #FFC978, coral #FF5470, warm white #F7EEE4. Optional: a low glowing horizon. No words or letters. Kid-safe, general audience.`;
+STYLE: Depict the actual subject, mood, perspective, and core activity described by the game concept. Use bold, iconic, poster-like geometric artwork with strong silhouettes and depth via layered shapes and gradients (defs allowed). Choose colors that fit the concept; do not force a single house palette. No words or letters. Kid-safe, general audience.`;
 
 function sanitizeSvg(t){
   t = (t||'').trim().replace(/^\`\`\`(?:svg|xml|html)?\s*/i,'').replace(/\`\`\`\s*$/,'').trim();
@@ -2496,6 +2540,60 @@ function cleanCode(text){
   return t;
 }
 
+var gameValidationFrame = null;
+function qualityError(message){
+  var error = new Error(message);
+  error.isGameQualityError = true;
+  return error;
+}
+function validateEngineCode(code, is3D){
+  if(!code || code.length<120) return 'The model returned too little game code.';
+  if(code.length>140000) return 'The game code is too large to run safely.';
+  if(/<\/?(?:html|script|canvas)\b/i.test(code)) return 'The model returned HTML instead of engine game logic.';
+  if(/\brequestAnimationFrame\s*\(|new\s+THREE\.WebGLRenderer|document\.write\s*\(/.test(code)) return 'The game tried to replace the prebuilt engine.';
+  var required = is3D ? ['resetGame','update'] : ['resetGame','update','draw'];
+  for(var i=0;i<required.length;i++){
+    if(!(new RegExp('\\bfunction\\s+'+required[i]+'\\s*\\(')).test(code)) return 'The game is missing '+required[i]+'().';
+  }
+  try{ new Function(code); }catch(e){ return 'The game code is incomplete or has a syntax error.'; }
+  return null;
+}
+function preflightGeneratedGame(html, is3D){
+  return new Promise(function(resolve, reject){
+    var frame = document.createElement('iframe');
+    frame.setAttribute('sandbox','allow-scripts');
+    frame.setAttribute('aria-hidden','true');
+    frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:390px;height:700px;opacity:0;pointer-events:none;border:0;';
+    var settled = false;
+    var timer = null;
+    function finish(error){
+      if(settled) return;
+      settled = true;
+      if(timer) clearTimeout(timer);
+      window.removeEventListener('message', onMessage);
+      if(gameValidationFrame===frame) gameValidationFrame = null;
+      frame.remove();
+      if(error) reject(qualityError(error)); else resolve();
+    }
+    function onMessage(e){
+      if(e.source!==frame.contentWindow || !e.data) return;
+      if(e.data.type==='ra-ready') finish();
+      else if(e.data.type==='ra-crash') finish('The generated game crashed during its startup check.');
+    }
+    window.addEventListener('message', onMessage);
+    document.body.appendChild(frame);
+    gameValidationFrame = frame;
+    timer = setTimeout(function(){ finish(is3D ? 'The 3D game did not start correctly.' : 'The generated game did not start correctly.'); }, is3D ? 9000 : 4500);
+    frame.srcdoc = html;
+  });
+}
+function prepareEngineGame(code, is3D){
+  var issue = validateEngineCode(code, is3D);
+  if(issue) return Promise.reject(qualityError(issue));
+  var html = is3D ? assembleGame3D(code) : assembleGame(code);
+  return preflightGeneratedGame(html, is3D).then(function(){ return html; });
+}
+
 var pendingCode = '';
 var progressDenom = 7000;
 var rafScheduled = false;
@@ -2564,18 +2662,22 @@ function runCreateJob(job){
   setBuildStage(job, 'building', use3D ? 'Building the 3D game…' : 'Building the game…', 4);
   streamGame(use3D ? SYS_3D_JS : SYS_JS, buildUserMessage('create', job.prompt, job.about, null), 3500).then(function(code){
     if(buildJob!==job) return;
+    setBuildStage(job, 'building', 'Checking that the game works…', 79);
+    return prepareEngineGame(code, use3D).then(function(html){ return {code:code, html:html}; });
+  }).then(function(result){
+    if(buildJob!==job || !result) return;
     var id = uid();
     var meta = {id:id, title:job.title, prompt:job.prompt, desc:job.about, parentId:null, creator:job.creator, plays:0, recentPlays:[], createdAt:Date.now()};
     setBuildStage(job, 'cover', 'Creating cover art…', 82);
     return generateCover(meta.title, job.prompt).then(function(cover){
       if(buildJob!==job) return;
       if(cover) meta.cover = cover;
-      lastBuild = {id:id, html:use3D ? assembleGame3D(code) : assembleGame(code), meta:meta};
+      lastBuild = {id:id, html:result.html, meta:meta};
       return finishBuild(lastBuild, job);
     });
   }).catch(function(e){
     console.error(e);
-    failBuild(job, 'Generation paused. Try again.', 'generation');
+    failBuild(job, e && e.isGameQualityError ? 'That game came back broken, so I did not publish it. Try the same idea again.' : 'Generation paused. Try again.', 'generation');
   });
 }
 function handleCreate(){
@@ -2595,7 +2697,11 @@ function runRemixJob(job){
   setBuildStage(job, 'building', job.kind==='edit' ? 'Updating the game…' : 'Building the remix…', 4);
   streamGame(job.system, buildUserMessage(job.messageMode, job.prompt, '', job.base), job.denom).then(function(code){
     if(buildJob!==job) return;
-    var finalHtml = job.isEngine ? (job.is3D ? assembleGame3D(code) : assembleGame(code)) : code;
+    if(!job.isEngine) return code;
+    setBuildStage(job, 'building', 'Checking that the game works…', 79);
+    return prepareEngineGame(code, job.is3D);
+  }).then(function(finalHtml){
+    if(buildJob!==job || !finalHtml) return;
     if(job.kind==='remix'){
       var id = uid();
       var meta = {id:id, title:job.title, prompt:job.prompt, desc:'', parentId:job.game.id, creator:job.creator, plays:0, recentPlays:[], createdAt:Date.now()};
@@ -2611,7 +2717,7 @@ function runRemixJob(job){
     return finishBuild(lastBuild, job);
   }).catch(function(e){
     console.error(e);
-    failBuild(job, 'Generation paused. Try again.', 'generation');
+    failBuild(job, e && e.isGameQualityError ? 'That version came back broken, so I did not publish it. Try the change again.' : 'Generation paused. Try again.', 'generation');
   });
 }
 function handleRemixOrEdit(mode){
@@ -2985,6 +3091,7 @@ function init(){
 
   window.addEventListener('message', function(e){
     var d = e.data;
+    if(gameValidationFrame && e.source===gameValidationFrame.contentWindow) return;
     if(!d || d.type!=='ra-cover' || !currentGame) return;
     if(currentGame.cover) return;
     if(typeof d.data!=='string' || d.data.indexOf('data:image/jpeg;base64,')!==0 || d.data.length>250000) return;
@@ -2993,6 +3100,7 @@ function init(){
   });
   window.addEventListener('message', function(e){
     var d = e.data;
+    if(gameValidationFrame && e.source===gameValidationFrame.contentWindow) return;
     if(!d || d.type!=='ra-score' || !currentGame) return;
     recordScore(currentGame, d.score);
   });
