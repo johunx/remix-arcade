@@ -115,6 +115,7 @@ body.swipe-mode .rays{animation-play-state:paused;}
 .card-cover::after{content:'';position:absolute;inset:0;box-shadow:inset 0 -22px 30px -18px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.25);}
 .card-glyph{font-size:38px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.5)) drop-shadow(0 1px 2px rgba(0,0,0,.6));transform:translateZ(0);}
 .badge-hot{position:absolute;top:9px;left:9px;z-index:2;background:linear-gradient(160deg,#FF7590,#F03858);color:#fff;font-size:9px;font-weight:700;padding:4px 9px;border-radius:999px;letter-spacing:.3px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.4),0 5px 12px -3px rgba(255,84,112,0.6);}
+.badge-remix{position:absolute;top:9px;right:9px;z-index:2;background:linear-gradient(160deg,#7FB8FF,#3D7DEB);color:#fff;font-size:9px;font-weight:800;padding:4px 9px;border-radius:999px;letter-spacing:.4px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.4),0 5px 12px -3px rgba(61,125,235,0.55);}
 .card-body{padding:11px 12px 13px;}
 .card-body h3{font-size:13.5px;font-weight:600;line-height:1.25;margin-bottom:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .card-creator{font-size:11px;color:var(--text-dim);margin-bottom:6px;}
@@ -166,6 +167,8 @@ body.swipe-mode .rays{animation-play-state:paused;}
    --playbar-h reserves the full strip below the game: 12px gap + pill + create-button overhang. */
 #tabbar{position:fixed;bottom:calc(12px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:calc(var(--shell-w) - 32px);display:flex;align-items:center;justify-content:space-around;padding:10px 18px;background:linear-gradient(160deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02)),rgba(45,23,31,0.55);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border:1px solid var(--glass-border);box-shadow:inset 0 1px 0 var(--glass-edge),0 22px 50px -16px rgba(0,0,0,0.75),var(--lsx,0px) var(--lsy,18px) var(--lsb,30px) rgb(10 5 8 / var(--lsa,0.5));border-radius:999px;z-index:20;}
 .tab{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;font-weight:600;letter-spacing:.3px;color:var(--text-faint);padding:6px 10px;transition:color .25s ease,transform .25s var(--spring);}
+#playTab{min-width:48px;padding-left:6px;padding-right:6px;}
+#playTab .tab-play-label{white-space:nowrap;}
 .tab .icon{font-size:20px;}
 .tab .icon svg.ic{width:21px;height:21px;}
 .tab.active{color:var(--mint);transform:translateY(-2px);}
@@ -345,6 +348,9 @@ body.swipe-mode #screens{padding-bottom:0;overflow:hidden;}
 .slide-cover{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;background:var(--cover,#1E0F16);background-size:cover;background-position:center;transition:opacity .35s ease;}
 .swipe-slide.live .slide-cover{opacity:0;pointer-events:none;}
 .slide-cover .card-glyph{font-size:64px;}
+/* origin chip on swipe covers — remix (blue) vs original (gold) at a glance */
+.slide-tag{position:absolute;top:calc(14px + env(safe-area-inset-top));left:14px;z-index:3;display:inline-flex;align-items:center;max-width:72%;padding:7px 13px;border-radius:999px;background:rgba(20,10,15,0.62);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(127,184,255,0.5);color:#CFE3FF;font-size:11px;font-weight:700;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 6px 16px -6px rgba(0,0,0,0.6);}
+.slide-tag.orig{border-color:rgba(255,201,120,0.42);color:#FFE2B8;}
 .swipe-sidebar{position:absolute;top:0;right:0;bottom:0;width:var(--swipe-lane-w);z-index:7;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;touch-action:none;user-select:none;background:linear-gradient(90deg,rgba(17,8,12,0.94),rgba(38,18,25,0.98));border-left:1px solid rgba(255,205,170,0.14);box-shadow:inset 1px 0 0 rgba(255,255,255,0.035);color:var(--text-faint);transition:color .2s ease,background .2s ease;}
 .swipe-sidebar.dragging{color:var(--mint);background:linear-gradient(90deg,rgba(28,12,17,0.98),rgba(55,24,30,0.99));}
 .swipe-sidebar .ic{width:18px;height:18px;filter:drop-shadow(0 2px 5px rgba(0,0,0,0.65));}
@@ -356,13 +362,18 @@ body.horizontal-swipe.swipe-mode .swipe-slide{width:100%;flex:0 0 100%;}
 body.horizontal-swipe.swipe-mode .swipe-sidebar{display:none;}
 body.horizontal-swipe.swipe-mode .game-stats-flash{right:10px;}
 body.horizontal-swipe.swipe-mode .game-rail{right:9px;}
-.dock-swipe-demo,.dock-drag-glow{display:none;}
-body.horizontal-swipe.swipe-mode #tabbar{padding-left:24px;padding-right:24px;touch-action:pan-y;user-select:none;background:linear-gradient(160deg,rgba(103,240,216,.16),rgba(42,166,158,.055)),rgba(12,42,45,.97);border-color:rgba(117,239,221,.34);box-shadow:inset 0 1px 0 rgba(213,255,247,.2),0 22px 48px -16px rgba(0,0,0,.82),0 0 0 1px rgba(55,198,185,.07);transition:border-color .2s ease,box-shadow .2s ease,transform .2s var(--spring),background .25s ease;}
+.dock-swipe-demo,.dock-drag-glow,.dock-swipe-track{display:none;}
+body.horizontal-swipe.swipe-mode #tabbar{padding:8px 24px 18px;touch-action:pan-y;user-select:none;background:linear-gradient(160deg,rgba(103,240,216,.16),rgba(42,166,158,.055)),rgba(12,42,45,.97);border-color:rgba(117,239,221,.34);box-shadow:inset 0 1px 0 rgba(213,255,247,.2),0 22px 48px -16px rgba(0,0,0,.82),0 0 0 1px rgba(55,198,185,.07);transition:border-color .2s ease,box-shadow .2s ease,transform .2s var(--spring),background .25s ease;}
 body.horizontal-swipe.swipe-mode #tabbar .tab{color:rgba(216,245,240,.56);}
 body.horizontal-swipe.swipe-mode #tabbar .tab.active{color:#8CF5E1;}
 body.horizontal-swipe.swipe-mode #tabbar .tab.active .icon svg.ic{filter:drop-shadow(0 0 8px rgba(89,223,198,.68));}
 body.horizontal-swipe.swipe-mode #tabbar .tab-create{color:var(--mint-ink)!important;}
 body.horizontal-swipe.swipe-mode .dock-drag-glow{position:absolute;display:block;inset:2px;z-index:1;overflow:hidden;pointer-events:none;border-radius:999px;opacity:0;transform:scale(.98);background:radial-gradient(86px 62px at var(--dock-glow-x,50%) 50%,rgba(185,255,240,.48),rgba(71,226,209,.22) 42%,rgba(41,173,166,.06) 64%,transparent 76%);transition:opacity .12s ease,transform .16s ease;}
+body.horizontal-swipe.swipe-mode .dock-swipe-track{position:absolute;left:18px;right:18px;bottom:4px;z-index:4;display:grid;grid-template-columns:12px minmax(0,1fr) 12px;align-items:center;gap:7px;height:11px;color:rgba(173,255,238,.72);pointer-events:none;filter:drop-shadow(0 0 7px rgba(72,224,205,.28));transition:color .16s ease,filter .16s ease;}
+body.horizontal-swipe.swipe-mode .dock-swipe-arrow{width:12px;height:12px;stroke-width:2.4;opacity:.82;}
+body.horizontal-swipe.swipe-mode .dock-swipe-rail{position:relative;height:4px;border-radius:4px;background:rgba(181,244,235,.18);box-shadow:inset 0 1px 2px rgba(0,0,0,.34),0 0 0 1px rgba(155,255,238,.08);overflow:visible;}
+body.horizontal-swipe.swipe-mode .dock-swipe-rail::before{content:'';position:absolute;inset:1px 5px;border-radius:3px;background:linear-gradient(90deg,transparent,rgba(149,255,234,.32),transparent);animation:dockRailShimmer 2.8s ease-in-out infinite;}
+body.horizontal-swipe.swipe-mode .dock-swipe-thumb{position:absolute;left:50%;top:50%;width:46px;height:5px;border-radius:5px;background:#B8FFF1;box-shadow:0 0 0 1px rgba(225,255,250,.3),0 0 10px rgba(88,238,215,.7);transform:translate(-50%,-50%) translateX(var(--dock-track-shift,0px));animation:dockThumbIdle 2.8s ease-in-out infinite;transition:width .16s ease,background .16s ease,box-shadow .16s ease;will-change:transform;}
 body.horizontal-swipe.swipe-mode .dock-swipe-demo.show{position:absolute;display:block;inset:-48px 0 0;z-index:5;pointer-events:none;}
 body.horizontal-swipe.swipe-mode .dock-swipe-fog{position:absolute;top:48px;left:4px;right:4px;height:64px;z-index:0;border-radius:999px;opacity:0;background:radial-gradient(75% 110% at 48% 16%,rgba(220,255,249,.28),rgba(79,181,175,.16) 42%,rgba(7,28,31,.62) 100%),linear-gradient(90deg,rgba(9,38,41,.5),rgba(135,225,212,.12),rgba(9,38,41,.5));box-shadow:inset 0 1px 0 rgba(222,255,249,.16);animation:dockFogLesson 1.5s ease-in-out forwards;}
 body.horizontal-swipe.swipe-mode .dock-swipe-finger{position:absolute;top:0;left:32%;z-index:2;font-family:Arial,sans-serif;font-size:34px;line-height:1;opacity:0;filter:drop-shadow(0 5px 8px rgba(0,0,0,.58));animation:dockFingerSwipe 1.5s ease-in-out forwards;will-change:transform,opacity;}
@@ -370,6 +381,8 @@ body.horizontal-swipe.swipe-mode .dock-swipe-touch{position:absolute;top:39px;le
 body.horizontal-swipe.swipe-mode #tabbar.dock-swiping,body.horizontal-swipe.swipe-mode #tabbar.dock-cue{border-color:rgba(140,245,225,.58);box-shadow:inset 0 1px 0 rgba(224,255,250,.28),0 18px 38px -14px rgba(0,0,0,.82),0 0 0 3px rgba(89,223,198,.1);transform:translateX(-50%) scale(.985);}
 body.horizontal-swipe.swipe-mode #tabbar.dock-swiping{box-shadow:inset 0 1px 0 rgba(224,255,250,.32),0 18px 38px -14px rgba(0,0,0,.82),0 0 0 3px rgba(89,223,198,.14),0 0 26px rgba(58,224,206,.2);}
 body.horizontal-swipe.swipe-mode #tabbar.dock-swiping .dock-drag-glow{opacity:1;transform:scale(1);animation:dockDragGlowPulse .62s ease-in-out infinite alternate;}
+body.horizontal-swipe.swipe-mode #tabbar.dock-swiping .dock-swipe-track,body.horizontal-swipe.swipe-mode #tabbar.dock-cue .dock-swipe-track{color:#CFFFF6;filter:drop-shadow(0 0 9px rgba(77,242,218,.66));}
+body.horizontal-swipe.swipe-mode #tabbar.dock-swiping .dock-swipe-thumb{width:58px;background:#E2FFF9;box-shadow:0 0 0 1px rgba(255,255,255,.45),0 0 15px rgba(88,238,215,.95);animation:none;}
 body.gameplay-mode #tabbar{background:linear-gradient(160deg,rgba(255,255,255,.065),rgba(255,255,255,.018)),rgba(39,20,27,.96);backdrop-filter:none;-webkit-backdrop-filter:none;}
 body.gameplay-mode .game-stats-flash{background:rgba(22,10,15,.94);backdrop-filter:none;-webkit-backdrop-filter:none;}
 body.gameplay-mode .rail-btn .bub{background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.015)),rgba(31,15,21,.94);backdrop-filter:none;-webkit-backdrop-filter:none;}
@@ -377,9 +390,15 @@ body.gameplay-mode .rail-btn .bub{background:linear-gradient(160deg,rgba(255,255
 @keyframes dockFingerSwipe{0%{opacity:0;transform:translate(-8px,-8px) scale(1);}14%{opacity:1;transform:translate(0,0) scale(1);}28%{opacity:1;transform:translate(0,14px) scale(.92);}72%{opacity:1;transform:translate(110px,14px) scale(.92);}88%{opacity:1;transform:translate(110px,0) scale(1);}100%{opacity:0;transform:translate(118px,-5px) scale(1);}}
 @keyframes dockTouchSwipe{0%,20%{opacity:0;transform:translate(-8px,-4px) scale(.35);}30%{opacity:.92;transform:translate(0,4px) scale(.55);}48%{opacity:.35;transform:translate(42px,4px) scale(1.25);}72%{opacity:.72;transform:translate(110px,4px) scale(.6);}100%{opacity:0;transform:translate(118px,0) scale(1.35);}}
 @keyframes dockDragGlowPulse{from{filter:brightness(.88);opacity:.72;}to{filter:brightness(1.18);opacity:1;}}
-.tab svg.tab-info-icon,.tab-info-label{display:none;}
+@keyframes dockThumbIdle{0%,100%{transform:translate(-50%,-50%) translateX(-22px);}50%{transform:translate(-50%,-50%) translateX(22px);}}
+@keyframes dockRailShimmer{0%,100%{opacity:.25;transform:translateX(-16%);}50%{opacity:1;transform:translateX(16%);}}
+.tab .tab-info-icon,.tab-info-label{display:none;}
 body.swipe-mode .tab svg.tab-play-icon,body.swipe-mode .tab-play-label{display:none;}
-body.swipe-mode .tab svg.tab-info-icon,body.swipe-mode .tab-info-label{display:block;}
+body.swipe-mode .tab .tab-info-icon,body.swipe-mode .tab-info-label{display:flex;}
+.creator-tab-avatar{position:relative;width:24px;height:24px;align-items:center;justify-content:center;border-radius:50%;font-family:var(--font-d);font-size:9px;color:#fff;background:var(--av);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 0 9px rgba(89,223,198,.34);}
+.creator-tab-follow{position:absolute;right:-5px;bottom:-3px;width:13px;height:13px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--mint);color:var(--mint-ink);border:1.5px solid rgba(14,40,43,.98);font:800 10px/1 var(--font-b);}
+.creator-tab-follow.on{background:#8CF5E1;font-size:8px;}
+#playCreatorLabel{max-width:58px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:12px;}
 .game-stats-flash{position:absolute;top:48%;right:calc(var(--swipe-lane-w) + 10px);z-index:6;display:flex;flex-direction:column;align-items:center;gap:13px;min-width:46px;padding:10px 8px;background:rgba(22,10,15,0.82);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,205,170,0.14);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.35);opacity:0;transform:translate(10px,-50%);transition:opacity .18s ease,transform .22s ease;pointer-events:none;}
 .game-stats-flash.show{opacity:1;transform:translate(0,-50%);}
 .game-stats-flash span{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:700;color:var(--text);}
@@ -419,6 +438,12 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 .rail-btn .bub .ic{width:22px;height:22px;}
 .rail-count{font-size:10.5px;font-weight:700;letter-spacing:.2px;color:var(--text);text-shadow:0 1px 5px rgba(0,0,0,0.85);}
 .rail-views{pointer-events:none;opacity:0.92;}
+.rail-creator-wrap{position:relative;pointer-events:auto;}
+.rail-creator .bub{padding:3px;}
+.rail-avatar{width:100%;height:100%;display:flex;align-items:center;justify-content:center;border-radius:50%;font-family:var(--font-d);font-size:13px;color:#fff;background:var(--av);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.3),inset 0 -3px 6px rgba(0,0,0,.25);}
+.rail-creator-name{display:block;max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rail-follow-mark{position:absolute;left:50%;top:35px;z-index:2;width:21px;height:21px;display:flex;align-items:center;justify-content:center;transform:translateX(-50%);border-radius:50%;background:var(--mint);color:var(--mint-ink);border:2px solid rgba(24,11,16,.95);box-shadow:0 4px 10px rgba(0,0,0,.5);font-size:16px;font-weight:800;line-height:1;}
+.rail-follow-mark.on{background:#8CF5E1;font-size:12px;}
 
 /* right-edge swipe-zone hint — flashes when a game loads */
 .rail-like .hrt{fill:none;}
@@ -442,6 +467,8 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:0.001ms!important;animation-iteration-count:1!important;transition-duration:0.001ms!important;}
+  body.horizontal-swipe.swipe-mode .dock-swipe-thumb{animation:none!important;transform:translate(-50%,-50%) translateX(var(--dock-track-shift,0px));}
+  body.horizontal-swipe.swipe-mode .dock-swipe-rail::before{animation:none!important;opacity:.65;}
 }
 @media (hover:hover){
   .card:hover{transform:translateY(-4px);box-shadow:inset 0 1px 0 var(--glass-edge),0 22px 44px -16px rgba(0,0,0,.7);}
@@ -484,6 +511,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
       <div class="swipe-sidebar" id="swipeSidebar" role="scrollbar" aria-label="Game navigation" aria-controls="swipePager" aria-orientation="vertical" aria-valuemin="1" aria-valuenow="1" aria-valuemax="1" tabindex="0"><svg class="ic up" viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></svg><span class="swipe-grip"><i></i><i></i><i></i></span><svg class="ic down" viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></svg></div>
       <div class="game-stats-flash hidden" id="gameStatsFlash" aria-live="polite"></div>
       <div class="game-rail hidden" id="gameRail">
+        <div class="rail-creator-wrap"><button class="rail-btn rail-creator" id="railCreator" aria-label="Open creator profile"><span class="bub"><span class="rail-avatar" id="railCreatorAvatar">R</span></span><span class="rail-count rail-creator-name" id="railCreatorName">Creator</span></button><button class="rail-follow-mark" id="railCreatorFollow" aria-label="Follow creator">+</button></div>
         <button class="rail-btn rail-like" id="railLike" aria-label="Like"><span class="bub"><svg class="ic hrt" viewBox="0 0 24 24"><path d="M12 20.3C6.5 16.6 3.5 13.4 3.5 9.9 3.5 7.2 5.6 5 8.2 5c1.5 0 3 .7 3.8 2 .8-1.3 2.3-2 3.8-2 2.6 0 4.7 2.2 4.7 4.9 0 3.5-3 6.7-8.5 10.4z"/></svg></span><span class="rail-count" id="railLikeCount">0</span></button>
         <button class="rail-btn" id="railComment" aria-label="Comments"><span class="bub"><svg class="ic" viewBox="0 0 24 24"><path d="M21 11.5c0 4.1-4 7.5-9 7.5-1 0-2-.13-2.9-.38L4 20l1.2-3.4C3.8 15.3 3 13.5 3 11.5 3 7.4 7 4 12 4s9 3.4 9 7.5z"/></svg></span><span class="rail-count" id="railCommentCount">0</span></button>
         <button class="rail-btn" id="railRemix" aria-label="Remix"><span class="bub"><svg class="ic" viewBox="0 0 24 24"><path d="M12 21.5V13M12 13 5.5 6.5M12 13V4.8M12 13l6.5-6.5"/><circle class="dot" cx="5.5" cy="6" r="1.8"/><circle class="dot" cx="12" cy="4.2" r="1.8"/><circle class="dot" cx="18.5" cy="6" r="1.8"/></svg></span><span class="rail-count" id="railRemixCount">0</span></button>
@@ -615,7 +643,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
         <div class="follow-chips" id="followingList"></div>
       </div>
       <div class="feed-grid" id="profGrid"></div>
-      <p class="build-tag">Remix Arcade · build v57</p>
+      <p class="build-tag">Remix Arcade · build v63</p>
     </section>
 
   </main>
@@ -632,8 +660,9 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 
   <nav id="tabbar">
     <span class="dock-drag-glow" aria-hidden="true"></span>
+    <span class="dock-swipe-track" aria-hidden="true"><svg class="ic dock-swipe-arrow" viewBox="0 0 24 24"><path d="m14.5 6-6 6 6 6"/></svg><span class="dock-swipe-rail"><span class="dock-swipe-thumb"></span></span><svg class="ic dock-swipe-arrow" viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6"/></svg></span>
     <span class="dock-swipe-demo" id="dockSwipeDemo" aria-hidden="true"><span class="dock-swipe-fog"></span><span class="dock-swipe-touch"></span><span class="dock-swipe-finger">👇</span></span>
-    <button class="tab active" id="playTab" data-screen="swipe"><span class="icon"><svg class="ic tab-play-icon" viewBox="0 0 24 24"><path d="M8.5 5.8c0-1.1 1.2-1.8 2.1-1.2l9 5.4c.9.6.9 1.9 0 2.4l-9 5.4c-.9.6-2.1-.1-2.1-1.2V5.8z"/></svg><svg class="ic tab-info-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle class="dot" cx="12" cy="7.8" r="1.2"/></svg></span><span class="tab-play-label">Play</span><span class="tab-info-label">Info</span></button>
+    <button class="tab active" id="playTab" data-screen="swipe"><span class="icon"><svg class="ic tab-play-icon" viewBox="0 0 24 24"><path d="M8.5 5.8c0-1.1 1.2-1.8 2.1-1.2l9 5.4c.9.6.9 1.9 0 2.4l-9 5.4c-.9.6-2.1-.1-2.1-1.2V5.8z"/></svg><span class="tab-info-icon creator-tab-avatar" id="playCreatorAvatar"><span id="playCreatorInitial">R</span><span class="creator-tab-follow" id="playCreatorFollow">+</span></span></span><span class="tab-play-label">For You</span><span class="tab-info-label" id="playCreatorLabel">Creator</span></button>
     <button class="tab tab-browse" data-screen="feed"><span class="icon"><svg class="ic" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="2.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2.2"/></svg></span>Browse</button>
     <button class="tab tab-create" data-screen="create"><span class="icon"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span></button>
     <button class="tab" data-screen="friends"><span class="icon"><svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19c1.2-2.8 3.2-4 5.5-4s4.3 1.2 5.5 4"/><circle cx="16.8" cy="9.5" r="2.6"/><path d="M15.5 15.2c2.3.2 4 1.4 5 3.8"/></svg></span>Activity</button>
@@ -693,9 +722,31 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
     return keys;
   }
   function api(path, options){
-    return fetch(path, options).then(function(resp){
-      if(!resp.ok) throw new Error('storage request failed');
-      return resp.json();
+    options = options || {};
+    var controller = typeof AbortController!=='undefined' ? new AbortController() : null;
+    if(controller) options.signal = controller.signal;
+    return new Promise(function(resolve, reject){
+      var settled = false;
+      var timer = setTimeout(function(){
+        if(settled) return;
+        settled = true;
+        if(controller) controller.abort();
+        reject(new Error('storage request timed out'));
+      }, 4000);
+      fetch(path, options).then(function(resp){
+        if(!resp.ok) throw new Error('storage request failed');
+        return resp.json();
+      }).then(function(value){
+        if(settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(value);
+      }, function(error){
+        if(settled) return;
+        settled = true;
+        clearTimeout(timer);
+        reject(error);
+      });
     });
   }
   window.storage = {
@@ -726,7 +777,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 <script>
 (function(){
 
-var BUILD = 'v57';
+var BUILD = 'v63';
 var HORIZONTAL_SWIPE = new URLSearchParams(location.search).get('nav')==='horizontal';
 document.body.classList.toggle('horizontal-swipe', HORIZONTAL_SWIPE);
 var META_PREFIX = 'ra-meta-';
@@ -838,6 +889,37 @@ BRAND RITUAL (mandatory, exact):
 - Before any gameplay, render a boot flash under 1 second long: a full-screen moment on a dark background (#1E0F16) showing the glyph "⑂" and the text "REMIX ARCADE", then clear straight into the game. Required in every game, no exceptions. Make it feel instant and punchy, never like a loading screen.
 
 Return nothing but the HTML document.`;
+
+var THREE_SRC = 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js';
+var SYS_3D = `You generate complete, single-file HTML5 3D browser games for Remix Arcade, rendered with three.js (WebGL).
+
+OUTPUT RULES (critical):
+- Respond with ONLY a complete HTML document, starting with <!DOCTYPE html> and ending with </html>. No markdown code fences, no commentary before or after.
+- The ONLY external resource allowed is three.js: include exactly one classic script tag in the head whose src is exactly ${THREE_SRC} — then use the global THREE object. No other scripts, stylesheets, fonts, images, or CDNs. No ES modules, no import maps, no type="module".
+- Never use localStorage, sessionStorage, cookies, fetch, or any other network or persistence. The game runs in a sandboxed iframe.
+
+3D GAME REQUIREMENTS:
+- One clear arcade mechanic in 3D: lane runner, tunnel dodger, rolling-ball collector, block stacker, or similar. The first tap or key press is already gameplay — no menus.
+- Controls: touch first (tap, or drag horizontally to steer), plus arrow keys/WASD/space. Design for a phone held in portrait.
+- Camera: simple and readable — a chase cam or fixed angle that the game controls. Never require the player to move the camera.
+- Look: low-poly primitives (BoxGeometry, SphereGeometry, ConeGeometry, TorusGeometry), bright chunky colors from the palette sunset orange #FF9A5F, rose #FF8FAE, gold #FFC978, coral #FF5470 on the deep ember #1E0F16 background, THREE.Fog for depth, MeshLambertMaterial or MeshBasicMaterial only, one DirectionalLight plus one AmbientLight.
+- Performance: renderer.setPixelRatio(Math.min(devicePixelRatio,2)), antialias:false, reuse geometries and materials, pool or cap active meshes to a few dozen. Must hold 60fps on a mid-range phone.
+- Show the score at all times (an HTML overlay div is fine), ramp difficulty meaningfully every 15-20 seconds, and on game over show the score with instant tap-to-retry that restarts without a page reload.
+- Juice: scale or flash effects on pickups, brief camera shake on impacts, procedural WebAudio beeps (oscillators only, different pitches for good/bad events).
+- Wrap setup and the frame loop in try/catch. If WebGL is unavailable or three.js fails to load, show a short friendly message on the #1E0F16 background instead of a blank or broken screen.
+- Content must be general-audience and kid-safe: no gore, no sexual or suggestive content, no hate symbols. Abstract/cartoon danger only.
+
+BRAND RITUAL (mandatory, exact):
+- Before any gameplay, render a boot flash under 1 second long: a full-screen moment on #1E0F16 showing the glyph "⑂" and the text "REMIX ARCADE", then clear straight into the game.
+
+Return nothing but the HTML document.`;
+
+function wants3D(text){
+  return /\b3[\s-]?d\b|\bthree[\s.-]?js\b|\bfirst[\s-]?person\b|\bthird[\s-]?person\b|\bfps\b/i.test(text||'');
+}
+function is3DGameHtml(html){
+  return !!html && (html.indexOf('three.min.js')>-1 || /\bTHREE\./.test(html));
+}
 
 var SEED_DODGE_HTML = `<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
@@ -1086,7 +1168,7 @@ function noteDegraded(){
   if(b) b.classList.remove('hidden');
 }
 function sGet(key, shared, attempt){
-  if(!window.storage || !window.storage.get){
+  if((shared && storageDegraded) || !window.storage || !window.storage.get){
     return Promise.resolve(memStore[key]!==undefined ? memStore[key] : null);
   }
   return window.storage.get(key, shared).then(function(r){
@@ -1095,6 +1177,7 @@ function sGet(key, shared, attempt){
     return v;
   }).catch(function(){
     if(!attempt){ return new Promise(function(res){ setTimeout(res, 400); }).then(function(){ return sGet(key, shared, 1); }); }
+    if(shared) noteDegraded();
     return memStore[key]!==undefined ? memStore[key] : null;
   });
 }
@@ -1118,12 +1201,12 @@ function sSet(key, value, shared, attempt){
 }
 function sList(prefix, shared){
   var memKeys = Object.keys(memStore).filter(function(k){ return k.indexOf(prefix)===0; });
-  if(!window.storage || !window.storage.list) return Promise.resolve(memKeys);
+  if((shared && storageDegraded) || !window.storage || !window.storage.list) return Promise.resolve(memKeys);
   return window.storage.list(prefix, shared).then(function(r){
     var keys = (r && r.keys) ? r.keys.slice() : [];
     memKeys.forEach(function(k){ if(keys.indexOf(k)===-1) keys.push(k); });
     return keys;
-  }).catch(function(){ return memKeys; });
+  }).catch(function(){ if(shared) noteDegraded(); return memKeys; });
 }
 
 function requestCreatorName(after){
@@ -1191,7 +1274,13 @@ function getSeedGames(){
   ];
 }
 
-var storageDegraded = false;
+function useLocalSeedGames(){
+  if(allMetas.length>0) return;
+  var seeds = getSeedGames();
+  allMetas = seeds.map(function(s){ codeCache[s.id] = s.code; return s.meta; });
+  lineage = computeLineage(allMetas);
+  allMetas.forEach(function(m){ m._directRemixes = m._directRemixes||0; m._descendants = m._descendants||0; });
+}
 function seedIfEmpty(){
   if(allMetas.length>0) return Promise.resolve();
   var seeds = getSeedGames();
@@ -1201,12 +1290,7 @@ function seedIfEmpty(){
                  .then(function(){ return sSet(META_PREFIX+s.id, JSON.stringify(s.meta), true); });
   });
   return chain.then(refreshData).then(function(){
-    if(allMetas.length===0){
-      storageDegraded = true;
-      allMetas = seeds.map(function(s){ codeCache[s.id] = s.code; return s.meta; });
-      lineage = computeLineage(allMetas);
-      allMetas.forEach(function(m){ m._directRemixes = m._directRemixes||0; m._descendants = m._descendants||0; });
-    }
+    if(allMetas.length===0){ noteDegraded(); useLocalSeedGames(); }
   });
 }
 
@@ -1262,7 +1346,7 @@ function cardHtml(m){
   var lineageLine = '';
   if(m.parentId && lineage.byId[m.parentId]) lineageLine = '<p class="card-lineage">⑂ from '+escapeHtml(lineage.byId[m.parentId].title)+'</p>';
   return '<article class="card" data-id="'+escapeHtml(m.id)+'" style="'+coverStyleFor(m)+'">'
-    +'<div class="card-cover" style="'+coverStyleFor(m)+'">'+(hot?'<span class="badge-hot">🔥 HOT</span>':'')+(m.cover?'':'<span class="card-glyph">'+glyphFor(m.id)+'</span>')+'</div>'
+    +'<div class="card-cover" style="'+coverStyleFor(m)+'">'+(hot?'<span class="badge-hot">🔥 HOT</span>':'')+(m.parentId?'<span class="badge-remix">⑂ REMIX</span>':'')+(m.cover?'':'<span class="card-glyph">'+glyphFor(m.id)+'</span>')+'</div>'
     +'<div class="card-body"><h3>'+escapeHtml(m.title)+'</h3>'+creatorLine(m)
     +lineageLine
     +'<div class="card-stats"><span>'+ICONS.play+fmt(m.plays)+'</span><span>'+ICONS.branch+fmt(m._directRemixes)+'</span><span>'+ICONS.tree+fmt(m._descendants)+'</span></div>'
@@ -1272,7 +1356,7 @@ function bigCardHtml(m){
   var lineageLine = '';
   if(m.parentId && lineage.byId[m.parentId]) lineageLine = '<p class="card-lineage">⑂ from '+escapeHtml(lineage.byId[m.parentId].title)+'</p>';
   return '<article class="card bigcard" data-id="'+escapeHtml(m.id)+'">'
-    +'<div class="card-cover big" style="'+coverStyleFor(m)+'">'+(m.cover?'':'<span class="card-glyph">'+glyphFor(m.id)+'</span>')+'<span class="reason">'+reasonFor(m)+'</span></div>'
+    +'<div class="card-cover big" style="'+coverStyleFor(m)+'">'+(m.parentId?'<span class="badge-remix">⑂ REMIX</span>':'')+(m.cover?'':'<span class="card-glyph">'+glyphFor(m.id)+'</span>')+'<span class="reason">'+reasonFor(m)+'</span></div>'
     +'<div class="card-body"><h3>'+escapeHtml(m.title)+'</h3>'+creatorLine(m)
     +lineageLine
     +'<div class="card-stats"><span>'+ICONS.play+fmt(m.plays)+'</span><span>'+ICONS.branch+fmt(m._directRemixes)+'</span><span>'+ICONS.tree+fmt(m._descendants)+'</span></div>'
@@ -1448,10 +1532,27 @@ function renderProfile(){
   }
 }
 
+function avatarGradient(name){
+  var h = sunsetHue(hashCode(name||'?'));
+  return 'linear-gradient(135deg, hsl('+h+',65%,55%), hsl('+((h+50)%360)+',60%,38%))';
+}
 function setAvatar(el, name){
   el.textContent = (name||'?').charAt(0).toUpperCase();
-  var h = sunsetHue(hashCode(name||'?'));
-  el.style.setProperty('--av', 'linear-gradient(135deg, hsl('+h+',65%,55%), hsl('+((h+50)%360)+',60%,38%))');
+  el.style.setProperty('--av', avatarGradient(name));
+}
+function renderPlayCreatorIdentity(meta){
+  if(!meta) return;
+  var name = meta.creator || 'Creator';
+  $('#playCreatorInitial').textContent = name.charAt(0).toUpperCase();
+  $('#playCreatorAvatar').style.setProperty('--av', avatarGradient(name));
+  $('#playCreatorLabel').textContent = name===myName ? 'You' : name;
+  var mark = $('#playCreatorFollow');
+  var own = name===myName;
+  var following = myFollows.indexOf(name)>-1;
+  mark.classList.toggle('hidden', own);
+  mark.classList.toggle('on', following);
+  mark.textContent = following ? '✓' : '+';
+  $('#playTab').setAttribute('aria-label', 'Game by '+name+'. Open game actions.');
 }
 var currentCreator = null;
 function setFollowBtnState(btn, name){
@@ -1463,9 +1564,15 @@ function setFollowBtnState(btn, name){
 function toggleFollow(name, btn){
   var i = myFollows.indexOf(name);
   if(i>-1) myFollows.splice(i,1); else myFollows.push(name);
-  setFollowBtnState(btn, name);
-  btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop');
+  if(btn){
+    setFollowBtnState(btn, name);
+    btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop');
+  }
   sSet('ra-follows', JSON.stringify(myFollows), false);
+  if(currentGame && currentGame.creator===name){
+    renderPlayCreatorIdentity(currentGame);
+    if(railOpen) renderGameRail();
+  }
 }
 function commentsFor(meta){
   return meta && Array.isArray(meta.comments) ? meta.comments : [];
@@ -1508,6 +1615,17 @@ var railOpen = false;
 function renderGameRail(){
   if(!currentGame) return;
   var m = currentGame;
+  var creatorName = m.creator || 'Creator';
+  setAvatar($('#railCreatorAvatar'), creatorName);
+  $('#railCreatorName').textContent = creatorName===myName ? 'You' : creatorName;
+  $('#railCreator').setAttribute('aria-label', 'Open '+creatorName+' creator profile');
+  var creatorFollow = $('#railCreatorFollow');
+  var ownGame = creatorName===myName;
+  var followingCreator = myFollows.indexOf(creatorName)>-1;
+  creatorFollow.classList.toggle('hidden', ownGame);
+  creatorFollow.classList.toggle('on', followingCreator);
+  creatorFollow.textContent = followingCreator ? '✓' : '+';
+  creatorFollow.setAttribute('aria-label', (followingCreator ? 'Unfollow ' : 'Follow ')+creatorName);
   $('#railLikeCount').textContent = fmt((m.likedBy||[]).length);
   $('#railCommentCount').textContent = fmt(commentsFor(m).length);
   $('#railRemixCount').textContent = fmt(m._directRemixes||0);
@@ -1583,15 +1701,25 @@ function fetchCode(id){
   if(codeCache[id]) return Promise.resolve(codeCache[id]);
   return sGet(CODE_PREFIX+id, true).then(function(c){ if(c) codeCache[id]=c; return c; });
 }
+function slideTagHtml(m){
+  if(m.parentId){
+    var parent = lineage && lineage.byId && lineage.byId[m.parentId];
+    return '<span class="slide-tag">⑂ REMIX'+(parent?' · '+escapeHtml(parent.title):'')+'</span>';
+  }
+  return '<span class="slide-tag orig">✦ ORIGINAL</span>';
+}
+function slideCoverHtml(m){
+  return '<div class="slide-cover" style="'+coverStyleFor(m)+'">'+(m.cover?'':'<span class="card-glyph">'+glyphFor(m.id)+'</span>')+slideTagHtml(m)+'</div>';
+}
 function slideHtml(m){
   return '<div class="swipe-slide" data-id="'+escapeHtml(m.id)+'">'
     +'<div class="slide-frame"><iframe sandbox="allow-scripts" title="game" tabindex="-1"></iframe></div>'
-    +'<div class="slide-cover" style="'+coverStyleFor(m)+'">'+(m.cover?'':'<span class="card-glyph">'+glyphFor(m.id)+'</span>')+'</div>'
+    +slideCoverHtml(m)
   +'</div>';
 }
 function loopSlideHtml(m){
   return '<div class="swipe-slide loop" data-id="'+escapeHtml(m.id)+'" aria-hidden="true">'
-    +'<div class="slide-cover" style="'+coverStyleFor(m)+'">'+(m.cover?'':'<span class="card-glyph">'+glyphFor(m.id)+'</span>')+'</div>'
+    +slideCoverHtml(m)
   +'</div>';
 }
 function pagerAnchor(pager, i){
@@ -1624,8 +1752,8 @@ function buildSwipe(){
   if(swipeLoop) setPagerPosition(pager, pagerAnchor(pager, 0));
   swipeTransitioning = false;
   setActiveSlide(0);
-  var teachDockSwipe = scheduleDockHandDemo();
-  scheduleHorizontalCue(teachDockSwipe);
+  scheduleDockHandDemo();
+  scheduleHorizontalCue(false);
 }
 function setActiveSlide(i){
   var pager = $('#swipePager');
@@ -1663,6 +1791,7 @@ function setActiveSlide(i){
   var meta = swipeList[i];
   currentGame = meta;
   currentGameCode = codeCache[meta.id] || null;
+  renderPlayCreatorIdentity(meta);
   var active = slides[i];
   if(!active.dataset.counted){ active.dataset.counted = '1'; trackPlay(meta); }
   flashGameStats(meta);
@@ -1737,26 +1866,19 @@ function interruptSwipeMotion(){
   var pager = $('#swipePager');
   if(pager) pager.style.scrollSnapType = '';
 }
-var dockHandTimer = 0, dockHandHideTimer = 0, dockHandSeen = false;
-try{ dockHandSeen = localStorage.getItem('ra-dock-hand-demo-v2')==='1'; }catch(e){}
-function cancelDockHandDemo(learned){
+var dockHandTimer = 0, dockHandHideTimer = 0;
+function cancelDockHandDemo(){
   if(dockHandTimer){ clearTimeout(dockHandTimer); dockHandTimer = 0; }
   if(dockHandHideTimer){ clearTimeout(dockHandHideTimer); dockHandHideTimer = 0; }
   var demo = $('#dockSwipeDemo');
   if(demo) demo.classList.remove('show');
-  if(learned && !dockHandSeen){
-    dockHandSeen = true;
-    try{ localStorage.setItem('ra-dock-hand-demo-v2', '1'); }catch(e){}
-  }
 }
 function scheduleDockHandDemo(){
-  if(!HORIZONTAL_SWIPE || swipeReducedMotion || dockHandSeen || swipeList.length<2) return false;
-  if(dockHandTimer) clearTimeout(dockHandTimer);
+  if(!HORIZONTAL_SWIPE || swipeReducedMotion || swipeList.length<2) return false;
+  cancelDockHandDemo();
   dockHandTimer = setTimeout(function(){
     dockHandTimer = 0;
     if(!document.body.classList.contains('swipe-mode') || swipeTransitioning) return;
-    dockHandSeen = true;
-    try{ localStorage.setItem('ra-dock-hand-demo-v2', '1'); }catch(e){}
     var demo = $('#dockSwipeDemo');
     if(!demo) return;
     demo.classList.remove('show');
@@ -2237,8 +2359,9 @@ function titleFromPrompt(prompt){
   return prompt.length>60 ? prompt.slice(0,57)+'…' : prompt;
 }
 function runCreateJob(job){
-  setBuildStage(job, 'building', 'Building the game…', 4);
-  streamGame(SYS_JS, buildUserMessage('create', job.prompt, job.about, null), 3500).then(function(code){
+  var use3D = wants3D(job.prompt+' '+(job.about||''));
+  setBuildStage(job, 'building', use3D ? 'Building the 3D game…' : 'Building the game…', 4);
+  streamGame(use3D ? SYS_3D : SYS_JS, buildUserMessage('create', job.prompt, job.about, null), use3D ? 8000 : 3500).then(function(code){
     if(buildJob!==job) return;
     var id = uid();
     var meta = {id:id, title:job.title, prompt:job.prompt, desc:job.about, parentId:null, creator:job.creator, plays:0, recentPlays:[], createdAt:Date.now()};
@@ -2246,7 +2369,7 @@ function runCreateJob(job){
     return generateCover(meta.title, job.prompt).then(function(cover){
       if(buildJob!==job) return;
       if(cover) meta.cover = cover;
-      lastBuild = {id:id, html:assembleGame(code), meta:meta};
+      lastBuild = {id:id, html:use3D ? code : assembleGame(code), meta:meta};
       return finishBuild(lastBuild, job);
     });
   }).catch(function(e){
@@ -2305,6 +2428,7 @@ function handleRemixOrEdit(mode){
   var game = currentGame;
   var innerJs = currentGameCode ? extractGameJs(currentGameCode) : null;
   var isEngine = !!innerJs;
+  var is3D = !isEngine && is3DGameHtml(currentGameCode);
   var job = {
     kind:mode,
     title:mode==='edit' ? game.title : titleFromPrompt(prompt),
@@ -2312,10 +2436,10 @@ function handleRemixOrEdit(mode){
     creator:myName,
     game:game,
     isEngine:isEngine,
-    system:isEngine ? SYS_JS : SYS,
+    system:isEngine ? SYS_JS : (is3D ? SYS_3D : SYS),
     messageMode:(mode==='remix') ? (isEngine?'remix-js':'remix-full') : (isEngine?'edit-js':'edit-full'),
     base:isEngine ? innerJs : currentGameCode,
-    denom:isEngine ? 3500 : 7000
+    denom:isEngine ? 3500 : (is3D ? 8000 : 7000)
   };
   job.runner = function(){ runRemixJob(job); };
   $('#remixModal').classList.add('hidden');
@@ -2487,6 +2611,19 @@ function init(){
   initLightFX();
   setTimeout(function(){ $('#boot').classList.add('fade'); setTimeout(function(){ $('#boot').style.display='none'; },450); }, 1150);
 
+  var appRevealed = false;
+  function revealApp(degraded){
+    if(appRevealed) return;
+    if(degraded){ noteDegraded(); useLocalSeedGames(); }
+    appRevealed = true;
+    $('#app').classList.remove('hidden');
+    showScreen(firstVisit ? 'feed' : 'swipe');
+  }
+  var startupGuard = setTimeout(function(){
+    console.warn('[Remix Arcade '+BUILD+'] startup data was slow; opening with local games.');
+    revealApp(true);
+  }, 8000);
+
   sGet(NAME_KEY, false).then(function(name){
     myName = name;
     return sGet(VIEWER_KEY, false);
@@ -2508,10 +2645,12 @@ function init(){
   }).then(function(){
     return seedIfEmpty();
   }).then(function(){
-    setTimeout(function(){
-      $('#app').classList.remove('hidden');
-      showScreen(firstVisit ? 'feed' : 'swipe');
-    }, 1150);
+    clearTimeout(startupGuard);
+    revealApp(false);
+  }).catch(function(error){
+    clearTimeout(startupGuard);
+    console.warn('[Remix Arcade '+BUILD+'] startup recovered from an error:', error);
+    revealApp(true);
   });
 
   $('#nameGo').addEventListener('click', function(){
@@ -2771,6 +2910,7 @@ function init(){
     dockDragging = false;
     tabbar.classList.remove('dock-swiping');
     tabbar.style.removeProperty('--dock-glow-x');
+    tabbar.style.removeProperty('--dock-track-shift');
   }
   tabbar.addEventListener('pointerdown', function(e){
     if(!HORIZONTAL_SWIPE || !document.body.classList.contains('swipe-mode') || e.isPrimary===false) return;
@@ -2785,6 +2925,7 @@ function init(){
     dockLeft = dockRect.left;
     dockWidth = dockRect.width || 1;
     dockNextGlow = Math.max(0, Math.min(100, (e.clientX-dockLeft)/dockWidth*100));
+    tabbar.style.setProperty('--dock-track-shift', '0px');
   });
   tabbar.addEventListener('pointermove', function(e){
     if(dockPointer!==e.pointerId) return;
@@ -2807,6 +2948,7 @@ function init(){
     var max = Math.max(0, swipePager.scrollWidth-swipePager.clientWidth);
     dockNextScroll = Math.max(0, Math.min(max, dockStartScroll-dx));
     dockNextGlow = Math.max(0, Math.min(100, (e.clientX-dockLeft)/dockWidth*100));
+    tabbar.style.setProperty('--dock-track-shift', Math.max(-46, Math.min(46, dx*.5))+'px');
     if(!dockMoveRaf) dockMoveRaf = requestAnimationFrame(applyDockMove);
     e.preventDefault();
   });
@@ -2900,6 +3042,16 @@ function init(){
   $('#gameInfoRemix').addEventListener('click', openCurrentRemix);
   $('#gameCommentPost').addEventListener('click', postGameComment);
 
+  $('#railCreator').addEventListener('click', function(){
+    if(!currentGame) return;
+    var creator = currentGame.creator;
+    closeGameRail();
+    openCreator(creator);
+  });
+  $('#railCreatorFollow').addEventListener('click', function(){
+    if(!currentGame || currentGame.creator===myName) return;
+    toggleFollow(currentGame.creator, null);
+  });
   $('#railLike').addEventListener('click', function(){
     if(!currentGame) return;
     toggleLike(currentGame);
