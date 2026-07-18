@@ -404,6 +404,18 @@ body.swipe-mode .tab .tab-info-icon,body.swipe-mode .tab-info-label{display:flex
 .game-origin-tag{position:absolute;top:calc(12px + env(safe-area-inset-top));right:calc(var(--swipe-lane-w) + 10px);z-index:6;max-width:64%;padding:6px 12px;border-radius:999px;background:rgba(20,10,15,0.62);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(127,184,255,0.45);color:#CFE3FF;font-size:10.5px;font-weight:700;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;box-shadow:0 6px 16px -6px rgba(0,0,0,0.55);}
 body.horizontal-swipe.swipe-mode .game-origin-tag{right:12px;}
 body.gameplay-mode .game-origin-tag{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(20,10,15,0.88);}
+
+/* per-game leaderboard modal */
+.scores-list{display:flex;flex-direction:column;gap:6px;max-height:52vh;overflow-y:auto;margin-top:4px;}
+.score-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;background:rgba(255,255,255,0.045);border:1px solid rgba(255,205,170,0.1);font-size:13px;font-weight:600;color:var(--text);}
+.score-row .rank{width:28px;text-align:center;font-family:var(--font-d);font-size:11px;color:var(--text-dim);flex:none;}
+.score-row.top1 .rank{color:#FFC978;}
+.score-row.top2 .rank{color:#E8E3DC;}
+.score-row.top3 .rank{color:#FF9A5F;}
+.score-row .who{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.score-row .pts{font-family:var(--font-d);font-size:12px;color:#FFC978;flex:none;}
+.score-row.me{border-color:rgba(127,184,255,0.45);background:rgba(127,184,255,0.08);}
+.scores-empty{padding:18px 6px;text-align:center;color:var(--text-dim);font-size:13px;line-height:1.5;}
 .game-stats-flash.show{opacity:1;transform:translate(0,-50%);}
 .game-stats-flash span{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:700;color:var(--text);}
 .game-stats-flash .ic{width:18px;height:18px;color:var(--text-dim);}
@@ -520,6 +532,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
         <button class="rail-btn rail-like" id="railLike" aria-label="Like"><span class="bub"><svg class="ic hrt" viewBox="0 0 24 24"><path d="M12 20.3C6.5 16.6 3.5 13.4 3.5 9.9 3.5 7.2 5.6 5 8.2 5c1.5 0 3 .7 3.8 2 .8-1.3 2.3-2 3.8-2 2.6 0 4.7 2.2 4.7 4.9 0 3.5-3 6.7-8.5 10.4z"/></svg></span><span class="rail-count" id="railLikeCount">0</span></button>
         <button class="rail-btn" id="railComment" aria-label="Comments"><span class="bub"><svg class="ic" viewBox="0 0 24 24"><path d="M21 11.5c0 4.1-4 7.5-9 7.5-1 0-2-.13-2.9-.38L4 20l1.2-3.4C3.8 15.3 3 13.5 3 11.5 3 7.4 7 4 12 4s9 3.4 9 7.5z"/></svg></span><span class="rail-count" id="railCommentCount">0</span></button>
         <button class="rail-btn" id="railRemix" aria-label="Remix"><span class="bub"><svg class="ic" viewBox="0 0 24 24"><path d="M12 21.5V13M12 13 5.5 6.5M12 13V4.8M12 13l6.5-6.5"/><circle class="dot" cx="5.5" cy="6" r="1.8"/><circle class="dot" cx="12" cy="4.2" r="1.8"/><circle class="dot" cx="18.5" cy="6" r="1.8"/></svg></span><span class="rail-count" id="railRemixCount">0</span></button>
+        <button class="rail-btn" id="railScores" aria-label="Top scores"><span class="bub"><svg class="ic" viewBox="0 0 24 24"><path d="M7.5 4h9v3.6a4.5 4.5 0 0 1-9 0V4z"/><path d="M7.5 5.5H5a2.3 2.3 0 0 0 2.6 4M16.5 5.5H19a2.3 2.3 0 0 1-2.6 4"/><path d="M12 12.2V15M9 20h6M12 15c-1.3 0-2.2 1.8-2.2 5h4.4c0-3.2-.9-5-2.2-5z"/></svg></span><span class="rail-count">Top</span></button>
         <div class="rail-btn rail-views"><span class="bub"><svg class="ic solid" viewBox="0 0 24 24"><path d="M8 5.6c0-1.2 1.3-1.9 2.3-1.3l9.2 6.4c.9.6.9 2 0 2.6l-9.2 6.4c-1 .6-2.3-.1-2.3-1.3V5.6z"/></svg></span><span class="rail-count" id="railViewsCount">0</span></div>
       </div>
     </section>
@@ -648,7 +661,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
         <div class="follow-chips" id="followingList"></div>
       </div>
       <div class="feed-grid" id="profGrid"></div>
-      <p class="build-tag">Remix Arcade · build v67</p>
+      <p class="build-tag">Remix Arcade · build v68</p>
     </section>
 
   </main>
@@ -704,6 +717,13 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
     <h2 id="modalTitle">⑂ REMIX THIS GAME</h2>
     <div class="field"><textarea id="modalInput" rows="3" placeholder="One sentence: what should change?"></textarea></div>
     <button class="btn btn-primary btn-block" id="modalGo">Go</button>
+  </div>
+</div>
+
+<div id="scoresModal" class="modal hidden">
+  <div class="modal-sheet">
+    <h2>🏆 TOP SCORES</h2>
+    <div class="scores-list" id="scoresList"></div>
   </div>
 </div>
 
@@ -799,7 +819,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 <script>
 (function(){
 
-var BUILD = 'v67';
+var BUILD = 'v68';
 var HORIZONTAL_SWIPE = new URLSearchParams(location.search).get('nav')==='horizontal';
 document.body.classList.toggle('horizontal-swipe', HORIZONTAL_SWIPE);
 var META_PREFIX = 'ra-meta-';
@@ -841,7 +861,7 @@ var RANKS = [
 
 var streak = {count:0, lastDay:null};
 
-var SHELL_TOP = '<!DOCTYPE html>\n<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">\n<style>*{margin:0;padding:0;box-sizing:border-box}html,body{height:100%;background:#1E0F16;overflow:hidden;touch-action:none}canvas{display:block;width:100%;height:100%}#boot{position:fixed;inset:0;background:#1E0F16;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;color:#FF9A5F;font-family:monospace}#boot .g{font-size:48px}#boot .t{font-size:14px;letter-spacing:2px;margin-top:10px;color:#F7EEE4}</style></head>\n<body><div id="boot"><div class="g">\u2442</div><div class="t">REMIX ARCADE</div></div><canvas id="c"></canvas>\n<scr'+'ipt>\n(function(){\nfunction crashScreen(){try{document.body.innerHTML=\'<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#1E0F16;color:#FF5470;font-family:monospace;text-align:center;padding:24px;line-height:1.7">\u2442 GAME CRASHED<br><br>hit REMIX/EDIT and say:<br>&quot;fix the crash&quot;</div>\';}catch(e){}}\nwindow.addEventListener("error",crashScreen);\ntry{\nvar canvas=document.getElementById("c"),ctx=canvas.getContext("2d");\nvar W=0,H=0;function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;}resize();addEventListener("resize",resize);\nsetTimeout(function(){var b=document.getElementById("boot");if(b){b.style.transition="opacity .25s";b.style.opacity="0";setTimeout(function(){b.remove();},260);}},550);\nvar particles=[],shakeT=0,score=0,over=false,audioC=null;\nfunction rand(a,b){return a+Math.random()*(b-a);}\nfunction clamp(v,a,b){return v<a?a:(v>b?b:v);}\nfunction burst(x,y,col,n){n=n||12;for(var i=0;i<n&&particles.length<300;i++)particles.push({x:x,y:y,vx:rand(-3,3),vy:rand(-3,3),life:1,col:col||"#FF9A5F"});}\nfunction shake(p){shakeT=Math.max(shakeT,p||10);}\nfunction beep(f,d,t){try{if(!audioC)audioC=new (window.AudioContext||window.webkitAudioContext)();var o=audioC.createOscillator(),g=audioC.createGain();o.frequency.value=f;o.type=t||"square";o.connect(g);g.connect(audioC.destination);g.gain.setValueAtTime(0.06,audioC.currentTime);g.gain.exponentialRampToValueAtTime(0.001,audioC.currentTime+(d||0.15));o.start();o.stop(audioC.currentTime+(d||0.15));}catch(e){}}\nfunction addScore(n){score+=(n==null?1:n);}\nfunction getScore(){return score;}\nfunction gameOver(){if(!over){over=true;shake(14);beep(110,0.4);}}\nvar input={x:0,y:0,down:false,justTapped:false};\nvar keys={};\ncanvas.addEventListener("pointerdown",function(e){var r=canvas.getBoundingClientRect();input.x=e.clientX-r.left;input.y=e.clientY-r.top;if(over){restart();return;}input.down=true;input.justTapped=true;if(typeof onTap==="function")onTap(input.x,input.y);});\ncanvas.addEventListener("pointermove",function(e){var r=canvas.getBoundingClientRect();input.x=e.clientX-r.left;input.y=e.clientY-r.top;});\ncanvas.addEventListener("pointerup",function(){input.down=false;});\naddEventListener("keydown",function(e){keys[e.key]=true;if(over&&(e.key===" "||e.key==="Enter"))restart();});\naddEventListener("keyup",function(e){keys[e.key]=false;});\nwindow.addEventListener("message",function(e){var d=e.data;if(!d||d.type!=="ra-key")return;keys[d.key]=!!d.down;if(d.down&&over&&(d.key===" "||d.key==="Enter"))restart();});\nfunction restart(){score=0;over=false;particles=[];resetGame();}\n';
+var SHELL_TOP = '<!DOCTYPE html>\n<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">\n<style>*{margin:0;padding:0;box-sizing:border-box}html,body{height:100%;background:#1E0F16;overflow:hidden;touch-action:none}canvas{display:block;width:100%;height:100%}#boot{position:fixed;inset:0;background:#1E0F16;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;color:#FF9A5F;font-family:monospace}#boot .g{font-size:48px}#boot .t{font-size:14px;letter-spacing:2px;margin-top:10px;color:#F7EEE4}</style></head>\n<body><div id="boot"><div class="g">\u2442</div><div class="t">REMIX ARCADE</div></div><canvas id="c"></canvas>\n<scr'+'ipt>\n(function(){\nfunction crashScreen(){try{document.body.innerHTML=\'<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#1E0F16;color:#FF5470;font-family:monospace;text-align:center;padding:24px;line-height:1.7">\u2442 GAME CRASHED<br><br>hit REMIX/EDIT and say:<br>&quot;fix the crash&quot;</div>\';}catch(e){}}\nwindow.addEventListener("error",crashScreen);\ntry{\nvar canvas=document.getElementById("c"),ctx=canvas.getContext("2d");\nvar W=0,H=0;function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;}resize();addEventListener("resize",resize);\nsetTimeout(function(){var b=document.getElementById("boot");if(b){b.style.transition="opacity .25s";b.style.opacity="0";setTimeout(function(){b.remove();},260);}},550);\nvar particles=[],shakeT=0,score=0,over=false,audioC=null;\nfunction rand(a,b){return a+Math.random()*(b-a);}\nfunction clamp(v,a,b){return v<a?a:(v>b?b:v);}\nfunction burst(x,y,col,n){n=n||12;for(var i=0;i<n&&particles.length<300;i++)particles.push({x:x,y:y,vx:rand(-3,3),vy:rand(-3,3),life:1,col:col||"#FF9A5F"});}\nfunction shake(p){shakeT=Math.max(shakeT,p||10);}\nfunction beep(f,d,t){try{if(!audioC)audioC=new (window.AudioContext||window.webkitAudioContext)();var o=audioC.createOscillator(),g=audioC.createGain();o.frequency.value=f;o.type=t||"square";o.connect(g);g.connect(audioC.destination);g.gain.setValueAtTime(0.06,audioC.currentTime);g.gain.exponentialRampToValueAtTime(0.001,audioC.currentTime+(d||0.15));o.start();o.stop(audioC.currentTime+(d||0.15));}catch(e){}}\nfunction addScore(n){score+=(n==null?1:n);}\nfunction getScore(){return score;}\nfunction gameOver(){if(!over){over=true;shake(14);beep(110,0.4);try{parent.postMessage({type:"ra-score",score:Math.floor(score)},"*");}catch(e){}}}\nvar input={x:0,y:0,down:false,justTapped:false};\nvar keys={};\ncanvas.addEventListener("pointerdown",function(e){var r=canvas.getBoundingClientRect();input.x=e.clientX-r.left;input.y=e.clientY-r.top;if(over){restart();return;}input.down=true;input.justTapped=true;if(typeof onTap==="function")onTap(input.x,input.y);});\ncanvas.addEventListener("pointermove",function(e){var r=canvas.getBoundingClientRect();input.x=e.clientX-r.left;input.y=e.clientY-r.top;});\ncanvas.addEventListener("pointerup",function(){input.down=false;});\naddEventListener("keydown",function(e){keys[e.key]=true;if(over&&(e.key===" "||e.key==="Enter"))restart();});\naddEventListener("keyup",function(e){keys[e.key]=false;});\nwindow.addEventListener("message",function(e){var d=e.data;if(!d||d.type!=="ra-key")return;keys[d.key]=!!d.down;if(d.down&&over&&(d.key===" "||d.key==="Enter"))restart();});\nfunction restart(){score=0;over=false;particles=[];resetGame();}\n';
 
 var SHELL_BOTTOM = '\nsetTimeout(function(){try{var oc=document.createElement("canvas");var ow=240,oh=Math.round(ow*H/W)||340;oc.width=ow;oc.height=oh;oc.getContext("2d").drawImage(canvas,0,0,ow,oh);parent.postMessage({type:"ra-cover",data:oc.toDataURL("image/jpeg",0.55)},"*");}catch(e){}},3500);\nvar lastT=performance.now();\nfunction frame(t){\nvar dt=Math.min((t-lastT)/16.67,3);lastT=t;\nctx.save();\nif(shakeT>0){ctx.translate(rand(-shakeT,shakeT)*0.5,rand(-shakeT,shakeT)*0.5);shakeT*=0.85;if(shakeT<0.5)shakeT=0;}\nctx.fillStyle="#1E0F16";ctx.fillRect(-20,-20,W+40,H+40);\ntry{if(!over)update(dt);draw();}catch(e){crashScreen();return;}\nfor(var i=particles.length-1;i>=0;i--){var p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=0.15*dt;p.life-=0.03*dt;if(p.life<=0){particles.splice(i,1);continue;}ctx.globalAlpha=Math.max(p.life,0);ctx.fillStyle=p.col;ctx.fillRect(p.x-2,p.y-2,4,4);ctx.globalAlpha=1;}\nctx.fillStyle="#F7EEE4";ctx.font="bold 16px monospace";ctx.textAlign="left";ctx.fillText("SCORE "+Math.floor(score),14,26);\nif(over){ctx.fillStyle="rgba(32,16,22,0.75)";ctx.fillRect(-20,-20,W+40,H+40);ctx.textAlign="center";ctx.fillStyle="#FF5470";ctx.font="bold 22px monospace";ctx.fillText("GAME OVER",W/2,H/2-20);ctx.fillStyle="#FFC978";ctx.font="bold 16px monospace";ctx.fillText("SCORE "+Math.floor(score),W/2,H/2+10);ctx.fillStyle="#F7EEE4";ctx.font="14px monospace";ctx.fillText("tap to retry",W/2,H/2+40);}\nctx.restore();\ninput.justTapped=false;\nrequestAnimationFrame(frame);\n}\nresetGame();\nrequestAnimationFrame(frame);\n}catch(e){crashScreen();}\n})();\n</scr'+'ipt>\n</body></html>';
 
@@ -945,9 +965,9 @@ function is3DGameHtml(html){
 
 /* prebuilt 3D engine shell — like SHELL_TOP/SHELL_BOTTOM but three.js. The AI
    only writes resetGame()/update(dt) logic, so 3D generates as fast as 2D. */
-var SHELL3D_TOP = '<!DOCTYPE html>\n<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">\n<style>*{margin:0;padding:0;box-sizing:border-box}html,body{height:100%;background:#1E0F16;overflow:hidden;touch-action:none}canvas{display:block}#boot{position:fixed;inset:0;background:#1E0F16;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;color:#FF9A5F;font-family:monospace}#boot .g{font-size:48px}#boot .t{font-size:14px;letter-spacing:2px;margin-top:10px;color:#F7EEE4}#hud{position:fixed;top:14px;left:14px;z-index:5;color:#F7EEE4;font:bold 16px monospace;text-shadow:0 1px 4px rgba(0,0,0,0.8)}#over{position:fixed;inset:0;z-index:6;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(32,16,22,0.75);font-family:monospace;text-align:center}#over .go{color:#FF5470;font-size:22px;font-weight:bold}#over .sc{color:#FFC978;font-size:16px;font-weight:bold;margin-top:10px}#over .rt{color:#F7EEE4;font-size:14px;margin-top:16px}</style></head>\n<body><div id="boot"><div class="g">⑂</div><div class="t">REMIX ARCADE</div></div><div id="hud">SCORE 0</div><div id="over"><div class="go">GAME OVER</div><div class="sc" id="finalScore"></div><div class="rt">tap to retry</div></div>\n<scr'+'ipt src="'+THREE_SRC+'"></scr'+'ipt>\n<scr'+'ipt>\n(function(){\nfunction crashScreen(){try{document.body.innerHTML=\'<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#1E0F16;color:#FF5470;font-family:monospace;text-align:center;padding:24px;line-height:1.7">⑂ GAME CRASHED<br><br>hit REMIX/EDIT and say:<br>&quot;fix the crash&quot;</div>\';}catch(e){}}\nwindow.addEventListener("error",crashScreen);window.addEventListener("unhandledrejection",crashScreen);\ntry{\nif(!window.THREE){document.body.innerHTML=\'<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#1E0F16;color:#FFC978;font-family:monospace;text-align:center;padding:24px;line-height:1.7">⑂ 3D NEEDS INTERNET<br><br>check your connection,<br>then reopen this game</div>\';return;}\nvar W=innerWidth,H=innerHeight;\nvar renderer=new THREE.WebGLRenderer({antialias:false,preserveDrawingBuffer:true});\nrenderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.setSize(W,H);document.body.appendChild(renderer.domElement);\nvar scene=new THREE.Scene();scene.background=new THREE.Color(0x1E0F16);scene.fog=new THREE.Fog(0x1E0F16,20,70);\nvar camera=new THREE.PerspectiveCamera(70,W/H,0.1,300);camera.position.set(0,6,10);camera.lookAt(0,0,0);\nscene.add(new THREE.AmbientLight(0xffffff,0.6));\nvar sun=new THREE.DirectionalLight(0xFFC978,0.9);sun.position.set(4,10,6);scene.add(sun);\nvar world=new THREE.Group();scene.add(world);\naddEventListener("resize",function(){W=innerWidth;H=innerHeight;renderer.setSize(W,H);camera.aspect=W/H;camera.updateProjectionMatrix();});\nsetTimeout(function(){var b=document.getElementById("boot");if(b){b.style.transition="opacity .25s";b.style.opacity="0";setTimeout(function(){b.remove();},260);}},550);\nvar particles=[],score=0,over=false,audioC=null,shakeT=0;\nvar hudEl=document.getElementById("hud"),overEl=document.getElementById("over"),fsEl=document.getElementById("finalScore");\nfunction rand(a,b){return a+Math.random()*(b-a);}\nfunction clamp(v,a,b){return v<a?a:(v>b?b:v);}\nfunction beep(f,d,t){try{if(!audioC)audioC=new (window.AudioContext||window.webkitAudioContext)();var o=audioC.createOscillator(),g=audioC.createGain();o.frequency.value=f;o.type=t||"square";o.connect(g);g.connect(audioC.destination);g.gain.setValueAtTime(0.06,audioC.currentTime);g.gain.exponentialRampToValueAtTime(0.001,audioC.currentTime+(d||0.15));o.start();o.stop(audioC.currentTime+(d||0.15));}catch(e){}}\nfunction addScore(n){score+=(n==null?1:n);}\nfunction getScore(){return score;}\nfunction shake(p){shakeT=Math.max(shakeT,p||10);}\nvar burstGeo=new THREE.BoxGeometry(0.2,0.2,0.2);\nfunction burst3d(x,y,z,color,n){n=n||10;for(var i=0;i<n&&particles.length<80;i++){var m=new THREE.Mesh(burstGeo,new THREE.MeshBasicMaterial({color:color||0xFF9A5F}));m.position.set(x,y,z);scene.add(m);particles.push({m:m,vx:rand(-0.18,0.18),vy:rand(0.06,0.3),vz:rand(-0.18,0.18),life:1});}}\nfunction clearParticles(){for(var i=0;i<particles.length;i++){scene.remove(particles[i].m);particles[i].m.material.dispose();}particles=[];}\nfunction gameOver(){if(!over){over=true;shake(14);beep(110,0.4);fsEl.textContent="SCORE "+Math.floor(score);overEl.style.display="flex";}}\nvar input={x:0,y:0,down:false,justTapped:false,dragX:0,dragY:0};\nvar startX=0,startY=0,keys={};\naddEventListener("pointerdown",function(e){input.x=e.clientX;input.y=e.clientY;startX=e.clientX;startY=e.clientY;input.dragX=0;input.dragY=0;if(over){restart();return;}input.down=true;input.justTapped=true;if(typeof onTap==="function")onTap(input.x,input.y);});\naddEventListener("pointermove",function(e){input.x=e.clientX;input.y=e.clientY;if(input.down){input.dragX=e.clientX-startX;input.dragY=e.clientY-startY;}});\naddEventListener("pointerup",function(){input.down=false;input.dragX=0;input.dragY=0;});\naddEventListener("keydown",function(e){keys[e.key]=true;if(over&&(e.key===" "||e.key==="Enter"))restart();});\naddEventListener("keyup",function(e){keys[e.key]=false;});\nwindow.addEventListener("message",function(e){var d=e.data;if(!d||d.type!=="ra-key")return;keys[d.key]=!!d.down;if(d.down&&over&&(d.key===" "||d.key==="Enter"))restart();});\nfunction restart(){score=0;over=false;overEl.style.display="none";clearParticles();while(world.children.length)world.remove(world.children[0]);resetGame();}\n';
+var SHELL3D_TOP = '<!DOCTYPE html>\n<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">\n<style>*{margin:0;padding:0;box-sizing:border-box}html,body{height:100%;background:#1E0F16;overflow:hidden;touch-action:none}canvas{display:block}#boot{position:fixed;inset:0;background:#1E0F16;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;color:#FF9A5F;font-family:monospace}#boot .g{font-size:48px}#boot .t{font-size:14px;letter-spacing:2px;margin-top:10px;color:#F7EEE4}#hud{position:fixed;top:14px;left:14px;z-index:5;color:#F7EEE4;font:bold 16px monospace;text-shadow:0 1px 4px rgba(0,0,0,0.8)}#over{position:fixed;inset:0;z-index:6;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(32,16,22,0.75);font-family:monospace;text-align:center}#over .go{color:#FF5470;font-size:22px;font-weight:bold}#over .sc{color:#FFC978;font-size:16px;font-weight:bold;margin-top:10px}#over .rt{color:#F7EEE4;font-size:14px;margin-top:16px}</style></head>\n<body><div id="boot"><div class="g">⑂</div><div class="t">REMIX ARCADE</div></div><div id="hud">SCORE 0</div><div id="over"><div class="go">GAME OVER</div><div class="sc" id="finalScore"></div><div class="rt">tap to retry</div></div>\n<scr'+'ipt src="'+THREE_SRC+'"></scr'+'ipt>\n<scr'+'ipt>\n(function(){\nfunction crashScreen(){try{document.body.innerHTML=\'<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#1E0F16;color:#FF5470;font-family:monospace;text-align:center;padding:24px;line-height:1.7">⑂ GAME CRASHED<br><br>hit REMIX/EDIT and say:<br>&quot;fix the crash&quot;</div>\';}catch(e){}}\nwindow.addEventListener("error",crashScreen);window.addEventListener("unhandledrejection",crashScreen);\ntry{\nif(!window.THREE){document.body.innerHTML=\'<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#1E0F16;color:#FFC978;font-family:monospace;text-align:center;padding:24px;line-height:1.7">⑂ 3D NEEDS INTERNET<br><br>check your connection,<br>then reopen this game</div>\';return;}\nvar W=innerWidth,H=innerHeight;\nvar renderer=new THREE.WebGLRenderer({antialias:false,preserveDrawingBuffer:true});\nrenderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.setSize(W,H);document.body.appendChild(renderer.domElement);\nvar scene=new THREE.Scene();scene.background=new THREE.Color(0x1E0F16);scene.fog=new THREE.Fog(0x1E0F16,20,70);\nvar camera=new THREE.PerspectiveCamera(70,W/H,0.1,300);camera.position.set(0,6,10);camera.lookAt(0,0,0);\nscene.add(new THREE.AmbientLight(0xffffff,0.6));\nvar sun=new THREE.DirectionalLight(0xFFC978,0.9);sun.position.set(4,10,6);scene.add(sun);\nvar world=new THREE.Group();scene.add(world);\naddEventListener("resize",function(){W=innerWidth;H=innerHeight;renderer.setSize(W,H);camera.aspect=W/H;camera.updateProjectionMatrix();});\nsetTimeout(function(){var b=document.getElementById("boot");if(b){b.style.transition="opacity .25s";b.style.opacity="0";setTimeout(function(){b.remove();},260);}},550);\nvar particles=[],score=0,over=false,audioC=null,shakeT=0;\nvar hudEl=document.getElementById("hud"),overEl=document.getElementById("over"),fsEl=document.getElementById("finalScore");\nfunction rand(a,b){return a+Math.random()*(b-a);}\nfunction clamp(v,a,b){return v<a?a:(v>b?b:v);}\nfunction beep(f,d,t){try{if(!audioC)audioC=new (window.AudioContext||window.webkitAudioContext)();var o=audioC.createOscillator(),g=audioC.createGain();o.frequency.value=f;o.type=t||"square";o.connect(g);g.connect(audioC.destination);g.gain.setValueAtTime(0.06,audioC.currentTime);g.gain.exponentialRampToValueAtTime(0.001,audioC.currentTime+(d||0.15));o.start();o.stop(audioC.currentTime+(d||0.15));}catch(e){}}\nfunction addScore(n){score+=(n==null?1:n);}\nfunction getScore(){return score;}\nfunction shake(p){shakeT=Math.max(shakeT,p||10);}\nvar burstGeo=new THREE.BoxGeometry(0.2,0.2,0.2);\nfunction burst3d(x,y,z,color,n){n=n||10;for(var i=0;i<n&&particles.length<80;i++){var m=new THREE.Mesh(burstGeo,new THREE.MeshBasicMaterial({color:color||0xFF9A5F}));m.position.set(x,y,z);scene.add(m);particles.push({m:m,vx:rand(-0.18,0.18),vy:rand(0.06,0.3),vz:rand(-0.18,0.18),life:1});}}\nfunction clearParticles(){for(var i=0;i<particles.length;i++){scene.remove(particles[i].m);particles[i].m.material.dispose();}particles=[];}\nfunction gameOver(){if(!over){over=true;shake(14);beep(110,0.4);fsEl.textContent="SCORE "+Math.floor(score);overEl.style.display="flex";try{parent.postMessage({type:"ra-score",score:Math.floor(score)},"*");}catch(e){}}}\nvar input={x:0,y:0,down:false,justTapped:false,dragX:0,dragY:0};\nvar stick={x:0,y:0,active:false},look={dx:0,dy:0};\nvar stickOn=false,stickPid=-1,lookPid=-1,lastLX=0,lastLY=0,stickCX=0,stickCY=0,stickBase=null,stickNub=null;\nfunction enableJoystick(){if(stickOn)return;stickOn=true;stickBase=document.createElement("div");stickBase.style.cssText="position:fixed;left:24px;bottom:90px;width:104px;height:104px;border-radius:50%;background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.25);z-index:7;pointer-events:none";stickNub=document.createElement("div");stickNub.style.cssText="position:absolute;left:50%;top:50%;width:46px;height:46px;border-radius:50%;background:rgba(255,201,120,0.6);border:1.5px solid rgba(255,255,255,0.45);transform:translate(-50%,-50%)";stickBase.appendChild(stickNub);document.body.appendChild(stickBase);}\nfunction resetStick(){stickPid=-1;stick.x=0;stick.y=0;stick.active=false;if(stickNub)stickNub.style.transform="translate(-50%,-50%)";}\nvar startX=0,startY=0,keys={};\naddEventListener("pointerdown",function(e){if(over){restart();return;}if(stickOn&&e.clientX<W*0.45&&stickPid<0){stickPid=e.pointerId;stickCX=e.clientX;stickCY=e.clientY;stick.active=true;if(stickBase){stickBase.style.left=(e.clientX-52)+"px";stickBase.style.top=(e.clientY-52)+"px";stickBase.style.bottom="auto";}return;}if(stickOn){lookPid=e.pointerId;lastLX=e.clientX;lastLY=e.clientY;}input.x=e.clientX;input.y=e.clientY;startX=e.clientX;startY=e.clientY;input.dragX=0;input.dragY=0;input.down=true;input.justTapped=true;if(typeof onTap==="function")onTap(input.x,input.y);});\naddEventListener("pointermove",function(e){if(stickOn&&e.pointerId===stickPid){var sdx=e.clientX-stickCX,sdy=e.clientY-stickCY;var sm=Math.sqrt(sdx*sdx+sdy*sdy)||1;var sc=Math.min(sm,42);stick.x=sdx/sm*(sc/42);stick.y=sdy/sm*(sc/42);if(stickNub)stickNub.style.transform="translate(-50%,-50%) translate("+(sdx/sm*sc)+"px,"+(sdy/sm*sc)+"px)";return;}if(stickOn&&e.pointerId===lookPid){look.dx+=e.clientX-lastLX;look.dy+=e.clientY-lastLY;lastLX=e.clientX;lastLY=e.clientY;}input.x=e.clientX;input.y=e.clientY;if(input.down){input.dragX=e.clientX-startX;input.dragY=e.clientY-startY;}});\nfunction endPointer(e){if(stickOn&&e.pointerId===stickPid){resetStick();return;}if(stickOn&&e.pointerId===lookPid)lookPid=-1;input.down=false;input.dragX=0;input.dragY=0;}\naddEventListener("pointerup",endPointer);\naddEventListener("pointercancel",endPointer);\naddEventListener("keydown",function(e){keys[e.key]=true;if(over&&(e.key===" "||e.key==="Enter"))restart();});\naddEventListener("keyup",function(e){keys[e.key]=false;});\nwindow.addEventListener("message",function(e){var d=e.data;if(!d||d.type!=="ra-key")return;keys[d.key]=!!d.down;if(d.down&&over&&(d.key===" "||d.key==="Enter"))restart();});\nfunction restart(){score=0;over=false;overEl.style.display="none";clearParticles();resetStick();look.dx=0;look.dy=0;while(world.children.length)world.remove(world.children[0]);resetGame();}\n';
 
-var SHELL3D_BOTTOM = '\nsetTimeout(function(){try{var oc=document.createElement("canvas");var ow=240,oh=Math.round(ow*H/W)||340;oc.width=ow;oc.height=oh;oc.getContext("2d").drawImage(renderer.domElement,0,0,ow,oh);parent.postMessage({type:"ra-cover",data:oc.toDataURL("image/jpeg",0.55)},"*");}catch(e){}},3500);\nvar lastT=performance.now();\nfunction frame(t){\nvar dt=Math.min((t-lastT)/16.67,3);lastT=t;\ntry{if(!over)update(dt);}catch(e){crashScreen();return;}\nfor(var i=particles.length-1;i>=0;i--){var p=particles[i];p.m.position.x+=p.vx*dt;p.m.position.y+=p.vy*dt;p.m.position.z+=p.vz*dt;p.vy-=0.012*dt;p.life-=0.03*dt;if(p.life<=0){scene.remove(p.m);p.m.material.dispose();particles.splice(i,1);continue;}p.m.scale.setScalar(Math.max(p.life,0.01));}\nhudEl.textContent="SCORE "+Math.floor(score);\nvar ox=0,oy=0;\nif(shakeT>0){ox=rand(-shakeT,shakeT)*0.02;oy=rand(-shakeT,shakeT)*0.02;shakeT*=0.85;if(shakeT<0.5)shakeT=0;}\ncamera.position.x+=ox;camera.position.y+=oy;\nrenderer.render(scene,camera);\ncamera.position.x-=ox;camera.position.y-=oy;\ninput.justTapped=false;\nrequestAnimationFrame(frame);\n}\nresetGame();\nrequestAnimationFrame(frame);\n}catch(e){crashScreen();}\n})();\n</scr'+'ipt>\n</body></html>';
+var SHELL3D_BOTTOM = '\nsetTimeout(function(){try{var oc=document.createElement("canvas");var ow=240,oh=Math.round(ow*H/W)||340;oc.width=ow;oc.height=oh;oc.getContext("2d").drawImage(renderer.domElement,0,0,ow,oh);parent.postMessage({type:"ra-cover",data:oc.toDataURL("image/jpeg",0.55)},"*");}catch(e){}},3500);\nvar lastT=performance.now();\nfunction frame(t){\nvar dt=Math.min((t-lastT)/16.67,3);lastT=t;\ntry{if(!over)update(dt);}catch(e){crashScreen();return;}\nfor(var i=particles.length-1;i>=0;i--){var p=particles[i];p.m.position.x+=p.vx*dt;p.m.position.y+=p.vy*dt;p.m.position.z+=p.vz*dt;p.vy-=0.012*dt;p.life-=0.03*dt;if(p.life<=0){scene.remove(p.m);p.m.material.dispose();particles.splice(i,1);continue;}p.m.scale.setScalar(Math.max(p.life,0.01));}\nhudEl.textContent="SCORE "+Math.floor(score);\nvar ox=0,oy=0;\nif(shakeT>0){ox=rand(-shakeT,shakeT)*0.02;oy=rand(-shakeT,shakeT)*0.02;shakeT*=0.85;if(shakeT<0.5)shakeT=0;}\ncamera.position.x+=ox;camera.position.y+=oy;\nrenderer.render(scene,camera);\ncamera.position.x-=ox;camera.position.y-=oy;\ninput.justTapped=false;look.dx=0;look.dy=0;\nrequestAnimationFrame(frame);\n}\nresetGame();\nrequestAnimationFrame(frame);\n}catch(e){crashScreen();}\n})();\n</scr'+'ipt>\n</body></html>';
 
 function assembleGame3D(js){
   return SHELL3D_TOP + '\n' + GAME_START + '\n' + js + '\n' + GAME_END + SHELL3D_BOTTOM;
@@ -969,14 +989,22 @@ ENGINE GLOBALS AND HELPERS AVAILABLE TO YOU:
 - W, H — viewport size in pixels (updates on resize).
 - input — {x, y, down, justTapped, dragX, dragY}: pointer position, pressed state, tap-started-this-frame, and drag distance since the pointer went down (dragX is ideal for steering).
 - keys — currently held keys, e.g. keys['ArrowLeft'], keys['a'], keys[' '].
+- enableJoystick(), stick — {x, y, active}, look — {dx, dy}: mobile FPS controls, see FIRST-PERSON MODE below. Only call enableJoystick() for first-person games.
 - burst3d(x, y, z, color, n) — particle explosion at a world position (color is a hex number like 0xFF9A5F). shake(power) — camera shake. beep(freq, seconds, type) — WebAudio tone ('square'/'sine'/'triangle').
 - addScore(n) — add to the score (engine draws the HUD). getScore() — read it. gameOver() — end the run (engine shows game over + tap to retry automatically).
 - rand(a, b), clamp(v, a, b).
 
+FIRST-PERSON MODE (use when the idea asks for a shooter, FPS, or first-person game):
+- Call enableJoystick() once inside resetGame(). This shows a left-thumb virtual joystick and splits touch like a mobile FPS: the left half of the screen moves (read stick.x and stick.y, each -1..1), the right half looks (read look.dx and look.dy — pixel deltas for this frame; the engine resets them every frame) and right-side taps fire onTap.
+- Drive the camera yourself: keep a yaw variable (and a small clamped pitch) updated from look.dx/look.dy, move the camera with stick relative to yaw, and aim shots straight out of the camera (a distance-plus-angle cone check against targets is enough — no physics engine).
+- Add a small crosshair in the screen center (an HTML overlay div is fine). Auto-fire or tap-to-fire both work; tap-to-fire uses onTap.
+- On desktop also support WASD/arrows to move and holding a mouse drag to turn.
+- Targets stay abstract and kid-safe: blocky drones, crystals, robots that pop with burst3d — never humans, never blood.
+
 GAME DESIGN REQUIREMENTS:
-- One clear 3D arcade mechanic: lane runner, tunnel dodger, rolling-ball collector, block stacker, or similar. The first tap or key press is already gameplay — never a menu.
+- One clear 3D arcade mechanic: lane runner, tunnel dodger, rolling-ball collector, block stacker, first-person arena shooter (see FIRST-PERSON MODE), or similar. The first tap or key press is already gameplay — never a menu.
 - Touch first: steer with input.dragX or input.x, act with onTap; also support arrow keys/WASD/space via keys. Design for a phone held in portrait.
-- Camera simple and readable — chase cam or fixed angle that YOUR code controls. Never require the player to move the camera.
+- Camera simple and readable — chase cam, fixed angle, or first-person via FIRST-PERSON MODE; YOUR code controls it. Never demand extra camera fiddling from the player.
 - Low-poly primitives only (BoxGeometry, SphereGeometry, ConeGeometry, CylinderGeometry, TorusGeometry, PlaneGeometry) with MeshLambertMaterial or MeshBasicMaterial. Create shared geometries/materials once with var, reuse them across meshes.
 - Palette: sunset orange 0xFF9A5F, rose 0xFF8FAE, gold 0xFFC978, coral 0xFF5470 on the deep ember background. Chunky, readable shapes.
 - Keep at most a few dozen active meshes; recycle instead of endlessly creating. Must hold 60fps on a mid-range phone.
@@ -1844,7 +1872,7 @@ function setActiveSlide(i){
               if(!swipeList[swipeActive] || slide.dataset.id!==swipeList[swipeActive].id) return;
               focusActiveGame();
             };
-            frame.srcdoc = injectCrashGuard(code);
+            frame.srcdoc = injectCrashGuard(injectScoreReporter(code));
             slide.dataset.loaded = '1';
           }
           slide.classList.add('live');
@@ -2084,6 +2112,70 @@ function openCreator(name){
   showScreen('creator');
 }
 
+/* retrofit score reporting into games stored before v68 — their embedded
+   shells share exact gameOver() strings, so a targeted replace upgrades them
+   at load time. New shells already contain the ra-score post (no-op here). */
+function injectScoreReporter(html){
+  if(!html || html.indexOf('ra-score')>-1) return html;
+  var report = 'try{parent.postMessage({type:"ra-score",score:Math.floor(score)},"*");}catch(e){}';
+  html = html.replace('function gameOver(){if(!over){over=true;shake(14);beep(110,0.4);}}',
+    'function gameOver(){if(!over){over=true;shake(14);beep(110,0.4);'+report+'}}');
+  html = html.replace('function gameOver(){if(!over){over=true;shake(14);beep(110,0.4);fsEl.textContent="SCORE "+Math.floor(score);overEl.style.display="flex";}}',
+    'function gameOver(){if(!over){over=true;shake(14);beep(110,0.4);fsEl.textContent="SCORE "+Math.floor(score);overEl.style.display="flex";'+report+'}}');
+  return html;
+}
+function scoreKey(id){ return 'ra-scores-'+id; }
+function playerLabel(){
+  if(myName) return myName;
+  return 'Guest-'+String(viewerId||'anon').replace(/[^a-zA-Z0-9]/g,'').slice(-6);
+}
+function recordScore(meta, score){
+  if(!meta) return;
+  score = Math.floor(Number(score));
+  if(!isFinite(score) || score<=0 || score>1e9) return;
+  var key = scoreKey(meta.id);
+  sGet(key, true).then(function(raw){
+    var entries = {};
+    try{ entries = (JSON.parse(raw)||{}).entries || {}; }catch(e){}
+    var label = playerLabel();
+    if(entries[label] && entries[label].score>=score) return;
+    entries[label] = {score:score, at:Date.now()};
+    var names = Object.keys(entries);
+    if(names.length>50){
+      names.sort(function(a,b){ return (entries[b].score||0)-(entries[a].score||0); });
+      var trimmed = {};
+      names.slice(0,50).forEach(function(n){ trimmed[n] = entries[n]; });
+      entries = trimmed;
+    }
+    sSet(key, JSON.stringify({entries:entries}), true);
+  });
+}
+function openScoresModal(){
+  if(!currentGame) return;
+  var list = $('#scoresList');
+  list.innerHTML = '<div class="scores-empty">Loading…</div>';
+  $('#scoresModal').classList.remove('hidden');
+  var id = currentGame.id;
+  sGet(scoreKey(id), true).then(function(raw){
+    if(!currentGame || currentGame.id!==id) return;
+    var entries = {};
+    try{ entries = (JSON.parse(raw)||{}).entries || {}; }catch(e){}
+    var names = Object.keys(entries);
+    if(!names.length){
+      list.innerHTML = '<div class="scores-empty">No scores yet.<br>Finish a run to set the first one!</div>';
+      return;
+    }
+    names.sort(function(a,b){ return (entries[b].score||0)-(entries[a].score||0); });
+    var me = playerLabel();
+    list.innerHTML = names.slice(0,10).map(function(n,i){
+      return '<div class="score-row top'+(i+1)+(n===me?' me':'')+'">'
+        +'<span class="rank">#'+(i+1)+'</span>'
+        +'<span class="who">'+escapeHtml(n)+(n===me?' (you)':'')+'</span>'
+        +'<span class="pts">'+fmt(entries[n].score)+'</span>'
+      +'</div>';
+    }).join('');
+  });
+}
 function injectCrashGuard(html){
   var guard = '<script>(function(){function sc(){try{document.documentElement.innerHTML=\'<body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:#1E0F16;color:#FF5470;font-family:monospace;text-align:center;padding:24px;font-size:14px;line-height:1.7;">⑂ GAME CRASHED<br><br>hit REMIX/EDIT and say:<br>&quot;fix the crash&quot;</body>\';}catch(e){}}window.addEventListener("error",sc);window.addEventListener("unhandledrejection",sc);})();<\/script>';
   if(/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, function(m){ return m+guard; });
@@ -2171,7 +2263,7 @@ function openGame(id){
   showScreen('game');
   sGet(CODE_PREFIX+id, true).then(function(code){
     currentGameCode = code;
-    $('#gameFrame').srcdoc = injectCrashGuard(code||'<body style="background:#1E0F16"></body>');
+    $('#gameFrame').srcdoc = injectCrashGuard(injectScoreReporter(code)||'<body style="background:#1E0F16"></body>');
     $('#statPlays').textContent = fmt(meta.plays);
     $('#statRemixes').textContent = fmt(meta._directRemixes);
     $('#statTree').textContent = fmt(meta._descendants);
@@ -2899,6 +2991,11 @@ function init(){
     currentGame.cover = d.data;
     sSet(META_PREFIX+currentGame.id, JSON.stringify(currentGame), true);
   });
+  window.addEventListener('message', function(e){
+    var d = e.data;
+    if(!d || d.type!=='ra-score' || !currentGame) return;
+    recordScore(currentGame, d.score);
+  });
 
   var SCROLL_KEYS = ['ArrowUp','ArrowDown',' ','PageUp','PageDown','Home','End'];
   function forwardKey(e, down){
@@ -3172,6 +3269,7 @@ function init(){
   });
   $('#railComment').addEventListener('click', openGameInfo);
   $('#railRemix').addEventListener('click', openCurrentRemix);
+  $('#railScores').addEventListener('click', openScoresModal);
   $('#gameCommentInput').addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); postGameComment(); } });
 
   $('#createGo').addEventListener('click', handleCreate);
@@ -3209,6 +3307,7 @@ function init(){
   });
   $('#modalGo').addEventListener('click', function(){ handleRemixOrEdit($('#remixModal').dataset.mode); });
   $('#remixModal').addEventListener('click', function(e){ if(e.target.id==='remixModal') e.target.classList.add('hidden'); });
+  $('#scoresModal').addEventListener('click', function(e){ if(e.target.id==='scoresModal') e.target.classList.add('hidden'); });
 
   var reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   var hoverCapable = matchMedia('(hover:hover)').matches;
