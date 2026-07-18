@@ -661,7 +661,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
         <div class="follow-chips" id="followingList"></div>
       </div>
       <div class="feed-grid" id="profGrid"></div>
-      <p class="build-tag">Remix Arcade · build v70</p>
+      <p class="build-tag">Remix Arcade · build v71</p>
     </section>
 
   </main>
@@ -819,7 +819,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 <script>
 (function(){
 
-var BUILD = 'v70';
+var BUILD = 'v71';
 var HORIZONTAL_SWIPE = new URLSearchParams(location.search).get('nav')==='horizontal';
 document.body.classList.toggle('horizontal-swipe', HORIZONTAL_SWIPE);
 var META_PREFIX = 'ra-meta-';
@@ -2390,9 +2390,9 @@ function updateBuildUI(){
   status.dataset.state = state;
   status.classList.remove('hidden');
   document.body.classList.toggle('build-active', buildJobIsActive());
-  $('#buildStatusTitle').textContent = state==='ready' ? 'Your game is ready' : (state==='error' ? 'Build needs attention' : buildJob.title);
+  $('#buildStatusTitle').textContent = state==='ready' ? 'Your game is ready' : (state==='error' ? 'Couldn’t finish the game' : buildJob.title);
   $('#buildStatusStage').textContent = buildJob.stage;
-  $('#buildViewTitle').textContent = state==='error' ? 'Build paused' : 'Building '+buildJob.title;
+  $('#buildViewTitle').textContent = state==='error' ? 'Couldn’t finish this game' : 'Building '+buildJob.title;
   $('#buildStageText').textContent = buildJob.stage;
   $('#buildMetaStage').textContent = buildJob.stage;
   $('#buildFocus').dataset.state = state;
@@ -2401,7 +2401,13 @@ function updateBuildUI(){
   var close = $('#buildStatusClose');
   action.classList.toggle('hidden', state==='building');
   close.classList.toggle('hidden', state==='building');
-  action.textContent = state==='ready' ? 'Play' : 'Retry';
+  var actionLabel = 'Retry with AI';
+  if(state==='ready') actionLabel = 'Play';
+  else if(buildJob.retryKind==='save') actionLabel = 'Retry publish';
+  else if(buildJob.retryKind==='validation') actionLabel = 'Check again — free';
+  else if(buildJob.retryKind==='wait') actionLabel = 'Back to prompt';
+  action.textContent = actionLabel;
+  $('#saveRetry').textContent = actionLabel;
   $('#saveRetry').classList.toggle('hidden', state!=='error');
   if($('#screen-create') && !$('#screen-create').classList.contains('hidden')) renderCreateMode();
 }
@@ -2445,6 +2451,30 @@ function retryBuildJob(){
   if(job.retryKind==='save' && lastBuild){
     setBuildStage(job, 'saving', 'Publishing your game…', 92);
     finishBuild(lastBuild, job);
+    return;
+  }
+  if(job.retryKind==='wait'){
+    if(job.kind==='create'){
+      $('#promptInput').value = job.prompt;
+      $('#aboutInput').value = job.about;
+      dismissBuildJob();
+      showScreen('create');
+    } else {
+      currentGame = job.game;
+      currentGameCode = job.sourceCode;
+      $('#modalInput').value = job.prompt;
+      $('#modalTitle').textContent = job.kind==='edit' ? '✎ EDIT YOUR GAME' : '⑂ MAKE YOUR VERSION';
+      $('#modalGo').textContent = job.kind==='edit' ? 'Save changes' : 'Create version';
+      $('#remixModal').dataset.mode = job.kind;
+      dismissBuildJob();
+      $('#remixModal').classList.remove('hidden');
+    }
+    return;
+  }
+  if(job.retryKind==='validation' && job.retryWithoutGeneration){
+    job.validationRetried = true;
+    setBuildStage(job, 'building', 'Checking the saved game again — no AI used…', 79);
+    job.retryWithoutGeneration().catch(function(error){ handleBuildError(job, error, job.kind==='create' ? 'game' : 'version'); });
     return;
   }
   pendingCode = '';
@@ -2612,6 +2642,39 @@ function scheduleTerminalUpdate(){
   });
 }
 
+function generationError(message, retryKind, code){
+  var error = new Error(message);
+  error.isGenerationError = true;
+  error.userMessage = message;
+  error.retryKind = retryKind || 'generation';
+  error.code = code || 'generation_failed';
+  return error;
+}
+function providerErrorText(raw){
+  var text = String(raw||'').trim();
+  try{
+    var data = JSON.parse(text);
+    if(typeof data.error==='string') text = data.error;
+    else if(data.error && typeof data.error.message==='string') text = data.error.message;
+    else if(typeof data.message==='string') text = data.message;
+  }catch(e){}
+  return text.replace(/\s+/g,' ').trim().slice(0,240);
+}
+function mappedGenerationError(status, raw){
+  var detail = providerErrorText(raw);
+  var lower = detail.toLowerCase();
+  if(status===429){
+    if(/budget|daily|tomorrow/.test(lower)) return generationError('Today’s shared AI budget has been reached. Your prompt is saved; come back after the daily reset.', 'wait', 'daily_limit');
+    return generationError('This connection has reached the beta limit of 6 AI requests per hour. Your prompt is saved; try again in about an hour.', 'wait', 'hourly_limit');
+  }
+  if(/credit|balance|quota|insufficient|billing/.test(lower)) return generationError('The AI account does not have enough credit right now. Your prompt is saved and no game was published.', 'wait', 'provider_credit');
+  if(/content.?filter|moderation|policy|safety|copyright|trademark|refus/.test(lower)) return generationError('The AI service declined this prompt. Named franchises can sometimes trigger provider rules; edit the prompt or use original characters before trying again.', 'wait', 'provider_policy');
+  if(status===401 || status===403) return generationError('The AI service rejected the site’s API access. The API key or account needs attention; your prompt is saved.', 'wait', 'provider_access');
+  if(status>=500) return generationError('The AI service had a temporary error. Your prompt is saved. Trying again will start a new paid AI request.', 'generation', 'provider_unavailable');
+  if(detail) return generationError('The AI service stopped the build: '+detail+' Trying again will start a new paid AI request.', 'generation', 'provider_error');
+  return generationError('The AI service stopped the build. Trying again will start a new paid AI request.', 'generation', 'provider_error');
+}
+
 function streamGame(system, userMsg, denom){
   pendingCode = '';
   progressDenom = denom || 7000;
@@ -2623,10 +2686,12 @@ function streamGame(system, userMsg, denom){
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:16000, stream:true, system: system, messages:[{role:'user', content: userMsg}] })
   }).then(function(resp){
-    if(!resp.ok || !resp.body) throw new Error('generation failed');
+    if(!resp.ok) return resp.text().then(function(raw){ throw mappedGenerationError(resp.status, raw); });
+    if(!resp.body) throw generationError('The AI service returned no stream. Trying again will start a new paid AI request.', 'generation', 'empty_stream');
     var reader = resp.body.getReader();
     var decoder = new TextDecoder();
     var buffer = '';
+    var stopReason = '';
     function pump(){
       return reader.read().then(function(res){
         if(res.done) return;
@@ -2635,11 +2700,16 @@ function streamGame(system, userMsg, denom){
         buffer = lines.pop();
         lines.forEach(function(line){
           var t = line.trim();
-          if(!t.indexOf('data:')===0 && t.slice(0,5)!=='data:') return;
+          if(t.slice(0,5)!=='data:') return;
           var dataStr = t.slice(5).trim();
           if(!dataStr || dataStr==='[DONE]') return;
           var evt;
           try{ evt = JSON.parse(dataStr); }catch(e){ return; }
+          if(evt.type==='error'){
+            var upstreamMessage = evt.error && (evt.error.message||evt.error.code) || 'The AI service stopped the stream.';
+            throw mappedGenerationError(Number(evt.error&&evt.error.status)||400, JSON.stringify({error:upstreamMessage}));
+          }
+          if(evt.type==='message_delta' && evt.delta && evt.delta.stop_reason) stopReason = evt.delta.stop_reason;
           if(evt.type==='content_block_delta' && evt.delta && evt.delta.type==='text_delta'){
             pendingCode += evt.delta.text;
             scheduleTerminalUpdate();
@@ -2649,36 +2719,74 @@ function streamGame(system, userMsg, denom){
       });
     }
     return pump().then(function(){
+      if(stopReason==='length') throw generationError('The AI ran out of output space before finishing the game. Trying again will start a new paid AI request.', 'generation', 'output_limit');
+      if(!pendingCode.trim()) throw generationError('The AI returned no game code. This may be a provider refusal or temporary error; your prompt is saved.', 'wait', 'empty_output');
       updateBuildProgress(78);
       return cleanCode(pendingCode);
+    }).catch(function(error){
+      if(error && error.isGenerationError) throw error;
+      var received = pendingCode.trim().length>0;
+      throw generationError(received ? 'The connection stopped after part of the game arrived. Retry with AI starts over and may use more tokens.' : 'The connection to the AI stopped before the game arrived. Retry with AI starts a new request.', 'generation', 'connection_interrupted');
     });
+  }).catch(function(error){
+    if(error && error.isGenerationError) throw error;
+    throw generationError('The app could not reach the AI service. Check the connection; Retry with AI starts a new request.', 'generation', 'network_error');
   });
 }
 
 function titleFromPrompt(prompt){
   return prompt.length>60 ? prompt.slice(0,57)+'…' : prompt;
 }
+function handleBuildError(job, error, noun){
+  console.error(error);
+  if(error && error.isGameQualityError){
+    if(job.retryWithoutGeneration && !job.validationRetried){
+      failBuild(job, 'The AI finished the '+noun+', but its startup check failed: '+error.message+' Check again is free and reuses the same code.', 'validation');
+      return;
+    }
+    job.retryWithoutGeneration = null;
+    failBuild(job, 'The saved code still fails its startup check. Rebuild with AI starts over and can use more tokens.', 'generation');
+    return;
+  }
+  failBuild(job, error && error.userMessage ? error.userMessage : 'The build stopped unexpectedly. Retry with AI starts a new request.', error && error.retryKind || 'generation');
+}
+function finishCreateFromCode(job, code, use3D){
+  if(buildJob!==job) return Promise.resolve();
+  setBuildStage(job, 'building', 'Checking that the game works…', 79);
+  return prepareEngineGame(code, use3D).then(function(html){
+    if(buildJob!==job) return;
+    job.retryWithoutGeneration = null;
+    var id = uid();
+    var meta = {id:id, title:job.title, prompt:job.prompt, desc:job.about, parentId:null, creator:job.creator, plays:0, recentPlays:[], createdAt:Date.now()};
+    var coverPromise;
+    if(job.validationRetried){
+      setBuildStage(job, 'saving', 'Publishing without another AI call…', 88);
+      coverPromise = Promise.resolve(null);
+    } else {
+      setBuildStage(job, 'cover', 'Creating cover art…', 82);
+      coverPromise = generateCover(meta.title, job.prompt);
+    }
+    return coverPromise.then(function(cover){
+      if(buildJob!==job) return;
+      if(cover) meta.cover = cover;
+      lastBuild = {id:id, html:html, meta:meta};
+      return finishBuild(lastBuild, job);
+    });
+  });
+}
 function runCreateJob(job){
   var use3D = wants3D(job.prompt+' '+(job.about||''));
+  job.validationRetried = false;
+  job.retryWithoutGeneration = null;
+  job.generatedCode = null;
   setBuildStage(job, 'building', use3D ? 'Building the 3D game…' : 'Building the game…', 4);
   streamGame(use3D ? SYS_3D_JS : SYS_JS, buildUserMessage('create', job.prompt, job.about, null), 3500).then(function(code){
     if(buildJob!==job) return;
-    setBuildStage(job, 'building', 'Checking that the game works…', 79);
-    return prepareEngineGame(code, use3D).then(function(html){ return {code:code, html:html}; });
-  }).then(function(result){
-    if(buildJob!==job || !result) return;
-    var id = uid();
-    var meta = {id:id, title:job.title, prompt:job.prompt, desc:job.about, parentId:null, creator:job.creator, plays:0, recentPlays:[], createdAt:Date.now()};
-    setBuildStage(job, 'cover', 'Creating cover art…', 82);
-    return generateCover(meta.title, job.prompt).then(function(cover){
-      if(buildJob!==job) return;
-      if(cover) meta.cover = cover;
-      lastBuild = {id:id, html:result.html, meta:meta};
-      return finishBuild(lastBuild, job);
-    });
+    job.generatedCode = code;
+    job.retryWithoutGeneration = function(){ return finishCreateFromCode(job, code, use3D); };
+    return job.retryWithoutGeneration();
   }).catch(function(e){
-    console.error(e);
-    failBuild(job, e && e.isGameQualityError ? 'That game came back broken, so I did not publish it. Try the same idea again.' : 'Generation paused. Try again.', 'generation');
+    handleBuildError(job, e, 'game');
   });
 }
 function handleCreate(){
@@ -2694,20 +2802,28 @@ function handleCreate(){
   }
 }
 
-function runRemixJob(job){
-  setBuildStage(job, 'building', job.kind==='edit' ? 'Updating the game…' : 'Building your version…', 4);
-  streamGame(job.system, buildUserMessage(job.messageMode, job.prompt, '', job.base), job.denom).then(function(code){
-    if(buildJob!==job) return;
-    if(!job.isEngine) return code;
+function finishVersionFromCode(job, code){
+  if(buildJob!==job) return Promise.resolve();
+  var prepared;
+  if(job.isEngine){
     setBuildStage(job, 'building', 'Checking that the game works…', 79);
-    return prepareEngineGame(code, job.is3D);
-  }).then(function(finalHtml){
+    prepared = prepareEngineGame(code, job.is3D);
+  } else prepared = Promise.resolve(code);
+  return prepared.then(function(finalHtml){
     if(buildJob!==job || !finalHtml) return;
+    job.retryWithoutGeneration = null;
     if(job.kind==='remix'){
       var id = uid();
       var meta = {id:id, title:job.title, prompt:job.prompt, desc:'', parentId:job.game.id, creator:job.creator, plays:0, recentPlays:[], createdAt:Date.now()};
-      setBuildStage(job, 'cover', 'Creating cover art…', 82);
-      return generateCover(meta.title, job.prompt).then(function(cover){
+      var coverPromise;
+      if(job.validationRetried){
+        setBuildStage(job, 'saving', 'Publishing without another AI call…', 88);
+        coverPromise = Promise.resolve(null);
+      } else {
+        setBuildStage(job, 'cover', 'Creating cover art…', 82);
+        coverPromise = generateCover(meta.title, job.prompt);
+      }
+      return coverPromise.then(function(cover){
         if(buildJob!==job) return;
         if(cover) meta.cover = cover;
         lastBuild = {id:id, html:finalHtml, meta:meta};
@@ -2716,9 +2832,20 @@ function runRemixJob(job){
     }
     lastBuild = {id:job.game.id, html:finalHtml, meta:job.game};
     return finishBuild(lastBuild, job);
+  });
+}
+function runRemixJob(job){
+  job.validationRetried = false;
+  job.retryWithoutGeneration = null;
+  job.generatedCode = null;
+  setBuildStage(job, 'building', job.kind==='edit' ? 'Updating the game…' : 'Building your version…', 4);
+  streamGame(job.system, buildUserMessage(job.messageMode, job.prompt, '', job.base), job.denom).then(function(code){
+    if(buildJob!==job) return;
+    job.generatedCode = code;
+    if(job.isEngine) job.retryWithoutGeneration = function(){ return finishVersionFromCode(job, code); };
+    return finishVersionFromCode(job, code);
   }).catch(function(e){
-    console.error(e);
-    failBuild(job, e && e.isGameQualityError ? 'That version came back broken, so I did not publish it. Try the change again.' : 'Generation paused. Try again.', 'generation');
+    handleBuildError(job, e, job.kind==='edit' ? 'game update' : 'version');
   });
 }
 function handleRemixOrEdit(mode){
@@ -2747,6 +2874,7 @@ function handleRemixOrEdit(mode){
     is3D:is3D,
     system:isEngine ? (is3D ? SYS_3D_JS : SYS_JS) : (is3D ? SYS_3D : SYS),
     messageMode:(mode==='remix') ? (isEngine?'remix-js':'remix-full') : (isEngine?'edit-js':'edit-full'),
+    sourceCode:currentGameCode,
     base:isEngine ? innerJs : currentGameCode,
     denom:isEngine ? 3500 : (is3D ? 8000 : 7000)
   };

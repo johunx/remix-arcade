@@ -260,7 +260,24 @@ function streamOpenAiAsAnthropic(upstream) {
             if (!raw || raw === "[DONE]") continue;
             let event;
             try { event = JSON.parse(raw); } catch { continue; }
-            const text = (event.choices || []).map((choice) => choice && choice.delta && typeof choice.delta.content === "string" ? choice.delta.content : "").join("");
+            if (event.error) {
+              const message = typeof event.error === "string" ? event.error : (event.error.message || event.error.code || "The AI provider stopped the request.");
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "error", error: { code: "provider_error", message } })}\n\n`));
+              continue;
+            }
+            const choices = event.choices || [];
+            const refusal = choices.map((choice) => choice && choice.delta && typeof choice.delta.refusal === "string" ? choice.delta.refusal : "").join("");
+            if (refusal) {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "error", error: { code: "provider_refusal", message: "The AI provider refused this prompt." } })}\n\n`));
+              continue;
+            }
+            const finishReason = choices.map((choice) => choice && choice.finish_reason).find(Boolean);
+            if (finishReason === "content_filter") {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "error", error: { code: "content_filter", message: "The AI provider stopped this prompt because of its content policy." } })}\n\n`));
+              continue;
+            }
+            if (finishReason) controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "message_delta", delta: { stop_reason: finishReason } })}\n\n`));
+            const text = choices.map((choice) => choice && choice.delta && typeof choice.delta.content === "string" ? choice.delta.content : "").join("");
             if (text) controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "content_block_delta", delta: { type: "text_delta", text } })}\n\n`));
           }
         }

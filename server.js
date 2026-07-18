@@ -211,7 +211,31 @@ async function streamOpenAiAsAnthropic(upstream, res) {
         continue;
       }
 
-      const text = (event.choices || []).map((choice) => {
+      if (event.error) {
+        const message = typeof event.error === 'string'
+          ? event.error
+          : (event.error.message || event.error.code || 'The AI provider stopped the request.');
+        sendSse(res, { type: 'error', error: { code: 'provider_error', message } });
+        continue;
+      }
+
+      const choices = event.choices || [];
+      const refusal = choices.map((choice) => {
+        return choice && choice.delta && typeof choice.delta.refusal === 'string' ? choice.delta.refusal : '';
+      }).join('');
+      if (refusal) {
+        sendSse(res, { type: 'error', error: { code: 'provider_refusal', message: 'The AI provider refused this prompt.' } });
+        continue;
+      }
+
+      const finishReason = choices.map((choice) => choice && choice.finish_reason).find(Boolean);
+      if (finishReason === 'content_filter') {
+        sendSse(res, { type: 'error', error: { code: 'content_filter', message: 'The AI provider stopped this prompt because of its content policy.' } });
+        continue;
+      }
+      if (finishReason) sendSse(res, { type: 'message_delta', delta: { stop_reason: finishReason } });
+
+      const text = choices.map((choice) => {
         return choice && choice.delta && typeof choice.delta.content === 'string' ? choice.delta.content : '';
       }).join('');
 

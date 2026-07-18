@@ -5,6 +5,8 @@ const path = require("path");
 const vm = require("vm");
 
 const source = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+const workerSource = fs.readFileSync(path.join(__dirname, "..", "worker", "index.mjs"), "utf8");
+const serverSource = fs.readFileSync(path.join(__dirname, "..", "server.js"), "utf8");
 const generatorStart = source.indexOf("var SHELL_TOP");
 const generatorEnd = source.indexOf("var SEED_DODGE_HTML");
 
@@ -19,6 +21,11 @@ const qualityStart = source.indexOf("function qualityError");
 const qualityEnd = source.indexOf("var pendingCode", qualityStart);
 assert(qualityStart >= 0 && qualityEnd > qualityStart, "Quality-gate source was not found.");
 vm.runInContext(source.slice(qualityStart, qualityEnd), context);
+
+const errorStart = source.indexOf("function generationError");
+const errorEnd = source.indexOf("function streamGame", errorStart);
+assert(errorStart >= 0 && errorEnd > errorStart, "Generation-error mapping source was not found.");
+vm.runInContext(source.slice(errorStart, errorEnd), context);
 
 const sample2D = [
   "var pulse=0;",
@@ -63,6 +70,17 @@ assert(/GENRE FIDELITY/.test(generatorSource), "Genre-fidelity instructions are 
 assert(!/One clear arcade mechanic/.test(generatorSource), "A forced arcade rule remains in the generator.");
 assert(source.includes("function validateEngineCode"), "The generated-code quality gate is missing.");
 assert(source.includes("function preflightGeneratedGame"), "The generated-game startup check is missing.");
+assert(source.includes("Check again — free"), "The free validation retry is not labelled clearly.");
+assert(source.includes("Retry with AI"), "Paid AI retries are not labelled clearly.");
+assert(source.includes("function mappedGenerationError"), "Generation errors are not mapped to useful messages.");
+assert(source.includes("job.retryWithoutGeneration"), "Generated code is not retained for a free validation retry.");
+assert(source.includes("Publishing without another AI call"), "The free validation retry can still trigger an unlabeled AI call.");
+assert(workerSource.includes('code: "provider_refusal"'), "The deployed worker does not relay provider refusals.");
+assert(workerSource.includes('finishReason === "content_filter"'), "The deployed worker does not relay content filtering.");
+assert(serverSource.includes("code: 'provider_refusal'"), "The local server does not relay provider refusals.");
+assert.strictEqual(context.mappedGenerationError(429, '{"error":"Too many AI requests"}').retryKind, "wait", "Hourly limits should not offer a paid retry.");
+assert.strictEqual(context.mappedGenerationError(400, '{"error":"content_filter"}').code, "provider_policy", "Content-policy failures are not identified.");
+assert.strictEqual(context.mappedGenerationError(402, '{"error":"insufficient balance"}').code, "provider_credit", "Provider credit failures are not identified.");
 
 if (process.argv.includes("--serve")) {
   const port = Number(process.env.GENERATOR_TEST_PORT || 3011);
