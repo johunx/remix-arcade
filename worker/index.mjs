@@ -19,6 +19,37 @@ function isValidKey(key) {
   return typeof key === "string" && key.length > 0 && key.length <= 220 && /^[a-zA-Z0-9:_./-]+$/.test(key);
 }
 
+/* game content keys are ownership-protected: the browser token that creates a
+   key becomes its owner (stored as a SHA-256 hash, never raw). */
+const PROTECTED_KEY = /^ra-(meta|code)-/;
+
+async function sha256Hex(text) {
+  const digest = await crypto.subtle.digest("SHA-256", encoder.encode(text));
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/* non-owners may only change engagement data on a meta (plays, recentPlays,
+   likedBy, cover-once) — identity fields must survive the write unchanged. */
+function isEngagementOnlyChange(oldStr, newStr) {
+  let a;
+  let b;
+  try {
+    a = JSON.parse(oldStr);
+    b = JSON.parse(newStr);
+  } catch {
+    return false;
+  }
+  if (!a || !b || typeof a !== "object" || typeof b !== "object" || Array.isArray(a) || Array.isArray(b)) return false;
+  const frozen = ["id", "title", "prompt", "desc", "parentId", "creator", "createdAt"];
+  for (const field of frozen) {
+    const oldValue = a[field] === undefined ? null : a[field];
+    const newValue = b[field] === undefined ? null : b[field];
+    if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) return false;
+  }
+  if (a.cover && b.cover !== a.cover) return false;
+  return true;
+}
+
 async function ensureSchema(env) {
   if (!env.DB) throw new Error("Database binding is unavailable.");
   if (!schemaReady) {
@@ -27,7 +58,8 @@ async function ensureSchema(env) {
         env.DB.prepare(`CREATE TABLE IF NOT EXISTS storage (
           key TEXT PRIMARY KEY NOT NULL,
           value TEXT NOT NULL,
-          updated_at INTEGER NOT NULL
+          updated_at INTEGER NOT NULL,
+          owner TEXT
         )`),
         env.DB.prepare(`CREATE TABLE IF NOT EXISTS ai_usage (
           bucket TEXT PRIMARY KEY NOT NULL,
@@ -35,6 +67,7 @@ async function ensureSchema(env) {
           reset_at INTEGER NOT NULL
         )`),
       ]);
+      await env.DB.prepare("ALTER TABLE storage ADD COLUMN owner TEXT").run().catch(() => {});
       const metaCount = await env.DB.prepare("SELECT COUNT(*) AS count FROM storage WHERE key LIKE 'ra-meta-%'").first();
       const seedEntries = Object.entries(seedStore.shared || {});
       if (Number(metaCount && metaCount.count) === 0 && seedEntries.length) {
@@ -81,12 +114,39 @@ async function handleStorage(request, env) {
     if (value !== null && encoder.encode(value).byteLength > maxBytes) {
       return json({ error: "Stored value is too large." }, 413);
     }
-    if (value === null) {
-      await env.DB.prepare("DELETE FROM storage WHERE key = ?").bind(key).run();
-    } else {
-      await env.DB.prepare("INSERT OR REPLACE INTO storage (key, value, updated_at) VALUES (?, ?, ?)")
-        .bind(key, value, Date.now()).run();
+    if (!PROTECTED_KEY.test(key)) {
+      if (value === null) {
+        await env.DB.prepare("DELETE FROM storage WHERE key = ?").bind(key).run();
+      } else {
+        await env.DB.prepare("INSERT OR REPLACE INTO storage (key, value, updated_at) VALUES (?, ?, ?)")
+          .bind(key, value, Date.now()).run();
+      }
+      return json({ ok: true });
     }
+
+    const token = String(request.headers.get("x-ra-token") || "").slice(0, 128);
+    const tokenHash = token ? await sha256Hex(token) : null;
+    const existing = await env.DB.prepare("SELECT value, owner FROM storage WHERE key = ?").bind(key).first();
+    const isOwner = Boolean(existing && existing.owner && tokenHash && existing.owner === tokenHash);
+
+    if (value === null) {
+      if (!existing) return json({ ok: true });
+      if (!isOwner) return json({ error: "Only the creator can delete this." }, 403);
+      await env.DB.prepare("DELETE FROM storage WHERE key = ?").bind(key).run();
+      return json({ ok: true });
+    }
+
+    if (!existing) {
+      await env.DB.prepare("INSERT OR REPLACE INTO storage (key, value, updated_at, owner) VALUES (?, ?, ?, ?)")
+        .bind(key, value, Date.now(), tokenHash).run();
+      return json({ ok: true });
+    }
+
+    if (!isOwner) {
+      if (key.startsWith("ra-code-")) return json({ error: "Only the creator can change this game." }, 403);
+      if (!isEngagementOnlyChange(existing.value, value)) return json({ error: "Only the creator can change this game." }, 403);
+    }
+    await env.DB.prepare("UPDATE storage SET value = ?, updated_at = ? WHERE key = ?").bind(value, Date.now(), key).run();
     return json({ ok: true });
   }
 

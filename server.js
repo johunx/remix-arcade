@@ -1,6 +1,7 @@
 const express = require('express');
 const fs = require('fs/promises');
 const path = require('path');
+const crypto = require('crypto');
 const { Readable } = require('stream');
 
 require('dotenv').config();
@@ -29,6 +30,33 @@ function jsonSize(value) {
   return Buffer.byteLength(String(value), 'utf8');
 }
 
+/* mirrors the production worker: game content keys are ownership-protected */
+const PROTECTED_KEY = /^ra-(meta|code)-/;
+
+function sha256Hex(text) {
+  return crypto.createHash('sha256').update(String(text)).digest('hex');
+}
+
+function isEngagementOnlyChange(oldStr, newStr) {
+  let a;
+  let b;
+  try {
+    a = JSON.parse(oldStr);
+    b = JSON.parse(newStr);
+  } catch (error) {
+    return false;
+  }
+  if (!a || !b || typeof a !== 'object' || typeof b !== 'object' || Array.isArray(a) || Array.isArray(b)) return false;
+  const frozen = ['id', 'title', 'prompt', 'desc', 'parentId', 'creator', 'createdAt'];
+  for (const field of frozen) {
+    const oldValue = a[field] === undefined ? null : a[field];
+    const newValue = b[field] === undefined ? null : b[field];
+    if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) return false;
+  }
+  if (a.cover && b.cover !== a.cover) return false;
+  return true;
+}
+
 async function readStore() {
   if (storeCache) return storeCache;
   try {
@@ -40,6 +68,7 @@ async function readStore() {
     storeCache = {};
   }
   if (!storeCache.shared || typeof storeCache.shared !== 'object') storeCache.shared = {};
+  if (!storeCache.owners || typeof storeCache.owners !== 'object') storeCache.owners = {};
   return storeCache;
 }
 
@@ -335,6 +364,34 @@ app.post('/api/storage', async (req, res, next) => {
     if (!isValidKey(key)) return res.status(400).json({ error: 'Invalid key.' });
     if (value !== null && typeof value !== 'string') return res.status(400).json({ error: 'Value must be a string or null.' });
     if (value !== null && jsonSize(value) > maxStoredValueBytes) return res.status(413).json({ error: 'Stored value is too large.' });
+
+    if (PROTECTED_KEY.test(key)) {
+      const token = String(req.get('x-ra-token') || '').slice(0, 128);
+      const tokenHash = token ? sha256Hex(token) : null;
+      const store = await readStore();
+      const exists = Object.prototype.hasOwnProperty.call(store.shared, key);
+      const owner = store.owners[key] || null;
+      const isOwner = Boolean(owner && tokenHash && owner === tokenHash);
+
+      if (value === null) {
+        if (!exists) return res.json({ ok: true });
+        if (!isOwner) return res.status(403).json({ error: 'Only the creator can delete this.' });
+      } else if (exists && !isOwner) {
+        if (key.startsWith('ra-code-')) return res.status(403).json({ error: 'Only the creator can change this game.' });
+        if (!isEngagementOnlyChange(store.shared[key], value)) return res.status(403).json({ error: 'Only the creator can change this game.' });
+      }
+
+      await writeStore((s) => {
+        if (value === null) {
+          delete s.shared[key];
+          delete s.owners[key];
+        } else {
+          if (!Object.prototype.hasOwnProperty.call(s.shared, key) && tokenHash) s.owners[key] = tokenHash;
+          s.shared[key] = value;
+        }
+      });
+      return res.json({ ok: true });
+    }
 
     await writeStore((store) => {
       if (value === null) delete store.shared[key];

@@ -648,7 +648,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
         <div class="follow-chips" id="followingList"></div>
       </div>
       <div class="feed-grid" id="profGrid"></div>
-      <p class="build-tag">Remix Arcade · build v65</p>
+      <p class="build-tag">Remix Arcade · build v66</p>
     </section>
 
   </main>
@@ -718,6 +718,19 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 
 <script>
 (function(){
+  /* per-browser secret that proves ownership of games created on this device.
+     Sent only as a header; the server stores a hash, never the token. */
+  var OWNER_TOKEN = '';
+  try{
+    OWNER_TOKEN = localStorage.getItem('ra-owner-token') || '';
+    if(!OWNER_TOKEN){
+      var seed = new Uint8Array(16);
+      if(window.crypto && crypto.getRandomValues) crypto.getRandomValues(seed);
+      else for(var i=0;i<16;i++) seed[i] = Math.floor(Math.random()*256);
+      OWNER_TOKEN = Array.prototype.map.call(seed, function(b){ return ('0'+b.toString(16)).slice(-2); }).join('');
+      localStorage.setItem('ra-owner-token', OWNER_TOKEN);
+    }
+  }catch(e){}
   function localKeys(prefix){
     var keys = [];
     for(var i=0;i<localStorage.length;i++){
@@ -739,7 +752,11 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
         reject(new Error('storage request timed out'));
       }, 4000);
       fetch(path, options).then(function(resp){
-        if(!resp.ok) throw new Error('storage request failed');
+        if(!resp.ok){
+          var err = new Error('storage request failed');
+          err.status = resp.status;
+          throw err;
+        }
         return resp.json();
       }).then(function(value){
         if(settled) return;
@@ -767,7 +784,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
       }
       return api('/api/storage', {
         method:'POST',
-        headers:{'Content-Type':'application/json'},
+        headers:{'Content-Type':'application/json','x-ra-token':OWNER_TOKEN},
         body:JSON.stringify({key:key, value:value})
       });
     },
@@ -782,7 +799,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 <script>
 (function(){
 
-var BUILD = 'v65';
+var BUILD = 'v66';
 var HORIZONTAL_SWIPE = new URLSearchParams(location.search).get('nav')==='horizontal';
 document.body.classList.toggle('horizontal-swipe', HORIZONTAL_SWIPE);
 var META_PREFIX = 'ra-meta-';
@@ -1238,6 +1255,10 @@ function sSet(key, value, shared, attempt){
     memStore[key] = value;
     return r || {};
   }).catch(function(e){
+    if(e && e.status===403){
+      console.warn('[Remix Arcade '+BUILD+'] write to '+key+' denied — this device is not the game\'s creator.');
+      return {denied:true};
+    }
     if(attempt < 4){
       return new Promise(function(res){ setTimeout(res, 400*attempt); }).then(function(){ return sSet(key, value, shared, attempt+1); });
     }
@@ -2315,14 +2336,19 @@ function playCompletedBuild(){
 function trySave(b){
   return sSet(CODE_PREFIX+b.id, b.html, true).then(function(r1){
     if(r1===null) return false;
-    return sSet(META_PREFIX+b.id, JSON.stringify(b.meta), true).then(function(r2){ return r2!==null; });
+    if(r1 && r1.denied) return 'denied';
+    return sSet(META_PREFIX+b.id, JSON.stringify(b.meta), true).then(function(r2){
+      if(r2===null) return false;
+      if(r2 && r2.denied) return 'denied';
+      return true;
+    });
   });
 }
 function finishBuild(b, job){
   job = job || buildJob;
   if(job) setBuildStage(job, 'saving', 'Publishing your game…', 92);
   return trySave(b).then(function(ok){
-    if(ok){
+    if(ok===true){
       lastBuild = null;
       return refreshData().then(function(){
         if(buildJob!==job) return;
@@ -2332,6 +2358,10 @@ function finishBuild(b, job){
         job.progress = 100;
         updateBuildUI();
       });
+    }
+    if(ok==='denied'){
+      failBuild(job, 'Only the device that made this game can edit it. Use REMIX to make your own version.', 'save');
+      return;
     }
     lastBuild = b;
     failBuild(job, 'Saving paused. Your game is safe.', 'save');
