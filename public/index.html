@@ -648,7 +648,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
         <div class="follow-chips" id="followingList"></div>
       </div>
       <div class="feed-grid" id="profGrid"></div>
-      <p class="build-tag">Remix Arcade · build v66</p>
+      <p class="build-tag">Remix Arcade · build v67</p>
     </section>
 
   </main>
@@ -799,7 +799,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 <script>
 (function(){
 
-var BUILD = 'v66';
+var BUILD = 'v67';
 var HORIZONTAL_SWIPE = new URLSearchParams(location.search).get('nav')==='horizontal';
 document.body.classList.toggle('horizontal-swipe', HORIZONTAL_SWIPE);
 var META_PREFIX = 'ra-meta-';
@@ -2360,7 +2360,29 @@ function finishBuild(b, job){
       });
     }
     if(ok==='denied'){
-      failBuild(job, 'Only the device that made this game can edit it. Use REMIX to make your own version.', 'save');
+      if(job && job.kind==='edit' && job.game){
+        /* this device doesn't own the original — save the edit as the
+           editor's own remix instead of failing */
+        var nid = uid();
+        var meta = {id:nid, title:job.game.title, prompt:job.prompt||job.game.prompt, desc:'', parentId:job.game.id, creator:myName||'Guest', plays:0, recentPlays:[], createdAt:Date.now()};
+        var nb = {id:nid, html:b.html, meta:meta};
+        return trySave(nb).then(function(ok2){
+          if(ok2===true){
+            lastBuild = null;
+            return refreshData().then(function(){
+              if(buildJob!==job) return;
+              job.resultId = nid;
+              job.state = 'ready';
+              job.stage = 'Saved as your own version — tap Play';
+              job.progress = 100;
+              updateBuildUI();
+            });
+          }
+          lastBuild = nb;
+          failBuild(job, 'Saving paused. Your game is safe.', 'save');
+        });
+      }
+      failBuild(job, 'Only the creator can change this game. Use REMIX to make your own version.', 'save');
       return;
     }
     lastBuild = b;
