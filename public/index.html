@@ -400,6 +400,10 @@ body.swipe-mode .tab .tab-info-icon,body.swipe-mode .tab-info-label{display:flex
 .creator-tab-follow.on{background:#8CF5E1;font-size:8px;}
 #playCreatorLabel{max-width:58px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:12px;}
 .game-stats-flash{position:absolute;top:48%;right:calc(var(--swipe-lane-w) + 10px);z-index:6;display:flex;flex-direction:column;align-items:center;gap:13px;min-width:46px;padding:10px 8px;background:rgba(22,10,15,0.82);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,205,170,0.14);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.35);opacity:0;transform:translate(10px,-50%);transition:opacity .18s ease,transform .22s ease;pointer-events:none;}
+/* persistent origin pill over the live game — remixes only, top-right clear of score HUDs */
+.game-origin-tag{position:absolute;top:calc(12px + env(safe-area-inset-top));right:calc(var(--swipe-lane-w) + 10px);z-index:6;max-width:64%;padding:6px 12px;border-radius:999px;background:rgba(20,10,15,0.62);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(127,184,255,0.45);color:#CFE3FF;font-size:10.5px;font-weight:700;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;box-shadow:0 6px 16px -6px rgba(0,0,0,0.55);}
+body.horizontal-swipe.swipe-mode .game-origin-tag{right:12px;}
+body.gameplay-mode .game-origin-tag{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(20,10,15,0.88);}
 .game-stats-flash.show{opacity:1;transform:translate(0,-50%);}
 .game-stats-flash span{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:700;color:var(--text);}
 .game-stats-flash .ic{width:18px;height:18px;color:var(--text-dim);}
@@ -510,6 +514,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
       <div class="swipe-pager" id="swipePager"></div>
       <div class="swipe-sidebar" id="swipeSidebar" role="scrollbar" aria-label="Game navigation" aria-controls="swipePager" aria-orientation="vertical" aria-valuemin="1" aria-valuenow="1" aria-valuemax="1" tabindex="0"><svg class="ic up" viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></svg><span class="swipe-grip"><i></i><i></i><i></i></span><svg class="ic down" viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></svg></div>
       <div class="game-stats-flash hidden" id="gameStatsFlash" aria-live="polite"></div>
+      <div class="game-origin-tag hidden" id="gameOriginTag" aria-live="polite"></div>
       <div class="game-rail hidden" id="gameRail">
         <div class="rail-creator-wrap"><button class="rail-btn rail-creator" id="railCreator" aria-label="Open creator profile"><span class="bub"><span class="rail-avatar" id="railCreatorAvatar">R</span></span><span class="rail-count rail-creator-name" id="railCreatorName">Creator</span></button><button class="rail-follow-mark" id="railCreatorFollow" aria-label="Follow creator">+</button></div>
         <button class="rail-btn rail-like" id="railLike" aria-label="Like"><span class="bub"><svg class="ic hrt" viewBox="0 0 24 24"><path d="M12 20.3C6.5 16.6 3.5 13.4 3.5 9.9 3.5 7.2 5.6 5 8.2 5c1.5 0 3 .7 3.8 2 .8-1.3 2.3-2 3.8-2 2.6 0 4.7 2.2 4.7 4.9 0 3.5-3 6.7-8.5 10.4z"/></svg></span><span class="rail-count" id="railLikeCount">0</span></button>
@@ -643,7 +648,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
         <div class="follow-chips" id="followingList"></div>
       </div>
       <div class="feed-grid" id="profGrid"></div>
-      <p class="build-tag">Remix Arcade · build v64</p>
+      <p class="build-tag">Remix Arcade · build v65</p>
     </section>
 
   </main>
@@ -777,7 +782,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 <script>
 (function(){
 
-var BUILD = 'v64';
+var BUILD = 'v65';
 var HORIZONTAL_SWIPE = new URLSearchParams(location.search).get('nav')==='horizontal';
 document.body.classList.toggle('horizontal-swipe', HORIZONTAL_SWIPE);
 var META_PREFIX = 'ra-meta-';
@@ -1837,6 +1842,16 @@ function setActiveSlide(i){
   var active = slides[i];
   if(!active.dataset.counted){ active.dataset.counted = '1'; trackPlay(meta); }
   flashGameStats(meta);
+  var originTag = $('#gameOriginTag');
+  if(originTag){
+    if(meta.parentId){
+      var par = lineage && lineage.byId && lineage.byId[meta.parentId];
+      originTag.textContent = '⑂ REMIX'+(par?' of '+par.title:'');
+      originTag.classList.remove('hidden');
+    } else {
+      originTag.classList.add('hidden');
+    }
+  }
   var sidebar = $('#swipeSidebar');
   if(sidebar){ sidebar.setAttribute('aria-valuenow', String(i+1)); sidebar.setAttribute('aria-valuemax', String(slides.length)); }
   if(railOpen) renderGameRail();
