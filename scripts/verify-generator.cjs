@@ -45,6 +45,20 @@ const games = {
   "/3d": context.assembleGame3D(sample3D),
 };
 
+function validationFixture(html) {
+  const validationHtml = context.validationGameHtml(html);
+  const serializedHtml = JSON.stringify(validationHtml).replace(/<\/script/gi, "<\\/script");
+  return `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><body><main id="result">waiting</main><script>
+  var frame=document.createElement('iframe');
+  frame.setAttribute('sandbox','allow-scripts');
+  frame.style.cssText='position:fixed;left:0;top:0;width:390px;height:700px;opacity:.001;pointer-events:none;border:0;transform:scale(.001);transform-origin:0 0;z-index:0;';
+  addEventListener('message',function(event){if(event.source===frame.contentWindow&&event.data&&event.data.type==='ra-ready'){document.getElementById('result').textContent='ready';frame.remove();}});
+  document.body.appendChild(frame);
+  setTimeout(function(){if(document.getElementById('result').textContent!=='ready')document.getElementById('result').textContent='timeout';},7000);
+  frame.srcdoc=${serializedHtml};
+  <\/script></body>`;
+}
+
 function inlineScripts(html) {
   const pattern = new RegExp("<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>", "g");
   return [...html.matchAll(pattern)].map((match) => match[1]).filter(Boolean);
@@ -59,6 +73,9 @@ for (const [name, html] of Object.entries(games)) {
   assert(html.includes("scoreVisible"), `${name} does not support an optional score HUD.`);
 }
 
+games["/validate-2d"] = validationFixture(games["/2d"]);
+games["/validate-3d"] = validationFixture(games["/3d"]);
+
 assert(context.wants3D("a Doomlike maze shooter"), "Doomlike prompts should select 3D.");
 assert(!context.wants3D("a cozy 2D pet"), "Explicit 2D prompts should remain 2D.");
 assert.strictEqual(context.validateEngineCode(sample2D, false), null, "Valid 2D logic was rejected.");
@@ -70,7 +87,10 @@ assert(/GENRE FIDELITY/.test(generatorSource), "Genre-fidelity instructions are 
 assert(!/One clear arcade mechanic/.test(generatorSource), "A forced arcade rule remains in the generator.");
 assert(source.includes("function validateEngineCode"), "The generated-code quality gate is missing.");
 assert(source.includes("function preflightGeneratedGame"), "The generated-game startup check is missing.");
+assert(context.validationGameHtml(games["/2d"]).includes("window.requestAnimationFrame"), "The mobile validation clock is missing.");
+assert(!source.includes("left:-10000px"), "The validation frame is still placed far outside the mobile viewport.");
 assert(source.includes("Check again — free"), "The free validation retry is not labelled clearly.");
+assert(source.includes("Publish anyway — free"), "Timeout-only builds cannot be published without another AI call.");
 assert(source.includes("Retry with AI"), "Paid AI retries are not labelled clearly.");
 assert(source.includes("function mappedGenerationError"), "Generation errors are not mapped to useful messages.");
 assert(source.includes("job.retryWithoutGeneration"), "Generated code is not retained for a free validation retry.");

@@ -661,7 +661,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
         <div class="follow-chips" id="followingList"></div>
       </div>
       <div class="feed-grid" id="profGrid"></div>
-      <p class="build-tag">Remix Arcade · build v71</p>
+      <p class="build-tag">Remix Arcade · build v72</p>
     </section>
 
   </main>
@@ -819,7 +819,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 <script>
 (function(){
 
-var BUILD = 'v71';
+var BUILD = 'v72';
 var HORIZONTAL_SWIPE = new URLSearchParams(location.search).get('nav')==='horizontal';
 document.body.classList.toggle('horizontal-swipe', HORIZONTAL_SWIPE);
 var META_PREFIX = 'ra-meta-';
@@ -2405,6 +2405,7 @@ function updateBuildUI(){
   if(state==='ready') actionLabel = 'Play';
   else if(buildJob.retryKind==='save') actionLabel = 'Retry publish';
   else if(buildJob.retryKind==='validation') actionLabel = 'Check again — free';
+  else if(buildJob.retryKind==='publishUnchecked') actionLabel = 'Publish anyway — free';
   else if(buildJob.retryKind==='wait') actionLabel = 'Back to prompt';
   action.textContent = actionLabel;
   $('#saveRetry').textContent = actionLabel;
@@ -2475,6 +2476,11 @@ function retryBuildJob(){
     job.validationRetried = true;
     setBuildStage(job, 'building', 'Checking the saved game again — no AI used…', 79);
     job.retryWithoutGeneration().catch(function(error){ handleBuildError(job, error, job.kind==='create' ? 'game' : 'version'); });
+    return;
+  }
+  if(job.retryKind==='publishUnchecked' && job.publishWithoutValidation){
+    setBuildStage(job, 'saving', 'Publishing the saved code without another AI call…', 88);
+    job.publishWithoutValidation().catch(function(error){ handleBuildError(job, error, job.kind==='create' ? 'game' : 'version'); });
     return;
   }
   pendingCode = '';
@@ -2572,9 +2578,10 @@ function cleanCode(text){
 }
 
 var gameValidationFrame = null;
-function qualityError(message){
+function qualityError(message, kind){
   var error = new Error(message);
   error.isGameQualityError = true;
+  error.qualityKind = kind || 'invalid';
   return error;
 }
 function validateEngineCode(code, is3D){
@@ -2589,33 +2596,38 @@ function validateEngineCode(code, is3D){
   try{ new Function(code); }catch(e){ return 'The game code is incomplete or has a syntax error.'; }
   return null;
 }
+function validationGameHtml(html){
+  var shim = '<script>(function(){var next=1,timers={};window.requestAnimationFrame=function(callback){var id=next++;timers[id]=setTimeout(function(){delete timers[id];callback(performance.now());},16);return id;};window.cancelAnimationFrame=function(id){if(timers[id]){clearTimeout(timers[id]);delete timers[id];}};})();<\/script>';
+  var headEnd = html.indexOf('</head>');
+  return headEnd>-1 ? html.slice(0,headEnd)+shim+html.slice(headEnd) : shim+html;
+}
 function preflightGeneratedGame(html, is3D){
   return new Promise(function(resolve, reject){
     var frame = document.createElement('iframe');
     frame.setAttribute('sandbox','allow-scripts');
     frame.setAttribute('aria-hidden','true');
-    frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:390px;height:700px;opacity:0;pointer-events:none;border:0;';
+    frame.style.cssText = 'position:fixed;left:0;top:0;width:390px;height:700px;opacity:.001;pointer-events:none;border:0;transform:scale(.001);transform-origin:0 0;z-index:0;';
     var settled = false;
     var timer = null;
-    function finish(error){
+    function finish(error, kind){
       if(settled) return;
       settled = true;
       if(timer) clearTimeout(timer);
       window.removeEventListener('message', onMessage);
       if(gameValidationFrame===frame) gameValidationFrame = null;
       frame.remove();
-      if(error) reject(qualityError(error)); else resolve();
+      if(error) reject(qualityError(error, kind)); else resolve();
     }
     function onMessage(e){
       if(e.source!==frame.contentWindow || !e.data) return;
       if(e.data.type==='ra-ready') finish();
-      else if(e.data.type==='ra-crash') finish('The generated game crashed during its startup check.');
+      else if(e.data.type==='ra-crash') finish('The generated game crashed during its startup check.', 'crash');
     }
     window.addEventListener('message', onMessage);
     document.body.appendChild(frame);
     gameValidationFrame = frame;
-    timer = setTimeout(function(){ finish(is3D ? 'The 3D game did not start correctly.' : 'The generated game did not start correctly.'); }, is3D ? 9000 : 4500);
-    frame.srcdoc = html;
+    timer = setTimeout(function(){ finish(is3D ? 'The phone could not confirm that the 3D game started.' : 'The phone could not confirm that the game started.', 'timeout'); }, is3D ? 12000 : 7000);
+    frame.srcdoc = validationGameHtml(html);
   });
 }
 function prepareEngineGame(code, is3D){
@@ -2740,22 +2752,33 @@ function titleFromPrompt(prompt){
 function handleBuildError(job, error, noun){
   console.error(error);
   if(error && error.isGameQualityError){
-    if(job.retryWithoutGeneration && !job.validationRetried){
+    if(error.qualityKind==='timeout' && job.retryWithoutGeneration && !job.validationRetried){
       failBuild(job, 'The AI finished the '+noun+', but its startup check failed: '+error.message+' Check again is free and reuses the same code.', 'validation');
       return;
     }
+    if(error.qualityKind==='timeout' && job.publishWithoutValidation){
+      failBuild(job, 'The code passed its safety and syntax checks, but this phone could not run the hidden startup test twice. You can publish the saved code without using AI again, then test the game normally.', 'publishUnchecked');
+      return;
+    }
     job.retryWithoutGeneration = null;
+    job.publishWithoutValidation = null;
     failBuild(job, 'The saved code still fails its startup check. Rebuild with AI starts over and can use more tokens.', 'generation');
     return;
   }
   failBuild(job, error && error.userMessage ? error.userMessage : 'The build stopped unexpectedly. Retry with AI starts a new request.', error && error.retryKind || 'generation');
 }
-function finishCreateFromCode(job, code, use3D){
+function finishCreateFromCode(job, code, use3D, skipPreflight){
   if(buildJob!==job) return Promise.resolve();
-  setBuildStage(job, 'building', 'Checking that the game works…', 79);
-  return prepareEngineGame(code, use3D).then(function(html){
+  var prepared;
+  if(skipPreflight) prepared = Promise.resolve(use3D ? assembleGame3D(code) : assembleGame(code));
+  else {
+    setBuildStage(job, 'building', 'Checking that the game works…', 79);
+    prepared = prepareEngineGame(code, use3D);
+  }
+  return prepared.then(function(html){
     if(buildJob!==job) return;
     job.retryWithoutGeneration = null;
+    job.publishWithoutValidation = null;
     var id = uid();
     var meta = {id:id, title:job.title, prompt:job.prompt, desc:job.about, parentId:null, creator:job.creator, plays:0, recentPlays:[], createdAt:Date.now()};
     var coverPromise;
@@ -2778,12 +2801,14 @@ function runCreateJob(job){
   var use3D = wants3D(job.prompt+' '+(job.about||''));
   job.validationRetried = false;
   job.retryWithoutGeneration = null;
+  job.publishWithoutValidation = null;
   job.generatedCode = null;
   setBuildStage(job, 'building', use3D ? 'Building the 3D game…' : 'Building the game…', 4);
   streamGame(use3D ? SYS_3D_JS : SYS_JS, buildUserMessage('create', job.prompt, job.about, null), 3500).then(function(code){
     if(buildJob!==job) return;
     job.generatedCode = code;
-    job.retryWithoutGeneration = function(){ return finishCreateFromCode(job, code, use3D); };
+    job.retryWithoutGeneration = function(){ return finishCreateFromCode(job, code, use3D, false); };
+    job.publishWithoutValidation = function(){ return finishCreateFromCode(job, code, use3D, true); };
     return job.retryWithoutGeneration();
   }).catch(function(e){
     handleBuildError(job, e, 'game');
@@ -2802,16 +2827,18 @@ function handleCreate(){
   }
 }
 
-function finishVersionFromCode(job, code){
+function finishVersionFromCode(job, code, skipPreflight){
   if(buildJob!==job) return Promise.resolve();
   var prepared;
-  if(job.isEngine){
+  if(job.isEngine && !skipPreflight){
     setBuildStage(job, 'building', 'Checking that the game works…', 79);
     prepared = prepareEngineGame(code, job.is3D);
-  } else prepared = Promise.resolve(code);
+  } else if(job.isEngine) prepared = Promise.resolve(job.is3D ? assembleGame3D(code) : assembleGame(code));
+  else prepared = Promise.resolve(code);
   return prepared.then(function(finalHtml){
     if(buildJob!==job || !finalHtml) return;
     job.retryWithoutGeneration = null;
+    job.publishWithoutValidation = null;
     if(job.kind==='remix'){
       var id = uid();
       var meta = {id:id, title:job.title, prompt:job.prompt, desc:'', parentId:job.game.id, creator:job.creator, plays:0, recentPlays:[], createdAt:Date.now()};
@@ -2837,13 +2864,17 @@ function finishVersionFromCode(job, code){
 function runRemixJob(job){
   job.validationRetried = false;
   job.retryWithoutGeneration = null;
+  job.publishWithoutValidation = null;
   job.generatedCode = null;
   setBuildStage(job, 'building', job.kind==='edit' ? 'Updating the game…' : 'Building your version…', 4);
   streamGame(job.system, buildUserMessage(job.messageMode, job.prompt, '', job.base), job.denom).then(function(code){
     if(buildJob!==job) return;
     job.generatedCode = code;
-    if(job.isEngine) job.retryWithoutGeneration = function(){ return finishVersionFromCode(job, code); };
-    return finishVersionFromCode(job, code);
+    if(job.isEngine){
+      job.retryWithoutGeneration = function(){ return finishVersionFromCode(job, code, false); };
+      job.publishWithoutValidation = function(){ return finishVersionFromCode(job, code, true); };
+    }
+    return finishVersionFromCode(job, code, false);
   }).catch(function(e){
     handleBuildError(job, e, job.kind==='edit' ? 'game update' : 'version');
   });
