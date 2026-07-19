@@ -661,7 +661,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
         <div class="follow-chips" id="followingList"></div>
       </div>
       <div class="feed-grid" id="profGrid"></div>
-      <p class="build-tag">Remix Arcade · build v73</p>
+      <p class="build-tag">Remix Arcade · build v74</p>
     </section>
 
   </main>
@@ -819,7 +819,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 <script>
 (function(){
 
-var BUILD = 'v73';
+var BUILD = 'v74';
 var HORIZONTAL_SWIPE = new URLSearchParams(location.search).get('nav')==='horizontal';
 document.body.classList.toggle('horizontal-swipe', HORIZONTAL_SWIPE);
 var META_PREFIX = 'ra-meta-';
@@ -1005,6 +1005,7 @@ var ADAPTIVE_SHELL3D_TOP = SHELL3D_TOP
   .replace('addEventListener("keydown",function(e){keys[e.key]=true;', 'function setActionKey(key,down){if(key===" "||key==="Enter"){if(down&&!actions.fire)actions.firePressed=true;actions.fire=down;}if(key==="q"||key==="Q"||key==="e"||key==="E"){if(down&&!actions.ability)actions.abilityPressed=true;actions.ability=down;}}\naddEventListener("keydown",function(e){keys[e.key]=true;setActionKey(e.key,true);')
   .replace('addEventListener("keyup",function(e){keys[e.key]=false;});', 'addEventListener("keyup",function(e){keys[e.key]=false;setActionKey(e.key,false);});')
   .replace('keys[d.key]=!!d.down;if(d.down&&over', 'keys[d.key]=!!d.down;setActionKey(d.key,!!d.down);if(d.down&&over')
+  .replace('if(typeof onTap==="function")onTap(input.x,input.y);', 'if(!fpsControlsOn&&typeof onTap==="function")onTap(input.x,input.y);')
   .replace('function restart(){score=0;over=false;overEl.style.display="none";', 'function restart(){score=0;scoreVisible=false;scoreLabel="SCORE";hudText="";hudEl.style.display="none";over=false;overEl.style.display="none";')
   .replace('clearParticles();resetStick();look.dx=0;', 'clearParticles();resetStick();actions.fire=false;actions.firePressed=false;actions.ability=false;actions.abilityPressed=false;look.dx=0;');
 
@@ -1036,17 +1037,19 @@ ENGINE GLOBALS AND HELPERS AVAILABLE TO YOU:
 - keys — currently held keys, e.g. keys['ArrowLeft'], keys['a'], keys[' '].
 - enableFPSControls(), stick — {x, y, active}, look — {dx, dy}, actions — {fire, firePressed, ability, abilityPressed}: complete mobile FPS controls, described below. Only call enableFPSControls() for first-person games.
 - burst3d(x, y, z, color, n) — particle explosion at a world position (color is a hex number like 0xFF9A5F). shake(power) — camera shake. beep(freq, seconds, type) — WebAudio tone ('square'/'sine'/'triangle').
-- setHud(text) shows a concise custom HUD such as health, ammo, cooldown, and objective. addScore(n), setScore(n, label), showScore(label), hideScore(), getScore() provide an optional score HUD.
+- setHud(text) shows a concise custom HUD such as health, ammo, cooldown, or a current objective when one exists. addScore(n), setScore(n, label), showScore(label), hideScore(), getScore() provide an optional score HUD.
 - gameOver() — optional. Use only for a genuine failed run with instant retry; it reports leaderboard scores automatically.
 - rand(a, b), clamp(v, a, b).
 
 FIRST-PERSON MODE (mandatory for FPS/first-person prompts; also the default for a 3D shooter unless the creator explicitly asks for third-person, top-down, or another perspective):
 - Call enableFPSControls() once inside resetGame(). The engine provides a visible left movement joystick, right-side drag-to-look area, center crosshair, large FIRE button, and separate ABILITY button. Never recreate or cover these controls with custom DOM.
 - Read stick.x/stick.y for movement and look.dx/look.dy for aiming. Read actions.firePressed for one shot per press or actions.fire for held automatic fire. Read actions.abilityPressed for a distinct themed ability with a visible or HUD cooldown. Never use a generic screen tap or onTap as the primary FPS fire control.
+- Do not define onTap() for an FPS. A touch on the right side begins aiming and must never unexpectedly fire, enter a vehicle, activate a prop, or perform another action. Put contextual interaction on ABILITY instead.
 - Drive the camera yourself: keep a yaw variable (and a small clamped pitch) updated from look.dx/look.dy, move the camera with stick relative to yaw, and aim shots straight out of the camera (a distance-plus-angle cone check against targets is enough — no physics engine).
 - On desktop also support WASD/arrows to move and mouse drag to turn. The engine maps Space/Enter to FIRE and Q/E to ABILITY.
 - Give the player real navigable space with a floor, boundaries and recognizable rooms, corridors, cover, ramps, or landmarks. Add collision so the camera cannot simply walk through walls.
-- Every shooter must include player health, enemies that move/react/attack, clear hit and firing feedback, a concrete objective beyond score, and a win or progression state. Use setHud() to keep health and the current objective visible. Never replace this with automatic movement, stationary targets, a one-screen gallery, or a score-only survival loop.
+- A mission-based shooter must include player health, enemies that move/react/attack, clear hit and firing feedback, a concrete objective beyond score, and a win or progression state. Use setHud() to keep health and the current objective visible. Never replace this with automatic movement, stationary targets, a one-screen gallery, or a score-only survival loop.
+- A sandbox or open-world shooter may intentionally have no mission, win state, timer, score, or forced game over. In that case build a place worth inhabiting: free movement, exploration, vehicles or traversal when requested, interactive props or characters, and several playful actions that create emergent fun. The HUD may show only useful state such as health, vehicle speed, or ability cooldown.
 - FIRE and ABILITY must both work immediately. The ability must fit the prompt, such as a portal burst, shield, dash, stun, or alternate weapon, rather than being a second identical shot.
 - Targets stay abstract and kid-safe: blocky drones, crystals, robots that pop with burst3d — never humans, never blood.
 
@@ -2611,7 +2614,7 @@ function validateEngineCode(code, is3D, fpsRequired){
     if(!/\benableFPSControls\s*\(/.test(code)) return 'The generated FPS did not enable its dedicated mobile controls.';
     if(!/\bactions\.fire(?:Pressed)?\b/.test(code)) return 'The generated FPS did not connect its FIRE button.';
     if(!/\bactions\.ability(?:Pressed)?\b/.test(code)) return 'The generated FPS did not create a working ABILITY button.';
-    if(!/\bsetHud\s*\(/.test(code)) return 'The generated FPS did not show health and its objective.';
+    if(!/\bsetHud\s*\(/.test(code)) return 'The generated FPS did not provide a useful status HUD.';
   }
   try{ new Function(code); }catch(e){ return 'The game code is incomplete or has a syntax error.'; }
   return null;

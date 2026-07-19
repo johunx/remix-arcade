@@ -6,3 +6,4 @@ data/storage.json
 data/*.tmp
 npm-debug.log*
 .DS_Store
+.generation-evals/

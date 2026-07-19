@@ -93,8 +93,10 @@ assert(generatorSource.includes("function enableFPSControls"), "The 3D engine do
 assert(games["/3d"].includes('makeActionButton("FIRE"'), "The 3D shell is missing its FIRE button.");
 assert(games["/3d"].includes('makeActionButton("ABILITY"'), "The 3D shell is missing its ABILITY button.");
 assert(games["/3d"].includes("actions.firePressed=false"), "FPS action presses are not reset each frame.");
+assert(games["/3d"].includes('if(!fpsControlsOn&&typeof onTap==="function")'), "Aim touches can still trigger FPS actions.");
 assert(generatorSource.includes("Never use a generic screen tap or onTap as the primary FPS fire control"), "The 3D prompt still permits ambiguous tap-to-fire controls.");
 assert(generatorSource.includes("Do not default to an arcade structure"), "The 3D prompt still defaults to arcade structure.");
+assert(generatorSource.includes("A sandbox or open-world shooter may intentionally have no mission"), "Open-world games are still forced into mission structure.");
 assert(source.includes("function validateEngineCode"), "The generated-code quality gate is missing.");
 assert(source.includes("function preflightGeneratedGame"), "The generated-game startup check is missing.");
 assert(context.validationGameHtml(games["/2d"]).includes("window.requestAnimationFrame"), "The mobile validation clock is missing.");
