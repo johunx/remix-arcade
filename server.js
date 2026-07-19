@@ -120,6 +120,7 @@ function cleanAiRequest(body) {
 
   const request = {
     model: body.model,
+    modelTier: body.modelTier === '3d' ? '3d' : 'default',
     max_tokens: getMaxTokens(body.max_tokens),
     stream: Boolean(body.stream),
     system: typeof body.system === 'string' ? body.system.slice(0, 80_000) : '',
@@ -162,8 +163,10 @@ function anthropicModel() {
   return process.env.ANTHROPIC_MODEL || process.env.AI_MODEL || 'claude-sonnet-5';
 }
 
-function yunwuModel() {
-  return process.env.YUNWU_MODEL || process.env.AI_MODEL || 'gpt-4o-mini';
+function yunwuModel(modelTier) {
+  return modelTier === '3d'
+    ? (process.env.YUNWU_3D_MODEL || 'gpt-5.6-sol')
+    : (process.env.YUNWU_MODEL || process.env.AI_MODEL || 'gpt-4o-mini');
 }
 
 function metaModel() {
@@ -318,7 +321,7 @@ async function callYunwu(body, res) {
   return callOpenAiCompatible(body, res, {
     apiKey,
     baseUrl: process.env.YUNWU_BASE_URL || 'https://yunwu.ai/v1',
-    model: yunwuModel(),
+    model: yunwuModel(body.modelTier),
     includeEffort: true,
     reasoningFormat: process.env.YUNWU_REASONING_FORMAT
   });
@@ -343,7 +346,7 @@ app.get('/healthz', (req, res) => {
 
 app.get('/api/ai/status', (req, res) => {
   const provider = ['yunwu', 'meta'].includes(aiProvider) ? aiProvider : 'anthropic';
-  const model = provider === 'yunwu' ? yunwuModel() : (provider === 'meta' ? metaModel() : anthropicModel());
+  const model = provider === 'yunwu' ? yunwuModel('default') : (provider === 'meta' ? metaModel() : anthropicModel());
   const configured = provider === 'yunwu'
     ? Boolean(process.env.YUNWU_API_KEY || process.env.OPENAI_API_KEY)
     : (provider === 'meta' ? Boolean(process.env.META_API_KEY) : Boolean(process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY));
@@ -351,6 +354,9 @@ app.get('/api/ai/status', (req, res) => {
     ok: true,
     provider,
     model,
+    models: provider === 'yunwu'
+      ? { default: yunwuModel('default'), threeD: yunwuModel('3d') }
+      : { default: model },
     configured,
     limits: {
       perIpPerHour: Number(process.env.AI_REQUESTS_PER_IP_PER_HOUR || process.env.AI_REQUESTS_PER_HOUR || 20),

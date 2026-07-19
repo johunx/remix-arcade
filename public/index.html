@@ -661,7 +661,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
         <div class="follow-chips" id="followingList"></div>
       </div>
       <div class="feed-grid" id="profGrid"></div>
-      <p class="build-tag">Remix Arcade · build v74</p>
+      <p class="build-tag">Remix Arcade · build v75</p>
     </section>
 
   </main>
@@ -819,7 +819,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 <script>
 (function(){
 
-var BUILD = 'v74';
+var BUILD = 'v75';
 var HORIZONTAL_SWIPE = new URLSearchParams(location.search).get('nav')==='horizontal';
 document.body.classList.toggle('horizontal-swipe', HORIZONTAL_SWIPE);
 var META_PREFIX = 'ra-meta-';
@@ -2710,7 +2710,7 @@ function mappedGenerationError(status, raw){
   return generationError('The AI service stopped the build. Trying again will start a new paid AI request.', 'generation', 'provider_error');
 }
 
-function streamGame(system, userMsg, denom){
+function streamGame(system, userMsg, denom, modelTier){
   pendingCode = '';
   progressDenom = denom || 7000;
   $('#buildTerminal').innerHTML = '<span class="cursor"></span>';
@@ -2719,7 +2719,7 @@ function streamGame(system, userMsg, denom){
   return fetch('/api/anthropic/messages', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:16000, stream:true, system: system, messages:[{role:'user', content: userMsg}] })
+    body: JSON.stringify({ model:'claude-sonnet-4-6', modelTier:modelTier==='3d'?'3d':'default', max_tokens:16000, stream:true, system: system, messages:[{role:'user', content: userMsg}] })
   }).then(function(resp){
     if(!resp.ok) return resp.text().then(function(raw){ throw mappedGenerationError(resp.status, raw); });
     if(!resp.body) throw generationError('The AI service returned no stream. Trying again will start a new paid AI request.', 'generation', 'empty_stream');
@@ -2828,7 +2828,7 @@ function runCreateJob(job){
   job.publishWithoutValidation = null;
   job.generatedCode = null;
   setBuildStage(job, 'building', use3D ? 'Building the 3D game…' : 'Building the game…', 4);
-  streamGame(use3D ? SYS_3D_JS : SYS_JS, buildUserMessage('create', job.prompt, job.about, null), 3500).then(function(code){
+  streamGame(use3D ? SYS_3D_JS : SYS_JS, buildUserMessage('create', job.prompt, job.about, null), 3500, use3D ? '3d' : 'default').then(function(code){
     if(buildJob!==job) return;
     job.generatedCode = code;
     job.retryWithoutGeneration = function(){ return finishCreateFromCode(job, code, use3D, false); };
@@ -2891,7 +2891,7 @@ function runRemixJob(job){
   job.publishWithoutValidation = null;
   job.generatedCode = null;
   setBuildStage(job, 'building', job.kind==='edit' ? 'Updating the game…' : 'Building your version…', 4);
-  streamGame(job.system, buildUserMessage(job.messageMode, job.prompt, '', job.base), job.denom).then(function(code){
+  streamGame(job.system, buildUserMessage(job.messageMode, job.prompt, '', job.base), job.denom, job.is3D ? '3d' : 'default').then(function(code){
     if(buildJob!==job) return;
     job.generatedCode = code;
     if(job.isEngine){

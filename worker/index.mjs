@@ -168,6 +168,7 @@ function getMaxTokens(body, env) {
 function cleanAiRequest(body, env) {
   return {
     model: body.model,
+    modelTier: body.modelTier === "3d" ? "3d" : "default",
     max_tokens: getMaxTokens(body, env),
     stream: Boolean(body.stream),
     system: typeof body.system === "string" ? body.system.slice(0, 80_000) : "",
@@ -358,7 +359,9 @@ async function handleAi(request, env) {
     return callOpenAiCompatible(body, env, {
       apiKey,
       baseUrl: env.YUNWU_BASE_URL || "https://yunwu.ai/v1",
-      model: env.YUNWU_MODEL || env.AI_MODEL || "gpt-4o-mini",
+      model: body.modelTier === "3d"
+        ? (env.YUNWU_3D_MODEL || "gpt-5.6-sol")
+        : (env.YUNWU_MODEL || env.AI_MODEL || "gpt-4o-mini"),
       includeEffort: true,
       reasoningFormat: env.YUNWU_REASONING_FORMAT,
     });
@@ -391,6 +394,10 @@ function aiStatus(env) {
     ok: true,
     provider,
     model,
+    models: provider === "yunwu" ? {
+      default: env.YUNWU_MODEL || env.AI_MODEL || "gpt-4o-mini",
+      threeD: env.YUNWU_3D_MODEL || "gpt-5.6-sol",
+    } : { default: model },
     configured,
     limits: {
       perIpPerHour: envNumber(env, "AI_REQUESTS_PER_IP_PER_HOUR", envNumber(env, "AI_REQUESTS_PER_HOUR", 20)),
