@@ -35,9 +35,9 @@ const sample2D = [
 ].join("\n");
 
 const sample3D = [
-  "var cube;",
-  "function resetGame(){hideScore();cube=new THREE.Mesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshBasicMaterial());world.add(cube);}",
-  "function update(dt){cube.rotation.y+=0.01*dt;}",
+  "var cube,shots;",
+  "function resetGame(){enableFPSControls();setHud('HEALTH 100 | FIND THE EXIT');shots=0;cube=new THREE.Mesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshBasicMaterial());world.add(cube);}",
+  "function update(dt){cube.rotation.y+=0.01*dt;if(actions.firePressed)shots++;if(actions.abilityPressed)cube.scale.setScalar(1.2);}",
 ].join("\n");
 
 const games = {
@@ -78,13 +78,23 @@ games["/validate-3d"] = validationFixture(games["/3d"]);
 
 assert(context.wants3D("a Doomlike maze shooter"), "Doomlike prompts should select 3D.");
 assert(!context.wants3D("a cozy 2D pet"), "Explicit 2D prompts should remain 2D.");
+assert(context.requiresFPSControls("a 3D portal shooter", true), "3D shooters should require full FPS controls.");
+assert(!context.requiresFPSControls("a 3D third-person shooter", true), "Third-person games should not be forced into FPS controls.");
 assert.strictEqual(context.validateEngineCode(sample2D, false), null, "Valid 2D logic was rejected.");
 assert.strictEqual(context.validateEngineCode(sample3D, true), null, "Valid 3D logic was rejected.");
+assert.strictEqual(context.validateEngineCode(sample3D, true, true), null, "A complete FPS control setup was rejected.");
+assert(/FIRE button/.test(context.validateEngineCode(sample3D.replace("actions.firePressed", "input.justTapped"), true, true)), "An FPS without a working FIRE button was accepted.");
 const padding = `/*${"x".repeat(140)}*/`;
 assert(/missing draw/.test(context.validateEngineCode(`function resetGame(){} function update(){} ${padding}`, false)), "Incomplete 2D logic was accepted.");
 assert(/syntax error/.test(context.validateEngineCode(`function resetGame(){ function update(){} ${padding}`, true)), "Invalid JavaScript was accepted.");
 assert(/GENRE FIDELITY/.test(generatorSource), "Genre-fidelity instructions are missing.");
 assert(!/One clear arcade mechanic/.test(generatorSource), "A forced arcade rule remains in the generator.");
+assert(generatorSource.includes("function enableFPSControls"), "The 3D engine does not provide complete FPS controls.");
+assert(games["/3d"].includes('makeActionButton("FIRE"'), "The 3D shell is missing its FIRE button.");
+assert(games["/3d"].includes('makeActionButton("ABILITY"'), "The 3D shell is missing its ABILITY button.");
+assert(games["/3d"].includes("actions.firePressed=false"), "FPS action presses are not reset each frame.");
+assert(generatorSource.includes("Never use a generic screen tap or onTap as the primary FPS fire control"), "The 3D prompt still permits ambiguous tap-to-fire controls.");
+assert(generatorSource.includes("Do not default to an arcade structure"), "The 3D prompt still defaults to arcade structure.");
 assert(source.includes("function validateEngineCode"), "The generated-code quality gate is missing.");
 assert(source.includes("function preflightGeneratedGame"), "The generated-game startup check is missing.");
 assert(context.validationGameHtml(games["/2d"]).includes("window.requestAnimationFrame"), "The mobile validation clock is missing.");
