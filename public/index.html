@@ -661,7 +661,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
         <div class="follow-chips" id="followingList"></div>
       </div>
       <div class="feed-grid" id="profGrid"></div>
-      <p class="build-tag">Remix Arcade · build v75</p>
+      <p class="build-tag">Remix Arcade · build v76</p>
     </section>
 
   </main>
@@ -819,7 +819,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 <script>
 (function(){
 
-var BUILD = 'v75';
+var BUILD = 'v76';
 var HORIZONTAL_SWIPE = new URLSearchParams(location.search).get('nav')==='horizontal';
 document.body.classList.toggle('horizontal-swipe', HORIZONTAL_SWIPE);
 var META_PREFIX = 'ra-meta-';
@@ -982,7 +982,9 @@ BRAND RITUAL (mandatory, exact):
 Return nothing but the HTML document.`;
 
 function wants3D(text){
-  return /\b3[\s-]?d\b|\bthree[\s.-]?js\b|\bfirst[\s-]?person\b|\bthird[\s-]?person\b|\bfps\b|\bdoom(?:like)?\b|\bvoxel\b/i.test(text||'');
+  var value = String(text||'');
+  if(/\b2[\s-]?d\b/i.test(value) && !/\b3[\s-]?d\b/i.test(value)) return false;
+  return /\b3[\s-]?d\b|\bthree[\s.-]?js\b|\bfirst[\s-]?person\b|\bthird[\s-]?person\b|\bfps\b|\bdoom(?:like)?\b|\bvoxel\b|\bgta(?:[\s-]?style)?\b|\bgrand\s+theft\s+auto\b|\bopen[\s-]?world\b|\bfree[\s-]?roam(?:ing)?\b/i.test(value);
 }
 function is3DGameHtml(html){
   return !!html && (html.indexOf('three.min.js')>-1 || /\bTHREE\./.test(html));

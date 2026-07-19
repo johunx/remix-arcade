@@ -77,7 +77,9 @@ games["/validate-2d"] = validationFixture(games["/2d"]);
 games["/validate-3d"] = validationFixture(games["/3d"]);
 
 assert(context.wants3D("a Doomlike maze shooter"), "Doomlike prompts should select 3D.");
+assert(context.wants3D("a GTA-style free-roaming city"), "Strong open-world prompts should select 3D.");
 assert(!context.wants3D("a cozy 2D pet"), "Explicit 2D prompts should remain 2D.");
+assert(!context.wants3D("a 2D open-world driving game"), "Explicit 2D intent should override genre inference.");
 assert(context.requiresFPSControls("a 3D portal shooter", true), "3D shooters should require full FPS controls.");
 assert(!context.requiresFPSControls("a 3D third-person shooter", true), "Third-person games should not be forced into FPS controls.");
 assert.strictEqual(context.validateEngineCode(sample2D, false), null, "Valid 2D logic was rejected.");
