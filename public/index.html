@@ -819,7 +819,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 <script>
 (function(){
 
-var BUILD = 'v77';
+var BUILD = 'v78';
 var GENERATION_JOB_KEY = 'ra-active-generation-v1';
 var HORIZONTAL_SWIPE = new URLSearchParams(location.search).get('nav')==='horizontal';
 document.body.classList.toggle('horizontal-swipe', HORIZONTAL_SWIPE);
@@ -998,6 +998,7 @@ var SHELL3D_TOP = '<!DOCTYPE html>\n<html><head><meta charset="UTF-8"><meta name
 var SHELL3D_BOTTOM = '\nsetTimeout(function(){try{var oc=document.createElement("canvas");var ow=240,oh=Math.round(ow*H/W)||340;oc.width=ow;oc.height=oh;oc.getContext("2d").drawImage(renderer.domElement,0,0,ow,oh);parent.postMessage({type:"ra-cover",data:oc.toDataURL("image/jpeg",0.55)},"*");}catch(e){}},3500);\nvar lastT=performance.now();\nfunction frame(t){\nvar dt=Math.min((t-lastT)/16.67,3);lastT=t;\ntry{if(!over)update(dt);}catch(e){crashScreen();return;}\nfor(var i=particles.length-1;i>=0;i--){var p=particles[i];p.m.position.x+=p.vx*dt;p.m.position.y+=p.vy*dt;p.m.position.z+=p.vz*dt;p.vy-=0.012*dt;p.life-=0.03*dt;if(p.life<=0){scene.remove(p.m);p.m.material.dispose();particles.splice(i,1);continue;}p.m.scale.setScalar(Math.max(p.life,0.01));}\nhudEl.textContent="SCORE "+Math.floor(score);\nvar ox=0,oy=0;\nif(shakeT>0){ox=rand(-shakeT,shakeT)*0.02;oy=rand(-shakeT,shakeT)*0.02;shakeT*=0.85;if(shakeT<0.5)shakeT=0;}\ncamera.position.x+=ox;camera.position.y+=oy;\nrenderer.render(scene,camera);\ncamera.position.x-=ox;camera.position.y-=oy;\ninput.justTapped=false;look.dx=0;look.dy=0;\nrequestAnimationFrame(frame);\n}\nresetGame();\nrequestAnimationFrame(frame);\n}catch(e){crashScreen();}\n})();\n</scr'+'ipt>\n</body></html>';
 
 var ADAPTIVE_SHELL3D_TOP = SHELL3D_TOP
+  .replace('renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.setSize(W,H);document.body.appendChild(renderer.domElement);', 'renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.setSize(W,H);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;document.body.appendChild(renderer.domElement);')
   .replace('<div id="hud">SCORE 0</div>', '<div id="hud" style="display:none">SCORE 0</div>')
   .replace('function crashScreen(){try{', 'function crashScreen(){try{parent.postMessage({type:"ra-crash"},"*");')
   .replace('var particles=[],score=0,over=false,audioC=null,shakeT=0;', 'var particles=[],score=0,scoreVisible=false,scoreLabel="SCORE",hudText="",over=false,audioC=null,shakeT=0;')
@@ -1005,18 +1006,23 @@ var ADAPTIVE_SHELL3D_TOP = SHELL3D_TOP
   .replace('fsEl.textContent="SCORE "+Math.floor(score);', 'fsEl.textContent=scoreLabel+" "+Math.floor(score);')
   .replace('var stickOn=false,stickPid=-1,lookPid=-1,lastLX=0,lastLY=0,stickCX=0,stickCY=0,stickBase=null,stickNub=null;', 'var actions={fire:false,firePressed:false,ability:false,abilityPressed:false};\nvar stickOn=false,stickPid=-1,lookPid=-1,lastLX=0,lastLY=0,stickCX=0,stickCY=0,stickBase=null,stickNub=null,fpsControlsOn=false;')
   .replace('function resetStick(){', 'function makeActionButton(label,right,bottom,key,size){var b=document.createElement("button");b.type="button";b.textContent=label;b.setAttribute("aria-label",label);b.style.cssText="position:fixed;right:"+right+"px;bottom:"+bottom+"px;width:"+size+"px;height:"+size+"px;border-radius:50%;border:2px solid rgba(255,255,255,.55);background:rgba(30,15,22,.72);color:#fff;font:bold "+(size>65?12:9)+"px monospace;z-index:8;touch-action:none;user-select:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 5px 18px rgba(0,0,0,.38)";function down(e){e.preventDefault();e.stopPropagation();actions[key]=true;actions[key+"Pressed"]=true;b.style.transform="scale(.91)";b.style.background="rgba(255,120,80,.82)";try{b.setPointerCapture(e.pointerId);}catch(_){} }function up(e){e.preventDefault();e.stopPropagation();actions[key]=false;b.style.transform="";b.style.background="rgba(30,15,22,.72)";}b.addEventListener("pointerdown",down);b.addEventListener("pointerup",up);b.addEventListener("pointercancel",up);b.addEventListener("lostpointercapture",function(){actions[key]=false;b.style.transform="";b.style.background="rgba(30,15,22,.72)";});document.body.appendChild(b);}\nfunction enableFPSControls(){enableJoystick();if(fpsControlsOn)return;fpsControlsOn=true;var cross=document.createElement("div");cross.setAttribute("aria-hidden","true");cross.style.cssText="position:fixed;left:50%;top:50%;width:18px;height:18px;transform:translate(-50%,-50%);z-index:7;pointer-events:none;border:2px solid rgba(255,255,255,.9);border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.45)";var dot=document.createElement("i");dot.style.cssText="position:absolute;left:50%;top:50%;width:3px;height:3px;border-radius:50%;background:#fff;transform:translate(-50%,-50%)";cross.appendChild(dot);document.body.appendChild(cross);makeActionButton("FIRE",18,82,"fire",76);makeActionButton("ABILITY",104,158,"ability",58);}\nfunction resetStick(){')
-  .replace('addEventListener("keydown",function(e){keys[e.key]=true;', 'function setActionKey(key,down){if(key===" "||key==="Enter"){if(down&&!actions.fire)actions.firePressed=true;actions.fire=down;}if(key==="q"||key==="Q"||key==="e"||key==="E"){if(down&&!actions.ability)actions.abilityPressed=true;actions.ability=down;}}\naddEventListener("keydown",function(e){keys[e.key]=true;setActionKey(e.key,true);')
+  .replace('var actions={fire:false,firePressed:false,ability:false,abilityPressed:false};\nvar stickOn=', 'var actions={fire:false,firePressed:false,ability:false,abilityPressed:false,gas:false,gasPressed:false,brake:false,brakePressed:false};\nvar drive={steer:0,throttle:0,brake:false};\nvar stickOn=')
+  .replace('stickNub=null,fpsControlsOn=false;', 'stickNub=null,fpsControlsOn=false,drivingControlsOn=false;')
+  .replace('function resetStick(){', 'function enableDrivingControls(){enableJoystick();if(drivingControlsOn)return;drivingControlsOn=true;makeActionButton("GAS",18,82,"gas",76);makeActionButton("BRAKE",104,158,"brake",58);}\nfunction resetStick(){')
+  .replace('addEventListener("keydown",function(e){keys[e.key]=true;', 'function setActionKey(key,down){if(key===" "||key==="Enter"){if(down&&!actions.fire)actions.firePressed=true;actions.fire=down;}if(key==="q"||key==="Q"||key==="e"||key==="E"){if(down&&!actions.ability)actions.abilityPressed=true;actions.ability=down;}if(key==="ArrowUp"||key==="w"||key==="W"){if(down&&!actions.gas)actions.gasPressed=true;actions.gas=down;}if(key==="ArrowDown"||key==="s"||key==="S"){if(down&&!actions.brake)actions.brakePressed=true;actions.brake=down;}}\naddEventListener("keydown",function(e){keys[e.key]=true;setActionKey(e.key,true);')
   .replace('addEventListener("keyup",function(e){keys[e.key]=false;});', 'addEventListener("keyup",function(e){keys[e.key]=false;setActionKey(e.key,false);});')
   .replace('keys[d.key]=!!d.down;if(d.down&&over', 'keys[d.key]=!!d.down;setActionKey(d.key,!!d.down);if(d.down&&over')
   .replace('if(typeof onTap==="function")onTap(input.x,input.y);', 'if(!fpsControlsOn&&typeof onTap==="function")onTap(input.x,input.y);')
   .replace('function restart(){score=0;over=false;overEl.style.display="none";', 'function restart(){score=0;scoreVisible=false;scoreLabel="SCORE";hudText="";hudEl.style.display="none";over=false;overEl.style.display="none";')
-  .replace('clearParticles();resetStick();look.dx=0;', 'clearParticles();resetStick();actions.fire=false;actions.firePressed=false;actions.ability=false;actions.abilityPressed=false;look.dx=0;');
+  .replace('clearParticles();resetStick();look.dx=0;', 'clearParticles();resetStick();actions.fire=false;actions.firePressed=false;actions.ability=false;actions.abilityPressed=false;look.dx=0;')
+  .replace('actions.ability=false;actions.abilityPressed=false;look.dx=0;', 'actions.ability=false;actions.abilityPressed=false;actions.gas=false;actions.gasPressed=false;actions.brake=false;actions.brakePressed=false;drive.steer=0;drive.throttle=0;drive.brake=false;look.dx=0;');
 
 var ADAPTIVE_SHELL3D_BOTTOM = SHELL3D_BOTTOM
   .replace('var lastT=performance.now();\nfunction frame(t){', 'var lastT=performance.now(),readySent=false;\nfunction frame(t){')
+  .replace('try{if(!over)update(dt);}', 'drive.steer=clamp(stick.x+(keys["ArrowRight"]||keys["d"]||keys["D"]?1:0)-(keys["ArrowLeft"]||keys["a"]||keys["A"]?1:0),-1,1);drive.throttle=actions.gas?1:0;drive.brake=!!actions.brake;try{if(!over)update(dt);}')
   .replace('hudEl.textContent="SCORE "+Math.floor(score);', 'hudEl.style.display=scoreVisible?"block":"none";if(scoreVisible)hudEl.textContent=hudText||scoreLabel+" "+Math.floor(score);')
   .replace('renderer.render(scene,camera);\ncamera.position.x-=ox;', 'renderer.render(scene,camera);\nif(!readySent){readySent=true;try{parent.postMessage({type:"ra-ready"},"*");}catch(e){}}\ncamera.position.x-=ox;')
-  .replace('input.justTapped=false;look.dx=0;look.dy=0;', 'input.justTapped=false;actions.firePressed=false;actions.abilityPressed=false;look.dx=0;look.dy=0;');
+  .replace('input.justTapped=false;look.dx=0;look.dy=0;', 'input.justTapped=false;actions.firePressed=false;actions.abilityPressed=false;actions.gasPressed=false;actions.brakePressed=false;look.dx=0;look.dy=0;');
 
 function assembleGame3D(js){
   return ADAPTIVE_SHELL3D_TOP + '\n' + GAME_START + '\n' + js + '\n' + GAME_END + ADAPTIVE_SHELL3D_BOTTOM;
@@ -1044,6 +1050,8 @@ ENGINE GLOBALS AND HELPERS AVAILABLE TO YOU:
 - gameOver() — optional. Use only for a genuine failed run with instant retry; it reports leaderboard scores automatically.
 - rand(a, b), clamp(v, a, b).
 
+- enableDrivingControls(), drive — {steer, throttle, brake}: complete visible mobile driving controls. Calling it adds a left steering stick plus large GAS and BRAKE buttons. Desktop arrows/WASD feed the same drive values.
+
 FIRST-PERSON MODE (mandatory for FPS/first-person prompts; also the default for a 3D shooter unless the creator explicitly asks for third-person, top-down, or another perspective):
 - Call enableFPSControls() once inside resetGame(). The engine provides a visible left movement joystick, right-side drag-to-look area, center crosshair, large FIRE button, and separate ABILITY button. Never recreate or cover these controls with custom DOM.
 - Read stick.x/stick.y for movement and look.dx/look.dy for aiming. Read actions.firePressed for one shot per press or actions.fire for held automatic fire. Read actions.abilityPressed for a distinct themed ability with a visible or HUD cooldown. Never use a generic screen tap or onTap as the primary FPS fire control.
@@ -1056,16 +1064,23 @@ FIRST-PERSON MODE (mandatory for FPS/first-person prompts; also the default for 
 - FIRE and ABILITY must both work immediately. The ability must fit the prompt, such as a portal burst, shield, dash, stun, or alternate weapon, rather than being a second identical shot.
 - Targets stay abstract and kid-safe: blocky drones, crystals, robots that pop with burst3d — never humans, never blood.
 
+DRIVING MODE (mandatory whenever the requested experience centers on a car, kart, truck, taxi, bus, race, or driving):
+- Call enableDrivingControls() once inside resetGame(). Never make invisible dragging or tilting the only way to steer.
+- Every frame, use drive.steer (-1 left to +1 right), drive.throttle (0 to 1), and drive.brake. BRAKE should slow the vehicle and become reverse when held near a stop. Steering must visibly rotate the car and its front wheels.
+- Use acceleration, drag, a capped speed, speed-sensitive turning, and smooth follow-camera interpolation. Keep the car on readable terrain or roads with boundaries; collisions should slow or stop it instead of letting it pass through scenery.
+- Build the vehicle as a recognizable compound model with a body, cabin, four wheels, lights, and distinct front/back. Show a concise speed or objective HUD. The controls must work immediately without reading instructions.
+
 GENRE FIDELITY — HIGHEST PRIORITY:
 - Treat the creator's prompt as a contract. Implement the requested genre, perspective, spatial layout, core activity, camera, controls, mood, and progression directly.
 - NEVER replace a requested game with an easier endless runner, tunnel dodger, rolling-ball collector, lane game, or tap-to-shoot box gallery unless that is what the creator requested.
 - Valid forms include first- or third-person exploration, campaign shooter, driving, platforming, puzzle, strategy, builder, sandbox, simulation, creative toy, or mystery. Do not default to an arcade structure; use one only when the creator explicitly requests it.
 - Touch controls must fit the genre; also support sensible keyboard controls. Camera behavior must match the perspective: first-person camera-as-player, third-person follow/orbit, top-down, or fixed as appropriate.
 - Build recognizable space rather than an empty void: floors, walls, rooms, ramps, landmarks, lanes, or boundaries appropriate to the idea.
-- Low-poly primitives only (BoxGeometry, SphereGeometry, ConeGeometry, CylinderGeometry, TorusGeometry, PlaneGeometry) with MeshLambertMaterial or MeshBasicMaterial. Create shared geometries/materials once with var, reuse them across meshes.
+- Use efficient three.js geometry and procedural art: compound models made from layered primitives, BufferGeometry or ShapeGeometry where useful, CanvasTexture for small generated signs or markings, vertex colors, transparent fake shadows, and InstancedMesh for repeated scenery. No external assets or network requests.
+- Visual quality matters: give important objects a recognizable silhouette, contrasting materials, small structural details, varied scale and height, and a coherent palette. Build foreground, midground, and distant landmarks so the scene does not look like sparse colored boxes.
 - Choose scene background, fog, lighting colors, and materials from the prompt. Do not force the platform palette onto every game. Keep important shapes and UI readable on a portrait phone.
 - When the prompt names a fictional world or visual theme, express it throughout the environment, silhouettes, colors, props, enemy design, ability, and objective. A title or color swap alone is not theme fidelity.
-- Keep at most a few dozen active meshes; recycle instead of endlessly creating. Must hold 60fps on a mid-range phone.
+- Keep roughly 80 rendered objects or fewer, share geometry and materials, use InstancedMesh for repetition, and recycle dynamic objects. Must remain smooth on a mid-range phone.
 - Score, timers, difficulty ramps, enemies, game over, particles, shake, and sound are optional. Use only the systems the requested experience needs. Health, objectives, dialogue, inventory, or contextual instructions may replace score.
 - Scope intelligently: deliver one polished, recognizable version of the requested idea. Initialize every variable in resetGame(), keep meshes bounded, and mentally check startup, first interaction, camera, collision, objective, and retry/continuation behavior. The code must be syntactically complete.
 - Content must be general-audience and kid-safe: no gore, no sexual or suggestive content, no hate symbols. Abstract/cartoon danger only.
@@ -2605,7 +2620,10 @@ function requiresFPSControls(text, is3D){
   if(/\bthird[\s-]?person\b|\btop[\s-]?down\b|\bisometric\b/i.test(value)) return false;
   return /\bfps\b|\bfirst[\s-]?person\b|\bdoom(?:like)?\b/i.test(value) || (is3D && /\bshoot(?:er|ing)?\b|\bblaster\b|\bgun\s*game\b/i.test(value));
 }
-function validateEngineCode(code, is3D, fpsRequired){
+function requiresDrivingControls(text, is3D){
+  return !!is3D && /\b(?:car|cars|kart|go[\s-]?kart|truck|taxi|bus|vehicle|driv(?:e|ing)|racing|racer|road\s*trip)\b/i.test(String(text||''));
+}
+function validateEngineCode(code, is3D, fpsRequired, drivingRequired){
   if(!code || code.length<120) return 'The model returned too little game code.';
   if(code.length>140000) return 'The game code is too large to run safely.';
   if(/<\/?(?:html|script|canvas)\b/i.test(code)) return 'The model returned HTML instead of engine game logic.';
@@ -2619,6 +2637,11 @@ function validateEngineCode(code, is3D, fpsRequired){
     if(!/\bactions\.fire(?:Pressed)?\b/.test(code)) return 'The generated FPS did not connect its FIRE button.';
     if(!/\bactions\.ability(?:Pressed)?\b/.test(code)) return 'The generated FPS did not create a working ABILITY button.';
     if(!/\bsetHud\s*\(/.test(code)) return 'The generated FPS did not provide a useful status HUD.';
+  }
+  if(is3D && drivingRequired){
+    if(!/\benableDrivingControls\s*\(/.test(code)) return 'The generated driving game did not enable visible steering, GAS, and BRAKE controls.';
+    if(!/\bdrive\.steer\b/.test(code)) return 'The generated driving game did not connect its steering control.';
+    if(!/\bdrive\.(?:throttle|brake)\b/.test(code)) return 'The generated driving game did not connect its pedals.';
   }
   try{ new Function(code); }catch(e){ return 'The game code is incomplete or has a syntax error.'; }
   return null;
@@ -2657,8 +2680,8 @@ function preflightGeneratedGame(html, is3D){
     frame.srcdoc = validationGameHtml(html);
   });
 }
-function prepareEngineGame(code, is3D, fpsRequired){
-  var issue = validateEngineCode(code, is3D, fpsRequired);
+function prepareEngineGame(code, is3D, fpsRequired, drivingRequired){
+  var issue = validateEngineCode(code, is3D, fpsRequired, drivingRequired);
   if(issue) return Promise.reject(qualityError(issue));
   var html = is3D ? assembleGame3D(code) : assembleGame(code);
   return preflightGeneratedGame(html, is3D).then(function(){ return html; });
@@ -2844,7 +2867,7 @@ function finishCreateFromCode(job, code, use3D, skipPreflight){
   if(skipPreflight) prepared = Promise.resolve(use3D ? assembleGame3D(code) : assembleGame(code));
   else {
     setBuildStage(job, 'building', 'Checking that the game works…', 79);
-    prepared = prepareEngineGame(code, use3D, job.fpsRequired);
+    prepared = prepareEngineGame(code, use3D, job.fpsRequired, job.drivingRequired);
   }
   return prepared.then(function(html){
     if(buildJob!==job) return;
@@ -2871,6 +2894,7 @@ function finishCreateFromCode(job, code, use3D, skipPreflight){
 function runCreateJob(job){
   var use3D = wants3D(job.prompt+' '+(job.about||''));
   job.fpsRequired = requiresFPSControls(job.prompt+' '+(job.about||''), use3D);
+  job.drivingRequired = requiresDrivingControls(job.prompt+' '+(job.about||''), use3D);
   job.validationRetried = false;
   job.retryWithoutGeneration = null;
   job.publishWithoutValidation = null;
@@ -2896,6 +2920,7 @@ function restoreGenerationJob(){
   var job={kind:'create',title:saved.title||titleFromPrompt(saved.prompt||'3D game'),prompt:saved.prompt||'',about:saved.about||'',creator:saved.creator||myName||'Guest',serverJobId:saved.id,startedAt:saved.startedAt||Date.now()};
   job.runner=function(){
     job.fpsRequired=requiresFPSControls(job.prompt+' '+job.about,true);
+    job.drivingRequired=requiresDrivingControls(job.prompt+' '+job.about,true);
     setBuildStage(job,'building','Reconnecting to your background buildâ€¦',8);
     var result=saved.code?Promise.resolve(cleanCode(saved.code)):pollGenerationJob(job);
     result.then(function(code){
@@ -2926,7 +2951,7 @@ function finishVersionFromCode(job, code, skipPreflight){
   var prepared;
   if(job.isEngine && !skipPreflight){
     setBuildStage(job, 'building', 'Checking that the game works…', 79);
-    prepared = prepareEngineGame(code, job.is3D, job.fpsRequired);
+    prepared = prepareEngineGame(code, job.is3D, job.fpsRequired, job.drivingRequired);
   } else if(job.isEngine) prepared = Promise.resolve(job.is3D ? assembleGame3D(code) : assembleGame(code));
   else prepared = Promise.resolve(code);
   return prepared.then(function(finalHtml){
@@ -2998,6 +3023,7 @@ function handleRemixOrEdit(mode){
     isEngine:isEngine,
     is3D:is3D,
     fpsRequired:is3D && requiresFPSControls((/\benableFPSControls\s*\(/.test(innerJs||'') ? 'first-person ' : '')+prompt, true),
+    drivingRequired:is3D && requiresDrivingControls(prompt+' '+(game.prompt||''), true),
     system:isEngine ? (is3D ? SYS_3D_JS : SYS_JS) : (is3D ? SYS_3D : SYS),
     messageMode:(mode==='remix') ? (isEngine?'remix-js':'remix-full') : (isEngine?'edit-js':'edit-full'),
     sourceCode:currentGameCode,

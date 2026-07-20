@@ -40,6 +40,12 @@ const sample3D = [
   "function update(dt){cube.rotation.y+=0.01*dt;if(actions.firePressed)shots++;if(actions.abilityPressed)cube.scale.setScalar(1.2);}",
 ].join("\n");
 
+const sampleDriving = [
+  "var car,speed;",
+  "function resetGame(){enableDrivingControls();speed=0;car=new THREE.Mesh(new THREE.BoxGeometry(2,1,4),new THREE.MeshBasicMaterial());world.add(car);}",
+  "function update(dt){speed+=drive.throttle*dt;if(drive.brake)speed-=dt;car.rotation.y+=drive.steer*0.02*dt;car.position.z+=speed*0.02*dt;}",
+].join("\n");
+
 const games = {
   "/2d": context.assembleGame(sample2D),
   "/3d": context.assembleGame3D(sample3D),
@@ -82,16 +88,23 @@ assert(!context.wants3D("a cozy 2D pet"), "Explicit 2D prompts should remain 2D.
 assert(!context.wants3D("a 2D open-world driving game"), "Explicit 2D intent should override genre inference.");
 assert(context.requiresFPSControls("a 3D portal shooter", true), "3D shooters should require full FPS controls.");
 assert(!context.requiresFPSControls("a 3D third-person shooter", true), "Third-person games should not be forced into FPS controls.");
+assert(context.requiresDrivingControls("a 3D car driving game", true), "Car games should require driving controls.");
+assert(!context.requiresDrivingControls("a 2D car game", false), "2D games should not require the 3D driving controls.");
 assert.strictEqual(context.validateEngineCode(sample2D, false), null, "Valid 2D logic was rejected.");
 assert.strictEqual(context.validateEngineCode(sample3D, true), null, "Valid 3D logic was rejected.");
 assert.strictEqual(context.validateEngineCode(sample3D, true, true), null, "A complete FPS control setup was rejected.");
 assert(/FIRE button/.test(context.validateEngineCode(sample3D.replace("actions.firePressed", "input.justTapped"), true, true)), "An FPS without a working FIRE button was accepted.");
+assert.strictEqual(context.validateEngineCode(sampleDriving, true, false, true), null, "A complete driving control setup was rejected.");
+assert(/visible steering/.test(context.validateEngineCode(sampleDriving.replace("enableDrivingControls();", ""), true, false, true)), "A car game without visible controls was accepted.");
 const padding = `/*${"x".repeat(140)}*/`;
 assert(/missing draw/.test(context.validateEngineCode(`function resetGame(){} function update(){} ${padding}`, false)), "Incomplete 2D logic was accepted.");
 assert(/syntax error/.test(context.validateEngineCode(`function resetGame(){ function update(){} ${padding}`, true)), "Invalid JavaScript was accepted.");
 assert(/GENRE FIDELITY/.test(generatorSource), "Genre-fidelity instructions are missing.");
 assert(!/One clear arcade mechanic/.test(generatorSource), "A forced arcade rule remains in the generator.");
 assert(generatorSource.includes("function enableFPSControls"), "The 3D engine does not provide complete FPS controls.");
+assert(generatorSource.includes("function enableDrivingControls"), "The 3D engine does not provide driving controls.");
+assert(generatorSource.includes('makeActionButton("GAS"'), "The 3D shell is missing its GAS button.");
+assert(generatorSource.includes('makeActionButton("BRAKE"'), "The 3D shell is missing its BRAKE button.");
 assert(games["/3d"].includes('makeActionButton("FIRE"'), "The 3D shell is missing its FIRE button.");
 assert(games["/3d"].includes('makeActionButton("ABILITY"'), "The 3D shell is missing its ABILITY button.");
 assert(games["/3d"].includes("actions.firePressed=false"), "FPS action presses are not reset each frame.");

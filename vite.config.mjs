@@ -20,6 +20,7 @@ export default defineConfig({
           AI_PROVIDER: "yunwu",
           YUNWU_BASE_URL: "https://yunwu.ai/v1",
           YUNWU_MODEL: "gpt-5.6-terra",
+          YUNWU_3D_MODEL: "gpt-5.6-sol",
           AI_EFFORT: "high",
           AI_REQUESTS_PER_IP_PER_HOUR: "6",
           AI_REQUESTS_GLOBAL_PER_DAY: "80",

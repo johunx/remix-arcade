@@ -21,11 +21,12 @@ vm.runInContext(source.slice(qualityStart, qualityEnd), context);
 const cases = {
   sandbox: "Create a 3D first-person open-world cartoon sci-fi city sandbox. There is deliberately no mission, score, timer, win state, or forced game over. Let the player freely walk around, drive a simple hover vehicle, explore several recognizable places, interact with props, use a blaster, and trigger a portal-burst ability. Make the world playful rather than an arena or endless arcade survival game.",
   mission: "Create a 3D first-person portal-cartoon shooter with several connected rooms and landmarks. The player must defeat moving robot enemies, collect three energy crystals, and reach an exit portal. Include health, clear enemy attacks, firing feedback, a FIRE button, and a portal-blast ABILITY with a cooldown. Do not make an endless runner, stationary target gallery, or score-only arcade survival game.",
+  car: "Create a polished 3D third-person free-driving game for a portrait phone. Let me drive a detailed red sports car around a colorful coastal town with curved roads, buildings, palms, signs, parked cars, and a waterfront landmark. There is no race or forced objective. Include obvious steering, gas and brake controls, satisfying acceleration and turning, collisions, a smooth follow camera, and a speed HUD.",
 };
 
 const requested = process.argv.filter((arg) => arg.startsWith("--case=")).map((arg) => arg.slice(7));
 if (requested.length !== 1) {
-  console.error("Choose exactly one paid evaluation with --case=sandbox or --case=mission.");
+  console.error("Choose exactly one paid evaluation with --case=sandbox, --case=mission, or --case=car.");
   process.exit(2);
 }
 const names = requested;
@@ -67,7 +68,8 @@ async function generate(name, prompt) {
   }
   code = code.trim().replace(/^```(?:javascript|js)?\s*/i, "").replace(/```\s*$/, "").trim();
   const fpsRequired = context.requiresFPSControls(prompt, true);
-  const issue = context.validateEngineCode(code, true, fpsRequired);
+  const drivingRequired = context.requiresDrivingControls(prompt, true);
+  const issue = context.validateEngineCode(code, true, fpsRequired, drivingRequired);
   const file = path.join(outputDir, `${name}.js`);
   fs.writeFileSync(file, code, "utf8");
   return {
@@ -80,6 +82,9 @@ async function generate(name, prompt) {
       fire: /\bactions\.fire(?:Pressed)?\b/.test(code),
       ability: /\bactions\.ability(?:Pressed)?\b/.test(code),
       hud: /\bsetHud\s*\(/.test(code),
+      driving: /\benableDrivingControls\s*\(/.test(code),
+      steering: /\bdrive\.steer\b/.test(code),
+      pedals: /\bdrive\.(?:throttle|brake)\b/.test(code),
     },
     structure: {
       gameOverCalls: (code.match(/\bgameOver\s*\(/g) || []).length,
