@@ -819,7 +819,8 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 <script>
 (function(){
 
-var BUILD = 'v76';
+var BUILD = 'v77';
+var GENERATION_JOB_KEY = 'ra-active-generation-v1';
 var HORIZONTAL_SWIPE = new URLSearchParams(location.search).get('nav')==='horizontal';
 document.body.classList.toggle('horizontal-swipe', HORIZONTAL_SWIPE);
 var META_PREFIX = 'ra-meta-';
@@ -2537,6 +2538,7 @@ function finishBuild(b, job){
   return trySave(b).then(function(ok){
     if(ok===true){
       lastBuild = null;
+      clearGenerationJob(job);
       return refreshData().then(function(){
         if(buildJob!==job) return;
         job.resultId = b.id;
@@ -2771,6 +2773,50 @@ function streamGame(system, userMsg, denom, modelTier){
   });
 }
 
+function saveGenerationJob(job, code){
+  if(!job || !job.serverJobId) return;
+  try{ localStorage.setItem(GENERATION_JOB_KEY, JSON.stringify({id:job.serverJobId,kind:'create',title:job.title,prompt:job.prompt,about:job.about||'',creator:job.creator||'',code:code||'',startedAt:job.startedAt||Date.now()})); }catch(e){}
+}
+function clearGenerationJob(job){
+  if(!job || !job.serverJobId) return;
+  try{ var saved=JSON.parse(localStorage.getItem(GENERATION_JOB_KEY)||'null'); if(saved&&saved.id===job.serverJobId) localStorage.removeItem(GENERATION_JOB_KEY); }catch(e){ localStorage.removeItem(GENERATION_JOB_KEY); }
+}
+function pollGenerationJob(job){
+  return new Promise(function(resolve,reject){
+    function check(){
+      fetch('/api/generation/jobs?id='+encodeURIComponent(job.serverJobId),{cache:'no-store'}).then(function(resp){
+        if(!resp.ok) return resp.text().then(function(raw){ throw mappedGenerationError(resp.status,raw); });
+        return resp.json();
+      }).then(function(status){
+        if(status.status==='complete'){
+          var output=status.output||{};
+          if(output.stopReason==='length') throw generationError('The AI ran out of output space before finishing the game. Trying again starts a new paid AI request.','generation','output_limit');
+          if(!output.code) throw generationError('The background build finished without game code.','generation','empty_output');
+          saveGenerationJob(job,output.code);
+          resolve(cleanCode(output.code)); return;
+        }
+        if(status.status==='errored'||status.status==='terminated') throw generationError('The background AI build stopped. Your prompt is saved; trying again starts one new AI request.','generation','background_failed');
+        if(buildJob===job) setBuildStage(job,'building','Building safely in the background. You can switch apps.',Math.min(72,(job.progress||4)+1));
+        setTimeout(check,2200);
+      }).catch(function(error){
+        if(error&&error.isGenerationError){ reject(error); return; }
+        setTimeout(check,3500);
+      });
+    }
+    check();
+  });
+}
+function backgroundGame(system,userMsg,job){
+  if(job.serverJobId) return pollGenerationJob(job);
+  return fetch('/api/generation/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({modelTier:'3d',max_tokens:16000,system:system,messages:[{role:'user',content:userMsg}]})}).then(function(resp){
+    if(!resp.ok) return resp.text().then(function(raw){ throw mappedGenerationError(resp.status,raw); });
+    return resp.json();
+  }).then(function(data){
+    job.serverJobId=data.id; job.startedAt=Date.now(); saveGenerationJob(job,'');
+    return pollGenerationJob(job);
+  });
+}
+
 function titleFromPrompt(prompt){
   return prompt.length>60 ? prompt.slice(0,57)+'…' : prompt;
 }
@@ -2830,7 +2876,10 @@ function runCreateJob(job){
   job.publishWithoutValidation = null;
   job.generatedCode = null;
   setBuildStage(job, 'building', use3D ? 'Building the 3D game…' : 'Building the game…', 4);
-  streamGame(use3D ? SYS_3D_JS : SYS_JS, buildUserMessage('create', job.prompt, job.about, null), 3500, use3D ? '3d' : 'default').then(function(code){
+  var generation = use3D
+    ? backgroundGame(SYS_3D_JS, buildUserMessage('create', job.prompt, job.about, null), job)
+    : streamGame(SYS_JS, buildUserMessage('create', job.prompt, job.about, null), 3500, 'default');
+  generation.then(function(code){
     if(buildJob!==job) return;
     job.generatedCode = code;
     job.retryWithoutGeneration = function(){ return finishCreateFromCode(job, code, use3D, false); };
@@ -2839,6 +2888,25 @@ function runCreateJob(job){
   }).catch(function(e){
     handleBuildError(job, e, 'game');
   });
+}
+function restoreGenerationJob(){
+  var saved;
+  try{ saved=JSON.parse(localStorage.getItem(GENERATION_JOB_KEY)||'null'); }catch(e){ return; }
+  if(!saved||!saved.id||saved.kind!=='create'||buildJobIsActive()) return;
+  var job={kind:'create',title:saved.title||titleFromPrompt(saved.prompt||'3D game'),prompt:saved.prompt||'',about:saved.about||'',creator:saved.creator||myName||'Guest',serverJobId:saved.id,startedAt:saved.startedAt||Date.now()};
+  job.runner=function(){
+    job.fpsRequired=requiresFPSControls(job.prompt+' '+job.about,true);
+    setBuildStage(job,'building','Reconnecting to your background buildâ€¦',8);
+    var result=saved.code?Promise.resolve(cleanCode(saved.code)):pollGenerationJob(job);
+    result.then(function(code){
+      if(buildJob!==job) return;
+      job.generatedCode=code;
+      job.retryWithoutGeneration=function(){ return finishCreateFromCode(job,code,true,false); };
+      job.publishWithoutValidation=function(){ return finishCreateFromCode(job,code,true,true); };
+      return job.retryWithoutGeneration();
+    }).catch(function(error){ handleBuildError(job,error,'game'); });
+  };
+  beginBuildJob(job);
 }
 function handleCreate(){
   var prompt = $('#promptInput').value.trim();
@@ -3142,6 +3210,7 @@ function init(){
   }).then(function(){
     clearTimeout(startupGuard);
     revealApp(false);
+    restoreGenerationJob();
   }).catch(function(error){
     clearTimeout(startupGuard);
     console.warn('[Remix Arcade '+BUILD+'] startup recovered from an error:', error);

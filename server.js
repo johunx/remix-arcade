@@ -193,10 +193,20 @@ async function streamOpenAiAsAnthropic(upstream, res) {
   const reader = upstream.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
+  let pendingRead = reader.read();
 
   while (true) {
-    const { value, done } = await reader.read();
+    const next = await Promise.race([
+      pendingRead.then((result) => ({ result })),
+      new Promise((resolve) => setTimeout(() => resolve({ heartbeat: true }), 10_000))
+    ]);
+    if (next.heartbeat) {
+      res.write(': keepalive\n\n');
+      continue;
+    }
+    const { value, done } = next.result;
     if (done) break;
+    pendingRead = reader.read();
     buffer += decoder.decode(value, { stream: true });
     const lines = buffer.split('\n');
     buffer = lines.pop() || '';

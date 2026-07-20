@@ -248,9 +248,19 @@ function streamOpenAiAsAnthropic(upstream) {
     async start(controller) {
       let buffer = "";
       try {
+        let pendingRead = reader.read();
         while (true) {
-          const { value, done } = await reader.read();
+          const next = await Promise.race([
+            pendingRead.then((result) => ({ result })),
+            new Promise((resolve) => setTimeout(() => resolve({ heartbeat: true }), 10_000)),
+          ]);
+          if (next.heartbeat) {
+            controller.enqueue(encoder.encode(": keepalive\n\n"));
+            continue;
+          }
+          const { value, done } = next.result;
           if (done) break;
+          pendingRead = reader.read();
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split("\n");
           buffer = lines.pop() || "";
@@ -378,6 +388,38 @@ async function handleAi(request, env) {
   return callAnthropic(body, env);
 }
 
+async function handleGenerationJobs(request, env) {
+  if (!env.GAME_GENERATION_WORKFLOW) return json({ error: "Background generation is unavailable." }, 503);
+  const url = new URL(request.url);
+  if (request.method === "POST") {
+    const limited = await checkAiLimit(request, env);
+    if (limited) return json({ error: limited.message }, 429);
+    const raw = await request.text().then((text) => JSON.parse(text)).catch(() => null);
+    if (!raw) return json({ error: "Invalid JSON." }, 400);
+    const body = cleanAiRequest(raw, env);
+    if (!body.messages.length) return json({ error: "Missing messages." }, 400);
+    const id = crypto.randomUUID();
+    await env.GAME_GENERATION_WORKFLOW.create({
+      id,
+      params: {
+        system: body.system,
+        messages: body.messages,
+        maxTokens: body.max_tokens,
+        modelTier: body.modelTier,
+      },
+    });
+    return json({ id, status: "queued" }, 202);
+  }
+  if (request.method === "GET") {
+    const id = url.searchParams.get("id") || "";
+    if (!/^[a-f0-9-]{36}$/i.test(id)) return json({ error: "Invalid job ID." }, 400);
+    const instance = await env.GAME_GENERATION_WORKFLOW.get(id);
+    const status = await instance.status();
+    return json({ id, ...status });
+  }
+  return json({ error: "Method not allowed." }, 405, { allow: "GET, POST" });
+}
+
 function aiStatus(env) {
   const provider = ["yunwu", "meta"].includes(String(env.AI_PROVIDER || "").toLowerCase()) ? String(env.AI_PROVIDER).toLowerCase() : "anthropic";
   const model = provider === "yunwu"
@@ -414,6 +456,7 @@ export const apiWorker = {
       if (url.pathname === "/healthz") return json({ ok: true });
       if (url.pathname === "/api/ai/status") return aiStatus(env);
       if (url.pathname === "/api/storage") return await handleStorage(request, env);
+      if (url.pathname === "/api/generation/jobs") return await handleGenerationJobs(request, env);
       if (url.pathname === "/api/anthropic/messages") return await handleAi(request, env);
       return env.ASSETS.fetch(request);
     } catch (error) {

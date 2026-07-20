@@ -1,9 +1,11 @@
 import handler from "vinext/server/app-router-entry";
 import { apiWorker } from "./index.mjs";
+export { GameGenerationWorkflow } from "./generation-workflow";
 
 interface Env {
   ASSETS: Fetcher;
   DB: D1Database;
+  GAME_GENERATION_WORKFLOW: Workflow;
   [key: string]: unknown;
 }
 

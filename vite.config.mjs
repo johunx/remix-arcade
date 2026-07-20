@@ -38,6 +38,13 @@ export default defineConfig({
             database_id: databaseId,
           },
         ],
+        workflows: [
+          {
+            name: "remix-arcade-generation",
+            binding: "GAME_GENERATION_WORKFLOW",
+            class_name: "GameGenerationWorkflow",
+          },
+        ],
       },
     }),
   ],
