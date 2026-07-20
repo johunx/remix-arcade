@@ -312,6 +312,25 @@ function streamOpenAiAsAnthropic(upstream) {
   });
 }
 
+/* the upstream AI proxy is occasionally flaky — retry connection failures and
+   5xx responses before giving up, so one hiccup never fails a build. */
+async function fetchUpstreamWithRetry(url, init, attempts = 3) {
+  let last = null;
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    if (attempt) await new Promise((resolve) => setTimeout(resolve, 800 * attempt));
+    try {
+      const upstream = await fetch(url, init);
+      if (upstream.status < 500) return upstream;
+      last = upstream;
+      if (upstream.body) await upstream.body.cancel().catch(() => {});
+    } catch (error) {
+      last = error;
+    }
+  }
+  if (last instanceof Response) return last;
+  throw last;
+}
+
 async function callOpenAiCompatible(body, env, config) {
   const payload = {
     model: config.model,
@@ -324,7 +343,7 @@ async function callOpenAiCompatible(body, env, config) {
   if (body.effort && config.includeEffort) payload.effort = body.effort;
   if (body.effort && config.reasoningFormat === "openrouter") payload.reasoning = { effort: body.effort };
 
-  const upstream = await fetch(completionsUrl(config.baseUrl), {
+  const upstream = await fetchUpstreamWithRetry(completionsUrl(config.baseUrl), {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${config.apiKey}` },
     body: JSON.stringify(payload),

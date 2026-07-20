@@ -132,6 +132,12 @@ assert(source.includes("modelTier:modelTier==='3d'?'3d':'default'"), "The client
 assert.strictEqual(context.mappedGenerationError(429, '{"error":"Too many AI requests"}').retryKind, "wait", "Hourly limits should not offer a paid retry.");
 assert.strictEqual(context.mappedGenerationError(400, '{"error":"content_filter"}').code, "provider_policy", "Content-policy failures are not identified.");
 assert.strictEqual(context.mappedGenerationError(402, '{"error":"insufficient balance"}').code, "provider_credit", "Provider credit failures are not identified.");
+assert(source.includes("function generateGameCode"), "Stream failures do not fail over to the background builder.");
+assert(source.includes("STREAM_FAILOVER_CODES"), "The failover path does not filter for transient errors.");
+assert(workerSource.includes("fetchUpstreamWithRetry"), "The worker does not retry flaky upstream connections.");
+const workflowSource = fs.readFileSync(path.join(__dirname, "..", "worker", "generation-workflow.ts"), "utf8");
+assert(workflowSource.includes("NonRetryableError"), "The workflow retries refusals and content-filter stops.");
+assert(/retries:\s*\{\s*limit:\s*4/.test(workflowSource), "The workflow does not retry transient provider failures.");
 
 if (process.argv.includes("--serve")) {
   const port = Number(process.env.GENERATOR_TEST_PORT || 3011);

@@ -2727,7 +2727,7 @@ function mappedGenerationError(status, raw){
   var lower = detail.toLowerCase();
   if(status===429){
     if(/budget|daily|tomorrow/.test(lower)) return generationError('Today’s shared AI budget has been reached. Your prompt is saved; come back after the daily reset.', 'wait', 'daily_limit');
-    return generationError('This connection has reached the beta limit of 6 AI requests per hour. Your prompt is saved; try again in about an hour.', 'wait', 'hourly_limit');
+    return generationError('This connection has reached its hourly beta limit for AI requests. Your prompt is saved; try again in about an hour.', 'wait', 'hourly_limit');
   }
   if(/credit|balance|quota|insufficient|billing/.test(lower)) return generationError('The AI account does not have enough credit right now. Your prompt is saved and no game was published.', 'wait', 'provider_credit');
   if(/content.?filter|moderation|policy|safety|copyright|trademark|refus/.test(lower)) return generationError('The AI service declined this prompt. Named franchises can sometimes trigger provider rules; edit the prompt or use original characters before trying again.', 'wait', 'provider_policy');
@@ -2797,20 +2797,25 @@ function streamGame(system, userMsg, denom, modelTier){
 }
 
 function saveGenerationJob(job, code){
-  if(!job || !job.serverJobId) return;
-  try{ localStorage.setItem(GENERATION_JOB_KEY, JSON.stringify({id:job.serverJobId,kind:'create',title:job.title,prompt:job.prompt,about:job.about||'',creator:job.creator||'',code:code||'',startedAt:job.startedAt||Date.now()})); }catch(e){}
+  if(!job || !job.serverJobId || job.kind!=='create') return;
+  try{ localStorage.setItem(GENERATION_JOB_KEY, JSON.stringify({id:job.serverJobId,kind:'create',use3D:job.use3D!==false,title:job.title,prompt:job.prompt,about:job.about||'',creator:job.creator||'',code:code||'',startedAt:job.startedAt||Date.now()})); }catch(e){}
 }
 function clearGenerationJob(job){
   if(!job || !job.serverJobId) return;
   try{ var saved=JSON.parse(localStorage.getItem(GENERATION_JOB_KEY)||'null'); if(saved&&saved.id===job.serverJobId) localStorage.removeItem(GENERATION_JOB_KEY); }catch(e){ localStorage.removeItem(GENERATION_JOB_KEY); }
 }
 function pollGenerationJob(job){
+  var deadline=(job.startedAt||Date.now())+20*60*1000;
   return new Promise(function(resolve,reject){
+    var failedPolls=0;
     function check(){
+      if(Date.now()>deadline){ reject(generationError('The background build took too long and was stopped. Your prompt is saved; trying again starts one new AI request.','generation','background_timeout')); return; }
       fetch('/api/generation/jobs?id='+encodeURIComponent(job.serverJobId),{cache:'no-store'}).then(function(resp){
-        if(!resp.ok) return resp.text().then(function(raw){ throw mappedGenerationError(resp.status,raw); });
+        if(resp.status===400||resp.status===404) return resp.text().then(function(raw){ throw mappedGenerationError(resp.status,raw); });
+        if(!resp.ok) throw new Error('transient poll failure '+resp.status);
         return resp.json();
       }).then(function(status){
+        failedPolls=0;
         if(status.status==='complete'){
           var output=status.output||{};
           if(output.stopReason==='length') throw generationError('The AI ran out of output space before finishing the game. Trying again starts a new paid AI request.','generation','output_limit');
@@ -2823,20 +2828,34 @@ function pollGenerationJob(job){
         setTimeout(check,2200);
       }).catch(function(error){
         if(error&&error.isGenerationError){ reject(error); return; }
-        setTimeout(check,3500);
+        failedPolls++;
+        setTimeout(check,Math.min(15000,3500+failedPolls*1500));
       });
     }
     check();
   });
 }
-function backgroundGame(system,userMsg,job){
+function backgroundGame(system,userMsg,job,tier){
   if(job.serverJobId) return pollGenerationJob(job);
-  return fetch('/api/generation/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({modelTier:'3d',max_tokens:16000,system:system,messages:[{role:'user',content:userMsg}]})}).then(function(resp){
+  return fetch('/api/generation/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({modelTier:tier==='3d'?'3d':'default',max_tokens:16000,system:system,messages:[{role:'user',content:userMsg}]})}).then(function(resp){
     if(!resp.ok) return resp.text().then(function(raw){ throw mappedGenerationError(resp.status,raw); });
     return resp.json();
   }).then(function(data){
     job.serverJobId=data.id; job.startedAt=Date.now(); saveGenerationJob(job,'');
     return pollGenerationJob(job);
+  });
+}
+/* transient stream failures fail over to a server-side background build
+   instead of surfacing an error — one new AI request, but the build survives
+   connection drops, app switches, and provider hiccups. */
+var STREAM_FAILOVER_CODES = /^(network_error|connection_interrupted|empty_stream|provider_unavailable|provider_error)$/;
+function generateGameCode(system, userMsg, denom, tier, job){
+  return streamGame(system, userMsg, denom, tier).catch(function(error){
+    if(buildJob!==job || !error || !error.isGenerationError || !STREAM_FAILOVER_CODES.test(error.code||'')) throw error;
+    setBuildStage(job, 'building', 'The connection hiccuped — restarting this build safely in the background…', Math.max(8, Math.min(60, job.progress||8)));
+    return backgroundGame(system, userMsg, job, tier).catch(function(fallbackError){
+      throw (fallbackError && fallbackError.isGenerationError && fallbackError.retryKind==='wait') ? fallbackError : error;
+    });
   });
 }
 
@@ -2893,6 +2912,7 @@ function finishCreateFromCode(job, code, use3D, skipPreflight){
 }
 function runCreateJob(job){
   var use3D = wants3D(job.prompt+' '+(job.about||''));
+  job.use3D = use3D;
   job.fpsRequired = requiresFPSControls(job.prompt+' '+(job.about||''), use3D);
   job.drivingRequired = requiresDrivingControls(job.prompt+' '+(job.about||''), use3D);
   job.validationRetried = false;
@@ -2901,8 +2921,8 @@ function runCreateJob(job){
   job.generatedCode = null;
   setBuildStage(job, 'building', use3D ? 'Building the 3D game…' : 'Building the game…', 4);
   var generation = use3D
-    ? backgroundGame(SYS_3D_JS, buildUserMessage('create', job.prompt, job.about, null), job)
-    : streamGame(SYS_JS, buildUserMessage('create', job.prompt, job.about, null), 3500, 'default');
+    ? backgroundGame(SYS_3D_JS, buildUserMessage('create', job.prompt, job.about, null), job, '3d')
+    : generateGameCode(SYS_JS, buildUserMessage('create', job.prompt, job.about, null), 3500, 'default', job);
   generation.then(function(code){
     if(buildJob!==job) return;
     job.generatedCode = code;
@@ -2917,17 +2937,18 @@ function restoreGenerationJob(){
   var saved;
   try{ saved=JSON.parse(localStorage.getItem(GENERATION_JOB_KEY)||'null'); }catch(e){ return; }
   if(!saved||!saved.id||saved.kind!=='create'||buildJobIsActive()) return;
-  var job={kind:'create',title:saved.title||titleFromPrompt(saved.prompt||'3D game'),prompt:saved.prompt||'',about:saved.about||'',creator:saved.creator||myName||'Guest',serverJobId:saved.id,startedAt:saved.startedAt||Date.now()};
+  var use3D=saved.use3D!==false;
+  var job={kind:'create',use3D:use3D,title:saved.title||titleFromPrompt(saved.prompt||'3D game'),prompt:saved.prompt||'',about:saved.about||'',creator:saved.creator||myName||'Guest',serverJobId:saved.id,startedAt:saved.startedAt||Date.now()};
   job.runner=function(){
-    job.fpsRequired=requiresFPSControls(job.prompt+' '+job.about,true);
-    job.drivingRequired=requiresDrivingControls(job.prompt+' '+job.about,true);
-    setBuildStage(job,'building','Reconnecting to your background buildâ€¦',8);
+    job.fpsRequired=requiresFPSControls(job.prompt+' '+job.about,use3D);
+    job.drivingRequired=requiresDrivingControls(job.prompt+' '+job.about,use3D);
+    setBuildStage(job,'building','Reconnecting to your background build…',8);
     var result=saved.code?Promise.resolve(cleanCode(saved.code)):pollGenerationJob(job);
     result.then(function(code){
       if(buildJob!==job) return;
       job.generatedCode=code;
-      job.retryWithoutGeneration=function(){ return finishCreateFromCode(job,code,true,false); };
-      job.publishWithoutValidation=function(){ return finishCreateFromCode(job,code,true,true); };
+      job.retryWithoutGeneration=function(){ return finishCreateFromCode(job,code,use3D,false); };
+      job.publishWithoutValidation=function(){ return finishCreateFromCode(job,code,use3D,true); };
       return job.retryWithoutGeneration();
     }).catch(function(error){ handleBuildError(job,error,'game'); });
   };
@@ -2986,7 +3007,7 @@ function runRemixJob(job){
   job.publishWithoutValidation = null;
   job.generatedCode = null;
   setBuildStage(job, 'building', job.kind==='edit' ? 'Updating the game…' : 'Building your version…', 4);
-  streamGame(job.system, buildUserMessage(job.messageMode, job.prompt, '', job.base), job.denom, job.is3D ? '3d' : 'default').then(function(code){
+  generateGameCode(job.system, buildUserMessage(job.messageMode, job.prompt, '', job.base), job.denom, job.is3D ? '3d' : 'default', job).then(function(code){
     if(buildJob!==job) return;
     job.generatedCode = code;
     if(job.isEngine){

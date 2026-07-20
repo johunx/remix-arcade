@@ -22,7 +22,7 @@ export default defineConfig({
           YUNWU_MODEL: "gpt-5.6-terra",
           YUNWU_3D_MODEL: "gpt-5.6-sol",
           AI_EFFORT: "high",
-          AI_REQUESTS_PER_IP_PER_HOUR: "6",
+          AI_REQUESTS_PER_IP_PER_HOUR: "12",
           AI_REQUESTS_GLOBAL_PER_DAY: "80",
           AI_MAX_TOKENS: "12000",
           MAX_STORED_VALUE_BYTES: "1000000",

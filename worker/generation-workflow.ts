@@ -1,4 +1,5 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
+import { NonRetryableError } from "cloudflare:workflows";
 
 interface Env {
   YUNWU_API_KEY?: string;
@@ -49,7 +50,10 @@ async function generate(params: GenerationParams, env: Env): Promise<{ code: str
   });
   if (!upstream.ok || !upstream.body) {
     const detail = (await upstream.text()).slice(0, 500);
-    throw new Error(`AI provider error ${upstream.status}: ${detail}`);
+    const message = `AI provider error ${upstream.status}: ${detail}`;
+    // 4xx (except rate limits) will fail identically on retry — don't burn paid attempts
+    if (upstream.status >= 400 && upstream.status < 500 && upstream.status !== 429) throw new NonRetryableError(message);
+    throw new Error(message);
   }
 
   const reader = upstream.body.getReader();
@@ -70,8 +74,14 @@ async function generate(params: GenerationParams, env: Env): Promise<{ code: str
       if (!raw || raw === "[DONE]") continue;
       let event: any;
       try { event = JSON.parse(raw); } catch { continue; }
-      if (event.error) throw new Error(event.error.message || event.error.code || "The AI provider stopped the request.");
+      if (event.error) {
+        const message = String(event.error.message || event.error.code || "The AI provider stopped the request.");
+        if (/content.?filter|moderation|policy|refus/i.test(message)) throw new NonRetryableError(message);
+        throw new Error(message);
+      }
       for (const choice of event.choices || []) {
+        if (choice.finish_reason === "content_filter") throw new NonRetryableError("The AI provider stopped this prompt because of its content policy.");
+        if (typeof choice.delta?.refusal === "string" && choice.delta.refusal) throw new NonRetryableError("The AI provider refused this prompt.");
         if (choice.finish_reason) stopReason = choice.finish_reason;
         if (choice.delta && typeof choice.delta.content === "string") code += choice.delta.content;
       }
@@ -83,6 +93,6 @@ async function generate(params: GenerationParams, env: Env): Promise<{ code: str
 
 export class GameGenerationWorkflow extends WorkflowEntrypoint<Env, GenerationParams> {
   async run(event: WorkflowEvent<GenerationParams>, step: WorkflowStep) {
-    return step.do("generate-game", { retries: { limit: 1, delay: "1 second", backoff: "constant" }, timeout: "15 minutes" }, () => generate(event.payload, this.env));
+    return step.do("generate-game", { retries: { limit: 4, delay: "5 seconds", backoff: "exponential" }, timeout: "15 minutes" }, () => generate(event.payload, this.env));
   }
 }
