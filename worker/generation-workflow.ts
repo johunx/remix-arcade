@@ -37,9 +37,19 @@ async function generate(params: GenerationParams, env: Env): Promise<{ code: str
   })).filter((message) => message.content);
   if (params.system) messages.unshift({ role: "system", content: params.system.slice(0, 80_000) });
 
+  /* a hung provider stream must die fast so the workflow retries in seconds
+     instead of burning the whole step timeout */
+  const controller = new AbortController();
+  let lastActivity = Date.now();
+  const watchdog = setInterval(() => {
+    if (Date.now() - lastActivity > 90_000) controller.abort();
+  }, 5_000);
+
+  try {
   const upstream = await fetch(completionsUrl(env.YUNWU_BASE_URL || "https://yunwu.ai/v1"), {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${apiKey}` },
+    signal: controller.signal,
     body: JSON.stringify({
       model: params.modelTier === "3d" ? (env.YUNWU_3D_MODEL || "gpt-5.6-sol") : (env.YUNWU_MODEL || "gpt-5.6-terra"),
       messages,
@@ -48,6 +58,7 @@ async function generate(params: GenerationParams, env: Env): Promise<{ code: str
       effort: env.AI_EFFORT || "high",
     }),
   });
+  lastActivity = Date.now();
   if (!upstream.ok || !upstream.body) {
     const detail = (await upstream.text()).slice(0, 500);
     const message = `AI provider error ${upstream.status}: ${detail}`;
@@ -64,6 +75,7 @@ async function generate(params: GenerationParams, env: Env): Promise<{ code: str
   while (true) {
     const { value, done } = await reader.read();
     if (done) break;
+    lastActivity = Date.now();
     buffer += decoder.decode(value, { stream: true });
     const lines = buffer.split("\n");
     buffer = lines.pop() || "";
@@ -89,10 +101,16 @@ async function generate(params: GenerationParams, env: Env): Promise<{ code: str
   }
   if (!code.trim()) throw new Error("The AI provider returned no game code.");
   return { code, stopReason };
+  } catch (error) {
+    if (controller.signal.aborted) throw new Error("The AI provider stopped responding mid-stream.");
+    throw error;
+  } finally {
+    clearInterval(watchdog);
+  }
 }
 
 export class GameGenerationWorkflow extends WorkflowEntrypoint<Env, GenerationParams> {
   async run(event: WorkflowEvent<GenerationParams>, step: WorkflowStep) {
-    return step.do("generate-game", { retries: { limit: 4, delay: "5 seconds", backoff: "exponential" }, timeout: "15 minutes" }, () => generate(event.payload, this.env));
+    return step.do("generate-game", { retries: { limit: 4, delay: "5 seconds", backoff: "exponential" }, timeout: "8 minutes" }, () => generate(event.payload, this.env));
   }
 }

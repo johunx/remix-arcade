@@ -138,6 +138,8 @@ assert(workerSource.includes("fetchUpstreamWithRetry"), "The worker does not ret
 const workflowSource = fs.readFileSync(path.join(__dirname, "..", "worker", "generation-workflow.ts"), "utf8");
 assert(workflowSource.includes("NonRetryableError"), "The workflow retries refusals and content-filter stops.");
 assert(/retries:\s*\{\s*limit:\s*4/.test(workflowSource), "The workflow does not retry transient provider failures.");
+assert(workflowSource.includes("controller.abort()"), "Hung provider streams are never aborted by the stall watchdog.");
+assert(workflowSource.includes("clearInterval(watchdog)"), "The stall watchdog timer is never cleaned up.");
 assert(source.includes("/api/images/cover"), "Covers do not use the AI image generator.");
 assert(source.includes("function generateCoverSvg"), "The SVG cover fallback was removed.");
 assert(source.includes("function shrinkCoverImage"), "Generated covers are not shrunk before storage.");
