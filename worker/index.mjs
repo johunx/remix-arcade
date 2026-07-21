@@ -415,7 +415,7 @@ function bytesToBase64(bytes) {
 }
 
 function coverImagePrompt(title, concept) {
-  return `Bold, colorful poster-style cover art for a mobile arcade game titled "${title}". ${concept}. One iconic central subject, dramatic lighting, rich color and depth, painterly game-key-art style. No text, letters, words, watermarks, or logos anywhere in the image. Kid-safe, general audience.`;
+  return `Irresistible mobile game cover art in the style of a top-grossing app store hit, for a game titled "${title}". Scene: ${concept}. One charismatic hero subject filling most of the frame, facing the viewer with energy and personality, mid-action pose. Exaggerated depth and perspective, dramatic cinematic rim lighting, glossy vibrant saturated colors with strong complementary contrast, detailed stylized 3D-render look with soft painterly background bokeh. The composition must read instantly as a tiny thumbnail and make players want to tap it. Absolutely no text, letters, numbers, words, UI, watermarks, or logos anywhere. Kid-safe, general audience.`;
 }
 
 async function handleCoverImage(request, env) {
