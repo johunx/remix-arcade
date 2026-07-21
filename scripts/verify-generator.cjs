@@ -46,9 +46,16 @@ const sampleDriving = [
   "function update(dt){speed+=drive.throttle*dt;if(drive.brake)speed-=dt;car.rotation.y+=drive.steer*0.02*dt;car.position.z+=speed*0.02*dt;}",
 ].join("\n");
 
+const sampleHero = [
+  "var goal;",
+  "function resetGame(){enableHeroControls();setActionLabels({ability:''});heroSpawn(0,3,8);var base=new THREE.Mesh(new THREE.BoxGeometry(24,1,24),new THREE.MeshLambertMaterial({color:0x557755}));base.position.y=-0.5;ground.add(base);var step=new THREE.Mesh(new THREE.BoxGeometry(3,1,3),new THREE.MeshLambertMaterial({color:0x996644}));step.position.set(0,1.5,2);ground.add(step);goal=new THREE.Mesh(new THREE.BoxGeometry(1.4,1.4,1.4),new THREE.MeshLambertMaterial({color:0xFFC978}));goal.position.set(0,2.9,2);world.add(goal);setHud('REACH THE GOLD CUBE');}",
+  "function update(dt){goal.rotation.y+=0.03*dt;if(hero.position.distanceTo(goal.position)<2){setHud('YOU MADE IT');return;}setHud('x'+hero.position.x.toFixed(1)+' y'+hero.position.y.toFixed(1)+' z'+hero.position.z.toFixed(1)+' g:'+heroOnGround);}",
+].join("\n");
+
 const games = {
   "/2d": context.assembleGame(sample2D),
   "/3d": context.assembleGame3D(sample3D),
+  "/hero": context.assembleGame3D(sampleHero),
 };
 
 function validationFixture(html) {
@@ -95,6 +102,15 @@ assert.strictEqual(context.validateEngineCode(sample3D, true), null, "Valid 3D l
 assert.strictEqual(context.validateEngineCode(sample3D, true, true), null, "A complete FPS control setup was rejected.");
 assert(/FIRE button/.test(context.validateEngineCode(sample3D.replace("actions.firePressed", "input.justTapped"), true, true)), "An FPS without a working FIRE button was accepted.");
 assert.strictEqual(context.validateEngineCode(sampleDriving, true, false, true), null, "A complete driving control setup was rejected.");
+assert(context.requiresHeroControls("a 3D platformer where you climb a mountain to the top", true), "Mountain platformer prompts should require hero controls.");
+assert(!context.requiresHeroControls("a 3D car driving game", true), "Driving prompts should not require hero controls.");
+assert(!context.requiresHeroControls("a first person shooter where you jump between arenas", true), "FPS prompts should keep FPS controls even when they mention jumping.");
+assert.strictEqual(context.validateEngineCode(sampleHero, true, false, false, true), null, "A complete hero control setup was rejected.");
+assert(/hero controls/.test(context.validateEngineCode(sampleHero.replace("enableHeroControls();", ""), true, false, false, true)), "A platformer without engine hero controls was accepted.");
+assert(/fall through/.test(context.validateEngineCode(sampleHero.replace(/ground\.add\s*\(/g, "world.add("), true, false, false, true)), "A platformer with no walkable surfaces was accepted.");
+assert(games["/hero"].includes("function enableHeroControls"), "The 3D engine does not provide the hero character controller.");
+assert(games["/hero"].includes("function heroFrame"), "The 3D engine never advances hero physics.");
+assert(games["/hero"].includes('makeActionButton("JUMP"'), "The hero shell is missing its JUMP button.");
 assert(/visible steering/.test(context.validateEngineCode(sampleDriving.replace("enableDrivingControls();", ""), true, false, true)), "A car game without visible controls was accepted.");
 const padding = `/*${"x".repeat(140)}*/`;
 assert(/missing draw/.test(context.validateEngineCode(`function resetGame(){} function update(){} ${padding}`, false)), "Incomplete 2D logic was accepted.");
@@ -108,7 +124,7 @@ assert(generatorSource.includes('makeActionButton("BRAKE"'), "The 3D shell is mi
 assert(games["/3d"].includes('makeActionButton("FIRE"'), "The 3D shell is missing its FIRE button.");
 assert(games["/3d"].includes('makeActionButton("ABILITY"'), "The 3D shell is missing its ABILITY button.");
 assert(games["/3d"].includes("actions.firePressed=false"), "FPS action presses are not reset each frame.");
-assert(games["/3d"].includes('if(!fpsControlsOn&&typeof onTap==="function")'), "Aim touches can still trigger FPS actions.");
+assert(games["/3d"].includes('if(!fpsControlsOn&&!heroControlsOn&&typeof onTap==="function")'), "Aim touches can still trigger FPS or hero actions.");
 assert(generatorSource.includes("Never use a generic screen tap or onTap as the primary FPS fire control"), "The 3D prompt still permits ambiguous tap-to-fire controls.");
 assert(generatorSource.includes("Do not default to an arcade structure"), "The 3D prompt still defaults to arcade structure.");
 assert(generatorSource.includes("A sandbox or open-world shooter may intentionally have no mission"), "Open-world games are still forced into mission structure.");

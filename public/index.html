@@ -1018,23 +1018,24 @@ var ADAPTIVE_SHELL3D_TOP = SHELL3D_TOP
   .replace('fsEl.textContent="SCORE "+Math.floor(score);', 'fsEl.textContent=scoreLabel+" "+Math.floor(score);')
   .replace('var stickOn=false,stickPid=-1,lookPid=-1,lastLX=0,lastLY=0,stickCX=0,stickCY=0,stickBase=null,stickNub=null;', 'var actions={fire:false,firePressed:false,ability:false,abilityPressed:false};\nvar stickOn=false,stickPid=-1,lookPid=-1,lastLX=0,lastLY=0,stickCX=0,stickCY=0,stickBase=null,stickNub=null,fpsControlsOn=false;')
   .replace('function resetStick(){', 'var actionButtons={};\nfunction makeActionButton(label,right,bottom,key,size){var b=document.createElement("button");b.type="button";b.textContent=label;b.setAttribute("aria-label",label);b.style.cssText="position:fixed;right:"+right+"px;bottom:"+bottom+"px;width:"+size+"px;height:"+size+"px;border-radius:50%;border:2px solid rgba(255,255,255,.55);background:rgba(30,15,22,.72);color:#fff;font:bold "+(size>65?12:9)+"px monospace;z-index:8;touch-action:none;user-select:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 5px 18px rgba(0,0,0,.38)";function down(e){e.preventDefault();e.stopPropagation();actions[key]=true;actions[key+"Pressed"]=true;b.style.transform="scale(.91)";b.style.background="rgba(255,120,80,.82)";try{b.setPointerCapture(e.pointerId);}catch(_){} }function up(e){e.preventDefault();e.stopPropagation();actions[key]=false;b.style.transform="";b.style.background="rgba(30,15,22,.72)";}b.addEventListener("pointerdown",down);b.addEventListener("pointerup",up);b.addEventListener("pointercancel",up);b.addEventListener("lostpointercapture",function(){actions[key]=false;b.style.transform="";b.style.background="rgba(30,15,22,.72)";});actionButtons[key]=b;document.body.appendChild(b);}\nfunction setActionLabels(map){for(var k in map){var b=actionButtons[k];if(!b)continue;var t=map[k]==null?"":String(map[k]).trim();if(!t){b.style.display="none";continue;}b.style.display="";t=t.slice(0,10).toUpperCase();b.style.fontSize=t.length>7?"8px":"";b.textContent=t;b.setAttribute("aria-label",t);}}\nfunction enableFPSControls(){enableJoystick();if(fpsControlsOn)return;fpsControlsOn=true;var cross=document.createElement("div");cross.setAttribute("aria-hidden","true");cross.style.cssText="position:fixed;left:50%;top:50%;width:18px;height:18px;transform:translate(-50%,-50%);z-index:7;pointer-events:none;border:2px solid rgba(255,255,255,.9);border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.45)";var dot=document.createElement("i");dot.style.cssText="position:absolute;left:50%;top:50%;width:3px;height:3px;border-radius:50%;background:#fff;transform:translate(-50%,-50%)";cross.appendChild(dot);document.body.appendChild(cross);makeActionButton("FIRE",18,82,"fire",76);makeActionButton("ABILITY",104,158,"ability",58);}\nfunction resetStick(){')
-  .replace('var actions={fire:false,firePressed:false,ability:false,abilityPressed:false};\nvar stickOn=', 'var actions={fire:false,firePressed:false,ability:false,abilityPressed:false,gas:false,gasPressed:false,brake:false,brakePressed:false};\nvar drive={steer:0,throttle:0,brake:false};\nvar stickOn=')
-  .replace('stickNub=null,fpsControlsOn=false;', 'stickNub=null,fpsControlsOn=false,drivingControlsOn=false;')
+  .replace('var actions={fire:false,firePressed:false,ability:false,abilityPressed:false};\nvar stickOn=', 'var actions={fire:false,firePressed:false,ability:false,abilityPressed:false,gas:false,gasPressed:false,brake:false,brakePressed:false,jump:false,jumpPressed:false};\nvar drive={steer:0,throttle:0,brake:false};\nvar hero=null,ground=null,heroVelY=0,heroYaw=0,heroOnGround=false,heroSpeed=0.16,heroJumpPower=0.36,heroFallY=-25,heroSpawnPos={x:0,y:3,z:0},heroRay=null;\nvar stickOn=')
+  .replace('stickNub=null,fpsControlsOn=false;', 'stickNub=null,fpsControlsOn=false,drivingControlsOn=false,heroControlsOn=false;')
   .replace('function resetStick(){', 'function enableDrivingControls(){enableJoystick();if(drivingControlsOn)return;drivingControlsOn=true;makeActionButton("GAS",18,82,"gas",76);makeActionButton("BRAKE",104,158,"brake",58);}\nfunction resetStick(){')
-  .replace('addEventListener("keydown",function(e){keys[e.key]=true;', 'function setActionKey(key,down){if(key===" "||key==="Enter"){if(down&&!actions.fire)actions.firePressed=true;actions.fire=down;}if(key==="q"||key==="Q"||key==="e"||key==="E"){if(down&&!actions.ability)actions.abilityPressed=true;actions.ability=down;}if(key==="ArrowUp"||key==="w"||key==="W"){if(down&&!actions.gas)actions.gasPressed=true;actions.gas=down;}if(key==="ArrowDown"||key==="s"||key==="S"){if(down&&!actions.brake)actions.brakePressed=true;actions.brake=down;}}\naddEventListener("keydown",function(e){keys[e.key]=true;setActionKey(e.key,true);')
+  .replace('function resetStick(){', 'function enableHeroControls(){enableJoystick();if(!heroControlsOn){heroControlsOn=true;makeActionButton("JUMP",18,82,"jump",76);makeActionButton("ABILITY",104,158,"ability",58);}\nif(!heroRay)heroRay=new THREE.Raycaster();\nground=new THREE.Group();world.add(ground);\nhero=new THREE.Group();\nvar hb=new THREE.Mesh(new THREE.BoxGeometry(0.7,1.0,0.5),new THREE.MeshLambertMaterial({color:0xFF9A5F}));hb.position.y=0.8;hero.add(hb);\nvar hh=new THREE.Mesh(new THREE.SphereGeometry(0.3,10,10),new THREE.MeshLambertMaterial({color:0xFFE2B8}));hh.position.y=1.55;hero.add(hh);\nhero.position.set(heroSpawnPos.x,heroSpawnPos.y,heroSpawnPos.z);world.add(hero);\nheroVelY=0;heroOnGround=false;heroYaw=0;}\nfunction heroSpawn(x,y,z){heroSpawnPos={x:x||0,y:y==null?3:y,z:z||0};if(hero){hero.position.set(heroSpawnPos.x,heroSpawnPos.y,heroSpawnPos.z);heroVelY=0;}}\nfunction setHeroStats(s,j,f){if(s)heroSpeed=s;if(j)heroJumpPower=j;if(f!=null)heroFallY=f;}\nfunction heroFrame(dt){if(!hero||!ground)return;\nheroYaw-=look.dx*0.0045;\nvar kx=(keys["ArrowRight"]||keys["d"]||keys["D"]?1:0)-(keys["ArrowLeft"]||keys["a"]||keys["A"]?1:0);\nvar kz=(keys["ArrowDown"]||keys["s"]||keys["S"]?1:0)-(keys["ArrowUp"]||keys["w"]||keys["W"]?1:0);\nvar mx=clamp(stick.x+kx,-1,1),mz=clamp(stick.y+kz,-1,1);\nvar mag=Math.sqrt(mx*mx+mz*mz);if(mag>1){mx/=mag;mz/=mag;}\nvar sy=Math.sin(heroYaw),cy=Math.cos(heroYaw);\nvar wx=mx*cy+mz*sy,wz=mz*cy-mx*sy;\nvar mvLen=Math.sqrt(wx*wx+wz*wz);\nif(mvLen>0.04){\nvar wallHit=false,wdir=new THREE.Vector3(wx/mvLen,0,wz/mvLen);\nfor(var wi=0;wi<2;wi++){heroRay.set(new THREE.Vector3(hero.position.x,hero.position.y+(wi?1.35:0.45),hero.position.z),wdir);heroRay.far=0.7;if(heroRay.intersectObjects(ground.children,true).length){wallHit=true;break;}}\nif(!wallHit){hero.position.x+=wx*heroSpeed*dt;hero.position.z+=wz*heroSpeed*dt;}\nhero.rotation.y=Math.atan2(wx,wz);\n}\nif(actions.jumpPressed&&heroOnGround){heroVelY=heroJumpPower;heroOnGround=false;beep(440,0.08,"square");}\nheroVelY-=0.02*dt;if(heroVelY<-0.9)heroVelY=-0.9;\nhero.position.y+=heroVelY*dt;\nheroRay.set(new THREE.Vector3(hero.position.x,hero.position.y+1.8,hero.position.z),new THREE.Vector3(0,-1,0));heroRay.far=6;\nvar gh=heroRay.intersectObjects(ground.children,true);\nheroOnGround=false;\nif(gh.length){var gy=gh[0].point.y;if(heroVelY<=0&&hero.position.y-gy<=0.5){hero.position.y=gy;heroVelY=0;heroOnGround=true;}}\nif(hero.position.y<heroFallY){hero.position.set(heroSpawnPos.x,heroSpawnPos.y,heroSpawnPos.z);heroVelY=0;shake(8);}\nvar tx=hero.position.x+sy*7.5,ty=hero.position.y+3.6,tz=hero.position.z+cy*7.5;\nvar cl=1-Math.pow(0.82,dt);\ncamera.position.x+=(tx-camera.position.x)*cl;camera.position.y+=(ty-camera.position.y)*cl;camera.position.z+=(tz-camera.position.z)*cl;\ncamera.lookAt(hero.position.x,hero.position.y+1.4,hero.position.z);\n}\nfunction resetStick(){')
+  .replace('addEventListener("keydown",function(e){keys[e.key]=true;', 'function setActionKey(key,down){if(key===" "||key==="Enter"){if(down&&!actions.fire)actions.firePressed=true;actions.fire=down;if(down&&!actions.jump)actions.jumpPressed=true;actions.jump=down;}if(key==="q"||key==="Q"||key==="e"||key==="E"){if(down&&!actions.ability)actions.abilityPressed=true;actions.ability=down;}if(key==="ArrowUp"||key==="w"||key==="W"){if(down&&!actions.gas)actions.gasPressed=true;actions.gas=down;}if(key==="ArrowDown"||key==="s"||key==="S"){if(down&&!actions.brake)actions.brakePressed=true;actions.brake=down;}}\naddEventListener("keydown",function(e){keys[e.key]=true;setActionKey(e.key,true);')
   .replace('addEventListener("keyup",function(e){keys[e.key]=false;});', 'addEventListener("keyup",function(e){keys[e.key]=false;setActionKey(e.key,false);});')
   .replace('keys[d.key]=!!d.down;if(d.down&&over', 'keys[d.key]=!!d.down;setActionKey(d.key,!!d.down);if(d.down&&over')
-  .replace('if(typeof onTap==="function")onTap(input.x,input.y);', 'if(!fpsControlsOn&&typeof onTap==="function")onTap(input.x,input.y);')
+  .replace('if(typeof onTap==="function")onTap(input.x,input.y);', 'if(!fpsControlsOn&&!heroControlsOn&&typeof onTap==="function")onTap(input.x,input.y);')
   .replace('function restart(){score=0;over=false;overEl.style.display="none";', 'function restart(){score=0;scoreVisible=false;scoreLabel="SCORE";hudText="";hudEl.style.display="none";over=false;overEl.style.display="none";')
   .replace('clearParticles();resetStick();look.dx=0;', 'clearParticles();resetStick();actions.fire=false;actions.firePressed=false;actions.ability=false;actions.abilityPressed=false;look.dx=0;')
-  .replace('actions.ability=false;actions.abilityPressed=false;look.dx=0;', 'actions.ability=false;actions.abilityPressed=false;actions.gas=false;actions.gasPressed=false;actions.brake=false;actions.brakePressed=false;drive.steer=0;drive.throttle=0;drive.brake=false;look.dx=0;');
+  .replace('actions.ability=false;actions.abilityPressed=false;look.dx=0;', 'actions.ability=false;actions.abilityPressed=false;actions.gas=false;actions.gasPressed=false;actions.brake=false;actions.brakePressed=false;actions.jump=false;actions.jumpPressed=false;drive.steer=0;drive.throttle=0;drive.brake=false;hero=null;ground=null;heroSpawnPos={x:0,y:3,z:0};heroVelY=0;heroYaw=0;look.dx=0;');
 
 var ADAPTIVE_SHELL3D_BOTTOM = SHELL3D_BOTTOM
   .replace('var lastT=performance.now();\nfunction frame(t){', 'var lastT=performance.now(),readySent=false;\nfunction frame(t){')
-  .replace('try{if(!over)update(dt);}', 'drive.steer=clamp(stick.x+(keys["ArrowRight"]||keys["d"]||keys["D"]?1:0)-(keys["ArrowLeft"]||keys["a"]||keys["A"]?1:0),-1,1);drive.throttle=actions.gas?1:0;drive.brake=!!actions.brake;try{if(!over)update(dt);}')
+  .replace('try{if(!over)update(dt);}', 'drive.steer=clamp(stick.x+(keys["ArrowRight"]||keys["d"]||keys["D"]?1:0)-(keys["ArrowLeft"]||keys["a"]||keys["A"]?1:0),-1,1);drive.throttle=actions.gas?1:0;drive.brake=!!actions.brake;try{if(heroControlsOn&&!over)heroFrame(dt);if(!over)update(dt);}')
   .replace('hudEl.textContent="SCORE "+Math.floor(score);', 'hudEl.style.display=scoreVisible?"block":"none";if(scoreVisible)hudEl.textContent=hudText||scoreLabel+" "+Math.floor(score);')
   .replace('renderer.render(scene,camera);\ncamera.position.x-=ox;', 'renderer.render(scene,camera);\nif(!readySent){readySent=true;try{parent.postMessage({type:"ra-ready"},"*");}catch(e){}}\ncamera.position.x-=ox;')
-  .replace('input.justTapped=false;look.dx=0;look.dy=0;', 'input.justTapped=false;actions.firePressed=false;actions.abilityPressed=false;actions.gasPressed=false;actions.brakePressed=false;look.dx=0;look.dy=0;');
+  .replace('input.justTapped=false;look.dx=0;look.dy=0;', 'input.justTapped=false;actions.firePressed=false;actions.abilityPressed=false;actions.gasPressed=false;actions.brakePressed=false;actions.jumpPressed=false;look.dx=0;look.dy=0;');
 
 function assembleGame3D(js){
   return ADAPTIVE_SHELL3D_TOP + '\n' + GAME_START + '\n' + js + '\n' + GAME_END + ADAPTIVE_SHELL3D_BOTTOM;
@@ -1064,6 +1065,7 @@ ENGINE GLOBALS AND HELPERS AVAILABLE TO YOU:
 - rand(a, b), clamp(v, a, b).
 
 - enableDrivingControls(), drive — {steer, throttle, brake}: complete visible mobile driving controls. Calling it adds a left steering stick plus large GAS and BRAKE buttons. Desktop arrows/WASD feed the same drive values.
+- enableHeroControls(), hero, ground, heroSpawn(x,y,z), setHeroStats(speed,jumpPower,fallY), heroOnGround, actions.jump/jumpPressed — a complete engine-owned third-person character controller, described below.
 
 FIRST-PERSON MODE (mandatory for FPS/first-person prompts; also the default for a 3D shooter unless the creator explicitly asks for third-person, top-down, or another perspective):
 - Call enableFPSControls() once inside resetGame(). The engine provides a visible left movement joystick, right-side drag-to-look area, center crosshair, and two round action buttons (defaults FIRE and ABILITY). Never recreate or cover these controls with custom DOM.
@@ -1084,6 +1086,14 @@ DRIVING MODE (mandatory whenever the requested experience centers on a car, kart
 - Use acceleration, drag, a capped speed, speed-sensitive turning, and smooth follow-camera interpolation. Keep the car on readable terrain or roads with boundaries; collisions should slow or stop it instead of letting it pass through scenery.
 - Build the vehicle as a recognizable compound model with a body, cabin, four wheels, lights, and distinct front/back. Show a concise speed or objective HUD. The controls must work immediately without reading instructions.
 - If the pedals mean something different in this game, relabel them so the buttons say so, e.g. setActionLabels({gas:'BOOST', brake:'DRIFT'}).
+
+THIRD-PERSON HERO MODE (mandatory for 3D platformers, obby/parkour, climbing, reach-the-goal, collect-and-explore, or any third-person character game that is not first-person and not driving):
+- Call enableHeroControls() FIRST inside resetGame(). The engine then fully owns the player character: left joystick + WASD movement, right-side drag orbits the camera, a large JUMP button with real gravity and landing, wall blocking, a smooth follow camera, and automatic respawn at the spawn point after a long fall. NEVER write your own gravity, jump physics, ground detection, character movement, or follow camera, and never move camera.position yourself in this mode — hand-rolled character physics is how players fall through terrain.
+- Add EVERY surface the player can stand on or bump into (terrain, floors, platforms, ramps, walls, stairs) to \`ground\` — a THREE.Group the engine collides the hero against. A mesh not inside \`ground\` cannot be stood on. Non-solid decoration goes in \`world\` as usual.
+- \`hero\` is the player THREE.Group. Read hero.position for goals and triggers (hero.position.distanceTo(goal.position)<2 means arrival). Customize its look by adding meshes to \`hero\`; the default is a simple blocky character.
+- heroSpawn(x,y,z) sets the spawn point and teleports there. Call it once at the start and again at each checkpoint the player reaches.
+- LEVEL DESIGN CONTRACT: the jump clears about 2.5 units of height and 4 units of horizontal gap. Every step of the intended route must respect those limits — walk the full path from spawn to goal mentally before responding. Give route platforms generous tops (2x2 units or more) and make the goal unmissable.
+- Use setHud for the objective and progress. Relabel ABILITY to a themed second action via setActionLabels, or hide it with setActionLabels({ability:''}).
 
 GENRE FIDELITY — HIGHEST PRIORITY:
 - Treat the creator's prompt as a contract. Implement the requested genre, perspective, spatial layout, core activity, camera, controls, mood, and progression directly.
@@ -2739,7 +2749,13 @@ function requiresFPSControls(text, is3D){
 function requiresDrivingControls(text, is3D){
   return !!is3D && /\b(?:car|cars|kart|go[\s-]?kart|truck|taxi|bus|vehicle|driv(?:e|ing)|racing|racer|road\s*trip)\b/i.test(String(text||''));
 }
-function validateEngineCode(code, is3D, fpsRequired, drivingRequired){
+function requiresHeroControls(text, is3D){
+  if(!is3D) return false;
+  var value = String(text||'');
+  if(requiresFPSControls(value, is3D) || requiresDrivingControls(value, is3D)) return false;
+  return /\bplatform(?:er|ing)?\b|\bobby\b|\bparkour\b|\bclimb(?:ing|er)?\b|\bjump(?:ing)?\b|\bmountain\b|\btower\b|\bsummit\b|reach the top|\bthird[\s-]?person\b|\bmario\b/i.test(value);
+}
+function validateEngineCode(code, is3D, fpsRequired, drivingRequired, heroRequired){
   if(!code || code.length<120) return 'The model returned too little game code.';
   if(code.length>140000) return 'The game code is too large to run safely.';
   if(/<\/?(?:html|script|canvas)\b/i.test(code)) return 'The model returned HTML instead of engine game logic.';
@@ -2758,6 +2774,10 @@ function validateEngineCode(code, is3D, fpsRequired, drivingRequired){
     if(!/\benableDrivingControls\s*\(/.test(code)) return 'The generated driving game did not enable visible steering, GAS, and BRAKE controls.';
     if(!/\bdrive\.steer\b/.test(code)) return 'The generated driving game did not connect its steering control.';
     if(!/\bdrive\.(?:throttle|brake)\b/.test(code)) return 'The generated driving game did not connect its pedals.';
+  }
+  if(is3D && heroRequired && !/\benableFPSControls\s*\(|\benableDrivingControls\s*\(/.test(code)){
+    if(!/\benableHeroControls\s*\(/.test(code)) return 'The generated character game did not enable the engine hero controls (movement and jumping).';
+    if(!/\bground\.add\s*\(/.test(code)) return 'The generated character game did not register any walkable surfaces, so the player would fall through the level.';
   }
   try{ new Function(code); }catch(e){ return 'The game code is incomplete or has a syntax error.'; }
   return null;
@@ -2796,8 +2816,8 @@ function preflightGeneratedGame(html, is3D){
     frame.srcdoc = validationGameHtml(html);
   });
 }
-function prepareEngineGame(code, is3D, fpsRequired, drivingRequired){
-  var issue = validateEngineCode(code, is3D, fpsRequired, drivingRequired);
+function prepareEngineGame(code, is3D, fpsRequired, drivingRequired, heroRequired){
+  var issue = validateEngineCode(code, is3D, fpsRequired, drivingRequired, heroRequired);
   if(issue) return Promise.reject(qualityError(issue));
   var html = is3D ? assembleGame3D(code) : assembleGame(code);
   return preflightGeneratedGame(html, is3D).then(function(){ return html; });
@@ -3009,7 +3029,7 @@ function finishCreateFromCode(job, code, use3D, skipPreflight){
   if(skipPreflight) prepared = Promise.resolve(use3D ? assembleGame3D(code) : assembleGame(code));
   else {
     setBuildStage(job, 'building', 'Checking that the game works…', 79);
-    prepared = prepareEngineGame(code, use3D, job.fpsRequired, job.drivingRequired);
+    prepared = prepareEngineGame(code, use3D, job.fpsRequired, job.drivingRequired, job.heroRequired);
   }
   return prepared.then(function(html){
     if(buildJob!==job) return;
@@ -3031,6 +3051,7 @@ function runCreateJob(job){
   job.use3D = use3D;
   job.fpsRequired = requiresFPSControls(job.prompt+' '+(job.about||''), use3D);
   job.drivingRequired = requiresDrivingControls(job.prompt+' '+(job.about||''), use3D);
+  job.heroRequired = requiresHeroControls(job.prompt+' '+(job.about||''), use3D);
   job.validationRetried = false;
   job.retryWithoutGeneration = null;
   job.publishWithoutValidation = null;
@@ -3058,6 +3079,7 @@ function restoreGenerationJob(){
   job.runner=function(){
     job.fpsRequired=requiresFPSControls(job.prompt+' '+job.about,use3D);
     job.drivingRequired=requiresDrivingControls(job.prompt+' '+job.about,use3D);
+    job.heroRequired=requiresHeroControls(job.prompt+' '+job.about,use3D);
     setBuildStage(job,'building','Reconnecting to your background build…',8);
     var result=saved.code?Promise.resolve(cleanCode(saved.code)):pollGenerationJob(job);
     result.then(function(code){
@@ -3088,7 +3110,7 @@ function finishVersionFromCode(job, code, skipPreflight){
   var prepared;
   if(job.isEngine && !skipPreflight){
     setBuildStage(job, 'building', 'Checking that the game works…', 79);
-    prepared = prepareEngineGame(code, job.is3D, job.fpsRequired, job.drivingRequired);
+    prepared = prepareEngineGame(code, job.is3D, job.fpsRequired, job.drivingRequired, job.heroRequired);
   } else if(job.isEngine) prepared = Promise.resolve(job.is3D ? assembleGame3D(code) : assembleGame(code));
   else prepared = Promise.resolve(code);
   return prepared.then(function(finalHtml){
@@ -3154,6 +3176,7 @@ function handleRemixOrEdit(mode){
     is3D:is3D,
     fpsRequired:is3D && requiresFPSControls((/\benableFPSControls\s*\(/.test(innerJs||'') ? 'first-person ' : '')+prompt, true),
     drivingRequired:is3D && requiresDrivingControls(prompt+' '+(game.prompt||''), true),
+    heroRequired:is3D && (/\benableHeroControls\s*\(/.test(innerJs||'') || requiresHeroControls(prompt+' '+(game.prompt||''), true)),
     system:isEngine ? (is3D ? SYS_3D_JS : SYS_JS) : (is3D ? SYS_3D : SYS),
     messageMode:(mode==='remix') ? (isEngine?'remix-js':'remix-full') : (isEngine?'edit-js':'edit-full'),
     sourceCode:currentGameCode,
