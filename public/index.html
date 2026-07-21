@@ -2621,6 +2621,14 @@ function retryBuildJob(){
     job.publishWithoutValidation().catch(function(error){ handleBuildError(job, error, job.kind==='create' ? 'game' : 'version'); });
     return;
   }
+  if(job.kind==='create'){
+    /* restored/background jobs carry a stale server job id and a runner bound
+       to it — rebuild both so retry creates a new generation, not a re-poll */
+    clearGenerationJob(job);
+    job.serverJobId = null;
+    job.startedAt = null;
+    job.runner = function(){ runCreateJob(job); };
+  }
   pendingCode = '';
   $('#buildTerminal').innerHTML = '<span class="cursor"></span>';
   $('#charCount').textContent = '0 chars';
@@ -2972,6 +2980,13 @@ function titleFromPrompt(prompt){
 }
 function handleBuildError(job, error, noun){
   console.error(error);
+  /* a dead background job must not be re-polled on retry or resurrected on
+     reload — drop it so Retry starts a genuinely fresh build */
+  if(error && (error.code==='background_timeout'||error.code==='background_failed')){
+    clearGenerationJob(job);
+    job.serverJobId = null;
+    job.startedAt = null;
+  }
   if(error && error.isGameQualityError){
     if(error.qualityKind==='timeout' && job.retryWithoutGeneration && !job.validationRetried){
       failBuild(job, 'The AI finished the '+noun+', but its startup check failed: '+error.message+' Check again is free and reuses the same code.', 'validation');

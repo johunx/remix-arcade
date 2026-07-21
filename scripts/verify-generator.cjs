@@ -146,6 +146,8 @@ assert(serverSource.includes("/api/images/cover"), "The local server has no cove
 assert(generatorSource.includes("function setActionLabels"), "The 3D engine cannot relabel its action buttons.");
 assert(generatorSource.includes("setActionLabels({fire:'SHOOT', ability:'DASH'})"), "The 3D prompt does not tell the model to adapt button labels.");
 assert(source.includes("function attachCoverLater"), "Covers still block publishing.");
+assert(/background_timeout'\|\|error\.code==='background_failed'/.test(source), "Dead background jobs are not dropped on failure.");
+assert(source.includes("job.runner = function(){ runCreateJob(job); };"), "Retrying a failed background build re-polls the dead job instead of starting fresh.");
 
 if (process.argv.includes("--serve")) {
   const port = Number(process.env.GENERATOR_TEST_PORT || 3011);
