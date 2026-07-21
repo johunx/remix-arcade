@@ -192,8 +192,12 @@ body.swipe-mode .rays{animation-play-state:paused;}
 .build-focus[data-state="error"] .build-orbit{animation:none;border-color:var(--coral);box-shadow:0 0 22px rgba(255,84,112,0.2);}
 .build-focus h2{font-family:var(--font-d);font-size:14px;line-height:1.6;margin-bottom:8px;}
 .build-stage{font-size:13px;color:var(--text-dim);min-height:20px;}
-.build-view-actions{display:flex;gap:10px;margin-top:18px;}
-.build-view-actions .btn{flex:1;}
+.build-view-actions{display:flex;gap:10px;margin-top:18px;justify-content:center;align-items:center;}
+.build-view-actions .btn-primary{flex:1;}
+/* leaving is a quiet escape hatch, not a call to action — compact dim pill */
+#buildBrowse{flex:0 0 auto;display:inline-flex;align-items:center;gap:7px;padding:10px 18px;border-radius:999px;font-size:12.5px;font-weight:600;color:var(--text-dim);}
+#buildBrowse .ic{width:13px;height:13px;opacity:.7;}
+#buildBrowse:active{transform:scale(.96);}
 .build-details-toggle{display:flex;align-items:center;justify-content:center;gap:8px;margin:18px auto 10px;padding:8px 10px;color:var(--text-dim);font-size:12px;}
 .build-details-toggle .ic{width:14px;height:14px;transition:transform .25s ease;}
 .build-details-toggle[aria-expanded="true"] .ic{transform:rotate(180deg);}
@@ -223,7 +227,12 @@ body.gameplay-mode .build-status[data-state="building"]{display:none;}
 /* game view */
 .gameframe-wrap{border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--glass-border);box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 26px 60px -22px rgba(0,0,0,0.8),0 0 0 1px rgba(255,154,95,0.06);background:#000;margin-bottom:14px;}
 .gameframe-wrap iframe{width:100%;aspect-ratio:9/13;display:block;background:#000;border:0;}
-.lineage-bar{font-size:11.5px;color:var(--blue);margin-bottom:12px;padding:11px 14px;background:linear-gradient(160deg,rgba(255,255,255,0.04),rgba(255,255,255,0.005)),var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:var(--r-sm);border:1px solid var(--glass-border);box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);}
+.lineage-bar{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--blue);margin-bottom:12px;padding:11px 14px;background:linear-gradient(160deg,rgba(255,255,255,0.04),rgba(255,255,255,0.005)),var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:var(--r-sm);border:1px solid var(--glass-border);box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);}
+.lineage-bar .lineage-title{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.lineage-bar.link{cursor:pointer;border-color:rgba(127,184,255,0.4);transition:transform .18s var(--spring),filter .18s ease;}
+.lineage-bar.link:active{transform:scale(.98);filter:brightness(1.12);}
+.lineage-bar .lineage-go{flex:0 0 auto;font-family:var(--font-d);font-size:8.5px;letter-spacing:.6px;color:#CFE3FF;padding:5px 10px;border-radius:999px;border:1px solid rgba(127,184,255,0.45);background:rgba(61,125,235,0.18);box-shadow:inset 0 1px 0 rgba(255,255,255,0.18);}
+.lineage-bar.orig{color:#FFE2B8;border-color:rgba(255,201,120,0.32);}
 .stat-row{display:flex;gap:10px;margin-bottom:16px;}
 .stat-pill{flex:1;background:linear-gradient(160deg,rgba(255,255,255,0.05),rgba(255,255,255,0.01)),var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--glass-border);box-shadow:inset 0 1px 0 var(--glass-edge),var(--lsx,0px) var(--lsy,18px) var(--lsb,30px) rgb(10 5 8 / var(--lsa,0.5));border-radius:var(--r-sm);padding:11px;text-align:center;}
 .stat-pill b{display:block;font-family:var(--font-d);font-size:13px;color:var(--amber);margin-bottom:3px;text-shadow:0 0 12px rgba(255,201,120,0.35);}
@@ -404,6 +413,9 @@ body.swipe-mode .tab .tab-info-icon,body.swipe-mode .tab-info-label{display:flex
 .game-origin-tag{position:absolute;top:calc(12px + env(safe-area-inset-top));right:calc(var(--swipe-lane-w) + 10px);z-index:6;max-width:64%;padding:6px 12px;border-radius:999px;background:rgba(20,10,15,0.62);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(127,184,255,0.45);color:#CFE3FF;font-size:10.5px;font-weight:700;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;box-shadow:0 6px 16px -6px rgba(0,0,0,0.55);}
 body.horizontal-swipe.swipe-mode .game-origin-tag{right:12px;}
 body.gameplay-mode .game-origin-tag{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(20,10,15,0.88);}
+.game-origin-tag.link{pointer-events:auto;cursor:pointer;transition:transform .18s var(--spring);}
+.game-origin-tag.link:active{transform:scale(.94);}
+.game-origin-tag .tag-go{margin-left:7px;opacity:.85;}
 
 /* per-game leaderboard modal */
 .scores-list{display:flex;flex-direction:column;gap:6px;max-height:52vh;overflow-y:auto;margin-top:4px;}
@@ -1517,9 +1529,9 @@ function coverStyleFor(m){
 function cardHtml(m){
   var hot = hotCount(m,86400000) >= 3;
   var lineageLine = '';
-  if(m.parentId && lineage.byId[m.parentId]) lineageLine = '<p class="card-lineage">⑂ Version of '+escapeHtml(lineage.byId[m.parentId].title)+'</p>';
+  if(m.parentId && lineage.byId[m.parentId]) lineageLine = '<p class="card-lineage">⑂ Remix of '+escapeHtml(lineage.byId[m.parentId].title)+'</p>';
   return '<article class="card" data-id="'+escapeHtml(m.id)+'" style="'+coverStyleFor(m)+'">'
-    +'<div class="card-cover" style="'+coverStyleFor(m)+'">'+(hot?'<span class="badge-hot">🔥 HOT</span>':'')+(m.parentId?'<span class="badge-remix">⑂ VERSION</span>':'')+(m.cover?'':'<span class="card-glyph">'+glyphFor(m.id)+'</span>')+'</div>'
+    +'<div class="card-cover" style="'+coverStyleFor(m)+'">'+(hot?'<span class="badge-hot">🔥 HOT</span>':'')+(m.parentId?'<span class="badge-remix">⑂ REMIX</span>':'')+(m.cover?'':'<span class="card-glyph">'+glyphFor(m.id)+'</span>')+'</div>'
     +'<div class="card-body"><h3>'+escapeHtml(m.title)+'</h3>'+creatorLine(m)
     +lineageLine
     +'<div class="card-stats"><span title="Plays" aria-label="'+fmt(m.plays)+' plays">'+ICONS.play+fmt(m.plays)+'</span><span title="Likes" aria-label="'+fmt((m.likedBy||[]).length)+' likes">'+ICONS.heart+fmt((m.likedBy||[]).length)+'</span><span title="Versions" aria-label="'+fmt(m._descendants)+' versions">'+ICONS.branch+fmt(m._descendants)+'</span></div>'
@@ -1527,9 +1539,9 @@ function cardHtml(m){
 }
 function bigCardHtml(m){
   var lineageLine = '';
-  if(m.parentId && lineage.byId[m.parentId]) lineageLine = '<p class="card-lineage">⑂ Version of '+escapeHtml(lineage.byId[m.parentId].title)+'</p>';
+  if(m.parentId && lineage.byId[m.parentId]) lineageLine = '<p class="card-lineage">⑂ Remix of '+escapeHtml(lineage.byId[m.parentId].title)+'</p>';
   return '<article class="card bigcard" data-id="'+escapeHtml(m.id)+'">'
-    +'<div class="card-cover big" style="'+coverStyleFor(m)+'">'+(m.parentId?'<span class="badge-remix">⑂ VERSION</span>':'')+(m.cover?'':'<span class="card-glyph">'+glyphFor(m.id)+'</span>')+'<span class="reason">'+reasonFor(m)+'</span></div>'
+    +'<div class="card-cover big" style="'+coverStyleFor(m)+'">'+(m.parentId?'<span class="badge-remix">⑂ REMIX</span>':'')+(m.cover?'':'<span class="card-glyph">'+glyphFor(m.id)+'</span>')+'<span class="reason">'+reasonFor(m)+'</span></div>'
     +'<div class="card-body"><h3>'+escapeHtml(m.title)+'</h3>'+creatorLine(m)
     +lineageLine
     +'<div class="card-stats"><span title="Plays" aria-label="'+fmt(m.plays)+' plays">'+ICONS.play+fmt(m.plays)+'</span><span title="Likes" aria-label="'+fmt((m.likedBy||[]).length)+' likes">'+ICONS.heart+fmt((m.likedBy||[]).length)+'</span><span title="Versions" aria-label="'+fmt(m._descendants)+' versions">'+ICONS.branch+fmt(m._descendants)+'</span></div>'
@@ -1610,7 +1622,7 @@ function renderFriends(){
   var evs = [];
   allMetas.forEach(function(m){
     if(myFollows.indexOf(m.creator)>-1){
-      evs.push({t:m.createdAt||0, m:m, who:m.creator, verb:(m.parentId && lineage.byId[m.parentId]) ? 'made a version of <b>'+escapeHtml(lineage.byId[m.parentId].title)+'</b> called' : 'made a new game'});
+      evs.push({t:m.createdAt||0, m:m, who:m.creator, verb:(m.parentId && lineage.byId[m.parentId]) ? 'remixed <b>'+escapeHtml(lineage.byId[m.parentId].title)+'</b> into' : 'made a new game'});
     }
     (m.playLog||[]).forEach(function(e){
       if(myFollows.indexOf(e.by)>-1 && e.by!==m.creator) evs.push({t:e.t, m:m, who:e.by, verb:'played'});
@@ -1766,9 +1778,11 @@ function renderGameInfo(){
   like.querySelector('span').textContent = isLikedByMe(meta) ? 'Liked' : 'Like';
   var lineageEl = $('#gameInfoLineage');
   if(meta.parentId && lineage.byId[meta.parentId]){
-    lineageEl.textContent = 'Version of '+lineage.byId[meta.parentId].title;
+    lineageEl.textContent = '⑂ Remix of '+lineage.byId[meta.parentId].title+' ▸';
+    lineageEl.dataset.parent = meta.parentId;
+    lineageEl.style.cursor = 'pointer';
     lineageEl.classList.remove('hidden');
-  } else lineageEl.classList.add('hidden');
+  } else { lineageEl.classList.add('hidden'); delete lineageEl.dataset.parent; }
   var comments = commentsFor(meta).slice().sort(function(a,b){ return (b.t||0)-(a.t||0); });
   $('#gameCommentsCount').textContent = comments.length;
   $('#gameCommentsList').innerHTML = comments.length ? comments.map(function(comment){
@@ -1878,7 +1892,7 @@ function fetchCode(id){
 function slideTagHtml(m){
   if(m.parentId){
     var parent = lineage && lineage.byId && lineage.byId[m.parentId];
-    return '<span class="slide-tag">⑂ VERSION'+(parent?' OF '+escapeHtml(parent.title):'')+'</span>';
+    return '<span class="slide-tag">⑂ REMIX'+(parent?' OF '+escapeHtml(parent.title):'')+'</span>';
   }
   return '<span class="slide-tag orig">✦ ORIGINAL</span>';
 }
@@ -1973,10 +1987,25 @@ function setActiveSlide(i){
   if(originTag){
     if(meta.parentId){
       var par = lineage && lineage.byId && lineage.byId[meta.parentId];
-      originTag.textContent = '⑂ VERSION'+(par?' OF '+par.title:'');
+      /* the chip is a real link to the direct parent — tap it repeatedly to
+         walk the remix chain one step back at a time */
+      if(par){
+        originTag.innerHTML = '⑂ REMIX OF '+escapeHtml(par.title)+'<span class="tag-go">▸</span>';
+        originTag.classList.add('link');
+        originTag.dataset.parent = par.id;
+        originTag.setAttribute('role','button');
+        originTag.setAttribute('aria-label','Open the game this was remixed from: '+par.title);
+      } else {
+        originTag.textContent = '⑂ REMIX';
+        originTag.classList.remove('link');
+        delete originTag.dataset.parent;
+        originTag.removeAttribute('role');
+      }
       originTag.classList.remove('hidden');
     } else {
       originTag.classList.add('hidden');
+      originTag.classList.remove('link');
+      delete originTag.dataset.parent;
     }
   }
   var sidebar = $('#swipeSidebar');
@@ -2347,9 +2376,22 @@ function openGame(id){
     $('#statVersions').textContent = fmt(meta._descendants);
     var bar = $('#lineageBar');
     if(meta.parentId && lineage.byId[meta.parentId]){
-      bar.classList.remove('hidden');
-      bar.textContent = '⑂ Version of "'+lineage.byId[meta.parentId].title+'"';
-    } else { bar.classList.add('hidden'); }
+      var par = lineage.byId[meta.parentId];
+      bar.classList.remove('hidden','orig');
+      bar.classList.add('link');
+      bar.innerHTML = '<span class="lineage-title">⑂ Remix of "'+escapeHtml(par.title)+'"</span><span class="lineage-go">PLAY IT ▸</span>';
+      bar.dataset.parent = par.id;
+      bar.setAttribute('role','button');
+      bar.setAttribute('tabindex','0');
+      bar.setAttribute('aria-label','Open the game this was remixed from: '+par.title);
+    } else if(!meta.parentId){
+      bar.classList.remove('hidden','link');
+      bar.classList.add('orig');
+      bar.innerHTML = '<span class="lineage-title">✦ Original game</span>';
+      delete bar.dataset.parent;
+      bar.removeAttribute('role');
+      bar.removeAttribute('tabindex');
+    } else { bar.classList.add('hidden'); delete bar.dataset.parent; }
     $('#gameCreator').textContent = 'by '+meta.creator;
     $('#gameCreator').dataset.creator = meta.creator;
     var fb = $('#followBtn');
@@ -3755,6 +3797,15 @@ function init(){
   $('#buildStatusClose').addEventListener('click', dismissBuildJob);
   $('#saveRetry').addEventListener('click', retryBuildJob);
   $('#backToFeed').addEventListener('click', function(){ showScreen('feed'); });
+  /* remix-chain navigation: each chip walks one step back to the direct parent */
+  function openLineageParent(el){
+    var pid = el && el.dataset && el.dataset.parent;
+    if(pid) openGame(pid);
+  }
+  $('#lineageBar').addEventListener('click', function(){ openLineageParent(this); });
+  $('#lineageBar').addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openLineageParent(this); } });
+  $('#gameOriginTag').addEventListener('click', function(){ openLineageParent(this); });
+  $('#gameInfoLineage').addEventListener('click', function(){ var pid=this.dataset.parent; if(pid){ closeGameInfo(); openGame(pid); } });
 
   $('#followBtn').addEventListener('click', function(){
     if(this.dataset.creator) toggleFollow(this.dataset.creator, this);
