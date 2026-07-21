@@ -456,6 +456,45 @@ app.post('/api/anthropic/messages', checkAiLimit, async (req, res, next) => {
   }
 });
 
+app.post('/api/images/cover', checkAiLimit, async (req, res, next) => {
+  try {
+    const title = String((req.body || {}).title || '').slice(0, 120);
+    const concept = String((req.body || {}).prompt || '').slice(0, 600);
+    if (!title && !concept) return res.status(400).json({ error: 'Missing prompt.' });
+    const apiKey = process.env.YUNWU_API_KEY || process.env.OPENAI_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: 'YUNWU_API_KEY is not set on the server.' });
+    const base = String(process.env.YUNWU_BASE_URL || 'https://yunwu.ai/v1').replace(/\/+$/, '');
+    const payload = {
+      model: process.env.YUNWU_IMAGE_MODEL || 'gpt-image-2',
+      prompt: `Bold, colorful poster-style cover art for a mobile arcade game titled "${title}". ${concept}. One iconic central subject, dramatic lighting, rich color and depth, painterly game-key-art style. No text, letters, words, watermarks, or logos anywhere in the image. Kid-safe, general audience.`,
+      size: process.env.YUNWU_IMAGE_SIZE || '1024x1024',
+      n: 1,
+    };
+    if (process.env.YUNWU_IMAGE_QUALITY) payload.quality = process.env.YUNWU_IMAGE_QUALITY;
+    const upstream = await fetch(`${base}/images/generations`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify(payload),
+    });
+    const raw = await upstream.text();
+    if (!upstream.ok) return res.status(upstream.status >= 500 ? 502 : upstream.status).json({ error: `Image provider error ${upstream.status}: ${raw.slice(0, 300)}` });
+    let data;
+    try { data = JSON.parse(raw); } catch { return res.status(502).json({ error: 'Image provider returned unreadable data.' }); }
+    const first = (data.data || [])[0] || {};
+    if (first.b64_json) return res.json({ image: `data:image/png;base64,${first.b64_json}` });
+    if (first.url) {
+      const imageResp = await fetch(first.url);
+      if (!imageResp.ok) return res.status(502).json({ error: 'The generated image could not be downloaded.' });
+      const mime = (imageResp.headers.get('content-type') || 'image/png').split(';')[0];
+      const buffer = Buffer.from(await imageResp.arrayBuffer());
+      return res.json({ image: `data:${mime};base64,${buffer.toString('base64')}` });
+    }
+    return res.status(502).json({ error: 'Image provider returned no image.' });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 app.use(express.static(publicDir, {
   extensions: ['html'],
   setHeaders(res) {

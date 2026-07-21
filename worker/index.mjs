@@ -407,6 +407,56 @@ async function handleAi(request, env) {
   return callAnthropic(body, env);
 }
 
+function bytesToBase64(bytes) {
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  return btoa(binary);
+}
+
+function coverImagePrompt(title, concept) {
+  return `Bold, colorful poster-style cover art for a mobile arcade game titled "${title}". ${concept}. One iconic central subject, dramatic lighting, rich color and depth, painterly game-key-art style. No text, letters, words, watermarks, or logos anywhere in the image. Kid-safe, general audience.`;
+}
+
+async function handleCoverImage(request, env) {
+  if (request.method !== "POST") return json({ error: "Method not allowed." }, 405, { allow: "POST" });
+  const limited = await checkAiLimit(request, env);
+  if (limited) return json({ error: limited.message }, 429);
+  const body = await request.text().then((text) => JSON.parse(text)).catch(() => null);
+  const title = String((body && body.title) || "").slice(0, 120);
+  const concept = String((body && body.prompt) || "").slice(0, 600);
+  if (!title && !concept) return json({ error: "Missing prompt." }, 400);
+  const apiKey = env.YUNWU_API_KEY || env.OPENAI_API_KEY;
+  if (!apiKey) return json({ error: "YUNWU_API_KEY is not set on the server." }, 500);
+  const base = String(env.YUNWU_BASE_URL || "https://yunwu.ai/v1").replace(/\/+$/, "");
+  const payload = {
+    model: env.YUNWU_IMAGE_MODEL || "gpt-image-2",
+    prompt: coverImagePrompt(title, concept),
+    size: env.YUNWU_IMAGE_SIZE || "1024x1024",
+    n: 1,
+  };
+  if (env.YUNWU_IMAGE_QUALITY) payload.quality = env.YUNWU_IMAGE_QUALITY;
+  const upstream = await fetchUpstreamWithRetry(`${base}/images/generations`, {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify(payload),
+  }, 2);
+  const raw = await upstream.text();
+  if (!upstream.ok) return json({ error: `Image provider error ${upstream.status}: ${raw.slice(0, 300)}` }, upstream.status >= 500 ? 502 : upstream.status);
+  let data;
+  try { data = JSON.parse(raw); } catch { return json({ error: "Image provider returned unreadable data." }, 502); }
+  const first = (data.data || [])[0] || {};
+  if (first.b64_json) return json({ image: `data:image/png;base64,${first.b64_json}` });
+  if (first.url) {
+    const imageResp = await fetch(first.url);
+    if (!imageResp.ok) return json({ error: "The generated image could not be downloaded." }, 502);
+    const mime = (imageResp.headers.get("content-type") || "image/png").split(";")[0];
+    const bytes = new Uint8Array(await imageResp.arrayBuffer());
+    return json({ image: `data:${mime};base64,${bytesToBase64(bytes)}` });
+  }
+  return json({ error: "Image provider returned no image." }, 502);
+}
+
 async function handleGenerationJobs(request, env) {
   if (!env.GAME_GENERATION_WORKFLOW) return json({ error: "Background generation is unavailable." }, 503);
   const url = new URL(request.url);
@@ -476,6 +526,7 @@ export const apiWorker = {
       if (url.pathname === "/api/ai/status") return aiStatus(env);
       if (url.pathname === "/api/storage") return await handleStorage(request, env);
       if (url.pathname === "/api/generation/jobs") return await handleGenerationJobs(request, env);
+      if (url.pathname === "/api/images/cover") return await handleCoverImage(request, env);
       if (url.pathname === "/api/anthropic/messages") return await handleAi(request, env);
       return env.ASSETS.fetch(request);
     } catch (error) {

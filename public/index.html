@@ -1005,7 +1005,7 @@ var ADAPTIVE_SHELL3D_TOP = SHELL3D_TOP
   .replace('function addScore(n){score+=(n==null?1:n);}\nfunction getScore(){return score;}', 'function addScore(n){hudText="";scoreVisible=true;score+=(n==null?1:n);}\nfunction setScore(n,label){hudText="";score=Number(n)||0;scoreVisible=true;if(label)scoreLabel=String(label).slice(0,18);}\nfunction showScore(label){hudText="";scoreVisible=true;if(label)scoreLabel=String(label).slice(0,18);}\nfunction hideScore(){hudText="";scoreVisible=false;}\nfunction setHud(text){hudText=String(text||"").slice(0,96);scoreVisible=!!hudText;}\nfunction getScore(){return score;}')
   .replace('fsEl.textContent="SCORE "+Math.floor(score);', 'fsEl.textContent=scoreLabel+" "+Math.floor(score);')
   .replace('var stickOn=false,stickPid=-1,lookPid=-1,lastLX=0,lastLY=0,stickCX=0,stickCY=0,stickBase=null,stickNub=null;', 'var actions={fire:false,firePressed:false,ability:false,abilityPressed:false};\nvar stickOn=false,stickPid=-1,lookPid=-1,lastLX=0,lastLY=0,stickCX=0,stickCY=0,stickBase=null,stickNub=null,fpsControlsOn=false;')
-  .replace('function resetStick(){', 'function makeActionButton(label,right,bottom,key,size){var b=document.createElement("button");b.type="button";b.textContent=label;b.setAttribute("aria-label",label);b.style.cssText="position:fixed;right:"+right+"px;bottom:"+bottom+"px;width:"+size+"px;height:"+size+"px;border-radius:50%;border:2px solid rgba(255,255,255,.55);background:rgba(30,15,22,.72);color:#fff;font:bold "+(size>65?12:9)+"px monospace;z-index:8;touch-action:none;user-select:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 5px 18px rgba(0,0,0,.38)";function down(e){e.preventDefault();e.stopPropagation();actions[key]=true;actions[key+"Pressed"]=true;b.style.transform="scale(.91)";b.style.background="rgba(255,120,80,.82)";try{b.setPointerCapture(e.pointerId);}catch(_){} }function up(e){e.preventDefault();e.stopPropagation();actions[key]=false;b.style.transform="";b.style.background="rgba(30,15,22,.72)";}b.addEventListener("pointerdown",down);b.addEventListener("pointerup",up);b.addEventListener("pointercancel",up);b.addEventListener("lostpointercapture",function(){actions[key]=false;b.style.transform="";b.style.background="rgba(30,15,22,.72)";});document.body.appendChild(b);}\nfunction enableFPSControls(){enableJoystick();if(fpsControlsOn)return;fpsControlsOn=true;var cross=document.createElement("div");cross.setAttribute("aria-hidden","true");cross.style.cssText="position:fixed;left:50%;top:50%;width:18px;height:18px;transform:translate(-50%,-50%);z-index:7;pointer-events:none;border:2px solid rgba(255,255,255,.9);border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.45)";var dot=document.createElement("i");dot.style.cssText="position:absolute;left:50%;top:50%;width:3px;height:3px;border-radius:50%;background:#fff;transform:translate(-50%,-50%)";cross.appendChild(dot);document.body.appendChild(cross);makeActionButton("FIRE",18,82,"fire",76);makeActionButton("ABILITY",104,158,"ability",58);}\nfunction resetStick(){')
+  .replace('function resetStick(){', 'var actionButtons={};\nfunction makeActionButton(label,right,bottom,key,size){var b=document.createElement("button");b.type="button";b.textContent=label;b.setAttribute("aria-label",label);b.style.cssText="position:fixed;right:"+right+"px;bottom:"+bottom+"px;width:"+size+"px;height:"+size+"px;border-radius:50%;border:2px solid rgba(255,255,255,.55);background:rgba(30,15,22,.72);color:#fff;font:bold "+(size>65?12:9)+"px monospace;z-index:8;touch-action:none;user-select:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 5px 18px rgba(0,0,0,.38)";function down(e){e.preventDefault();e.stopPropagation();actions[key]=true;actions[key+"Pressed"]=true;b.style.transform="scale(.91)";b.style.background="rgba(255,120,80,.82)";try{b.setPointerCapture(e.pointerId);}catch(_){} }function up(e){e.preventDefault();e.stopPropagation();actions[key]=false;b.style.transform="";b.style.background="rgba(30,15,22,.72)";}b.addEventListener("pointerdown",down);b.addEventListener("pointerup",up);b.addEventListener("pointercancel",up);b.addEventListener("lostpointercapture",function(){actions[key]=false;b.style.transform="";b.style.background="rgba(30,15,22,.72)";});actionButtons[key]=b;document.body.appendChild(b);}\nfunction setActionLabels(map){for(var k in map){var b=actionButtons[k];if(!b)continue;var t=map[k]==null?"":String(map[k]).trim();if(!t){b.style.display="none";continue;}b.style.display="";t=t.slice(0,10).toUpperCase();b.style.fontSize=t.length>7?"8px":"";b.textContent=t;b.setAttribute("aria-label",t);}}\nfunction enableFPSControls(){enableJoystick();if(fpsControlsOn)return;fpsControlsOn=true;var cross=document.createElement("div");cross.setAttribute("aria-hidden","true");cross.style.cssText="position:fixed;left:50%;top:50%;width:18px;height:18px;transform:translate(-50%,-50%);z-index:7;pointer-events:none;border:2px solid rgba(255,255,255,.9);border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.45)";var dot=document.createElement("i");dot.style.cssText="position:absolute;left:50%;top:50%;width:3px;height:3px;border-radius:50%;background:#fff;transform:translate(-50%,-50%)";cross.appendChild(dot);document.body.appendChild(cross);makeActionButton("FIRE",18,82,"fire",76);makeActionButton("ABILITY",104,158,"ability",58);}\nfunction resetStick(){')
   .replace('var actions={fire:false,firePressed:false,ability:false,abilityPressed:false};\nvar stickOn=', 'var actions={fire:false,firePressed:false,ability:false,abilityPressed:false,gas:false,gasPressed:false,brake:false,brakePressed:false};\nvar drive={steer:0,throttle:0,brake:false};\nvar stickOn=')
   .replace('stickNub=null,fpsControlsOn=false;', 'stickNub=null,fpsControlsOn=false,drivingControlsOn=false;')
   .replace('function resetStick(){', 'function enableDrivingControls(){enableJoystick();if(drivingControlsOn)return;drivingControlsOn=true;makeActionButton("GAS",18,82,"gas",76);makeActionButton("BRAKE",104,158,"brake",58);}\nfunction resetStick(){')
@@ -1045,15 +1045,17 @@ ENGINE GLOBALS AND HELPERS AVAILABLE TO YOU:
 - input — {x, y, down, justTapped, dragX, dragY}: pointer position, pressed state, tap-started-this-frame, and drag distance since the pointer went down (dragX is ideal for steering).
 - keys — currently held keys, e.g. keys['ArrowLeft'], keys['a'], keys[' '].
 - enableFPSControls(), stick — {x, y, active}, look — {dx, dy}, actions — {fire, firePressed, ability, abilityPressed}: complete mobile FPS controls, described below. Only call enableFPSControls() for first-person games.
+- setActionLabels(map) — rename any on-screen action button so its label says what it actually does in YOUR game. Keys: fire, ability, gas, brake. Example: setActionLabels({fire:'SCAN', ability:'TALK'}). Labels are one short verb, 9 characters max. An empty string hides that button (only when the game truly has no use for it and it is not a required control).
 - burst3d(x, y, z, color, n) — particle explosion at a world position (color is a hex number like 0xFF9A5F). shake(power) — camera shake. beep(freq, seconds, type) — WebAudio tone ('square'/'sine'/'triangle').
-- setHud(text) shows a concise custom HUD such as health, ammo, cooldown, or a current objective when one exists. addScore(n), setScore(n, label), showScore(label), hideScore(), getScore() provide an optional score HUD.
+- setHud(text) shows a concise custom HUD such as health, ammo, cooldown, or a current objective when one exists. Never use setHud to explain controls or button mappings — a legend like "FIRE = scan" is forbidden; relabel the button itself with setActionLabels instead. addScore(n), setScore(n, label), showScore(label), hideScore(), getScore() provide an optional score HUD.
 - gameOver() — optional. Use only for a genuine failed run with instant retry; it reports leaderboard scores automatically.
 - rand(a, b), clamp(v, a, b).
 
 - enableDrivingControls(), drive — {steer, throttle, brake}: complete visible mobile driving controls. Calling it adds a left steering stick plus large GAS and BRAKE buttons. Desktop arrows/WASD feed the same drive values.
 
 FIRST-PERSON MODE (mandatory for FPS/first-person prompts; also the default for a 3D shooter unless the creator explicitly asks for third-person, top-down, or another perspective):
-- Call enableFPSControls() once inside resetGame(). The engine provides a visible left movement joystick, right-side drag-to-look area, center crosshair, large FIRE button, and separate ABILITY button. Never recreate or cover these controls with custom DOM.
+- Call enableFPSControls() once inside resetGame(). The engine provides a visible left movement joystick, right-side drag-to-look area, center crosshair, and two round action buttons (defaults FIRE and ABILITY). Never recreate or cover these controls with custom DOM.
+- The buttons must adapt to the game like water: immediately after enableFPSControls(), call setActionLabels with one short verb per button describing what it really does in this game — setActionLabels({fire:'SHOOT', ability:'DASH'}), or {fire:'SCAN', ability:'INSPECT'} for a mystery, {fire:'GRAB', ability:'JUMP'} for a platformer. The player must understand every button by reading it alone.
 - Read stick.x/stick.y for movement and look.dx/look.dy for aiming. Read actions.firePressed for one shot per press or actions.fire for held automatic fire. Read actions.abilityPressed for a distinct themed ability with a visible or HUD cooldown. Never use a generic screen tap or onTap as the primary FPS fire control.
 - Do not define onTap() for an FPS. A touch on the right side begins aiming and must never unexpectedly fire, enter a vehicle, activate a prop, or perform another action. Put contextual interaction on ABILITY instead.
 - Drive the camera yourself: keep a yaw variable (and a small clamped pitch) updated from look.dx/look.dy, move the camera with stick relative to yaw, and aim shots straight out of the camera (a distance-plus-angle cone check against targets is enough — no physics engine).
@@ -1061,7 +1063,7 @@ FIRST-PERSON MODE (mandatory for FPS/first-person prompts; also the default for 
 - Give the player real navigable space with a floor, boundaries and recognizable rooms, corridors, cover, ramps, or landmarks. Add collision so the camera cannot simply walk through walls.
 - A mission-based shooter must include player health, enemies that move/react/attack, clear hit and firing feedback, a concrete objective beyond score, and a win or progression state. Use setHud() to keep health and the current objective visible. Never replace this with automatic movement, stationary targets, a one-screen gallery, or a score-only survival loop.
 - A sandbox or open-world shooter may intentionally have no mission, win state, timer, score, or forced game over. In that case build a place worth inhabiting: free movement, exploration, vehicles or traversal when requested, interactive props or characters, and several playful actions that create emergent fun. The HUD may show only useful state such as health, vehicle speed, or ability cooldown.
-- FIRE and ABILITY must both work immediately. The ability must fit the prompt, such as a portal burst, shield, dash, stun, or alternate weapon, rather than being a second identical shot.
+- Both action buttons must work immediately and carry labels matching their real actions. The second action must fit the prompt, such as a portal burst, shield, dash, stun, or alternate weapon, rather than being a second identical shot.
 - Targets stay abstract and kid-safe: blocky drones, crystals, robots that pop with burst3d — never humans, never blood.
 
 DRIVING MODE (mandatory whenever the requested experience centers on a car, kart, truck, taxi, bus, race, or driving):
@@ -1069,6 +1071,7 @@ DRIVING MODE (mandatory whenever the requested experience centers on a car, kart
 - Every frame, use drive.steer (-1 left to +1 right), drive.throttle (0 to 1), and drive.brake. BRAKE should slow the vehicle and become reverse when held near a stop. Steering must visibly rotate the car and its front wheels.
 - Use acceleration, drag, a capped speed, speed-sensitive turning, and smooth follow-camera interpolation. Keep the car on readable terrain or roads with boundaries; collisions should slow or stop it instead of letting it pass through scenery.
 - Build the vehicle as a recognizable compound model with a body, cabin, four wheels, lights, and distinct front/back. Show a concise speed or objective HUD. The controls must work immediately without reading instructions.
+- If the pedals mean something different in this game, relabel them so the buttons say so, e.g. setActionLabels({gas:'BOOST', brake:'DRIFT'}).
 
 GENRE FIDELITY — HIGHEST PRIORITY:
 - Treat the creator's prompt as a contract. Implement the requested genre, perspective, spatial layout, core activity, camera, controls, mood, and progression directly.
@@ -2375,7 +2378,7 @@ function sanitizeSvg(t){
   if(t.length>60000) return null;
   return t;
 }
-function generateCover(title, promptText){
+function generateCoverSvg(title, promptText){
   return fetch('/api/anthropic/messages', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
@@ -2385,6 +2388,69 @@ function generateCover(title, promptText){
     var s = sanitizeSvg(t);
     return s ? 'data:image/svg+xml;utf8,'+encodeURIComponent(s).replace(/'/g,'%27') : null;
   }).catch(function(){ return null; });
+}
+/* generated covers are 1024px — shrink to a 640px JPEG so the stored meta
+   stays well under the 1MB storage cap */
+function shrinkCoverImage(src){
+  return new Promise(function(resolve){
+    var img = new Image();
+    img.onload = function(){
+      try{
+        var size = 640;
+        var canvas = document.createElement('canvas');
+        canvas.width = size; canvas.height = size;
+        var c = canvas.getContext('2d');
+        var s = Math.max(size/img.width, size/img.height);
+        var w = img.width*s, h = img.height*s;
+        c.drawImage(img, (size-w)/2, (size-h)/2, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.82));
+      }catch(e){ resolve(null); }
+    };
+    img.onerror = function(){ resolve(null); };
+    img.src = src;
+  });
+}
+/* real AI-painted cover via the image model; falls back to the old SVG
+   generator so covers keep working if the image provider is down */
+function generateCover(title, promptText){
+  return fetch('/api/images/cover', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ title:title, prompt:promptText })
+  }).then(function(r){
+    if(!r.ok) throw new Error('cover_http_'+r.status);
+    return r.json();
+  }).then(function(d){
+    if(!d || !d.image) throw new Error('cover_empty');
+    return shrinkCoverImage(d.image);
+  }).then(function(small){
+    if(!small) throw new Error('cover_shrink');
+    return small;
+  }).catch(function(){ return generateCoverSvg(title, promptText); });
+}
+/* image models take 30-80s, so covers no longer block publishing — the game
+   ships instantly and the painting is attached when it arrives */
+function attachCoverLater(id, title, promptText){
+  generateCover(title, promptText).then(function(cover){
+    if(!cover) return;
+    var meta = allMetas.filter(function(m){ return m.id===id; })[0];
+    if(meta){
+      meta.cover = cover;
+      sSet(META_PREFIX+id, JSON.stringify(meta), true);
+    } else {
+      sGet(META_PREFIX+id, true).then(function(raw){
+        try{
+          var m = JSON.parse(raw||'null');
+          if(!m) return;
+          m.cover = cover;
+          sSet(META_PREFIX+id, JSON.stringify(m), true);
+        }catch(e){}
+      });
+    }
+    if(currentGame && currentGame.id===id) currentGame.cover = cover;
+    if(!$('#screen-feed').classList.contains('hidden')) renderFeed();
+    if(!$('#screen-profile').classList.contains('hidden')) renderProfile();
+  });
 }
 
 var lastBuild = null;
@@ -2894,20 +2960,13 @@ function finishCreateFromCode(job, code, use3D, skipPreflight){
     job.publishWithoutValidation = null;
     var id = uid();
     var meta = {id:id, title:job.title, prompt:job.prompt, desc:job.about, parentId:null, creator:job.creator, plays:0, recentPlays:[], createdAt:Date.now()};
-    var coverPromise;
     if(job.validationRetried){
       setBuildStage(job, 'saving', 'Publishing without another AI call…', 88);
-      coverPromise = Promise.resolve(null);
     } else {
-      setBuildStage(job, 'cover', 'Creating cover art…', 82);
-      coverPromise = generateCover(meta.title, job.prompt);
+      attachCoverLater(id, meta.title, job.prompt);
     }
-    return coverPromise.then(function(cover){
-      if(buildJob!==job) return;
-      if(cover) meta.cover = cover;
-      lastBuild = {id:id, html:html, meta:meta};
-      return finishBuild(lastBuild, job);
-    });
+    lastBuild = {id:id, html:html, meta:meta};
+    return finishBuild(lastBuild, job);
   });
 }
 function runCreateJob(job){
@@ -2982,20 +3041,13 @@ function finishVersionFromCode(job, code, skipPreflight){
     if(job.kind==='remix'){
       var id = uid();
       var meta = {id:id, title:job.title, prompt:job.prompt, desc:'', parentId:job.game.id, creator:job.creator, plays:0, recentPlays:[], createdAt:Date.now()};
-      var coverPromise;
       if(job.validationRetried){
         setBuildStage(job, 'saving', 'Publishing without another AI call…', 88);
-        coverPromise = Promise.resolve(null);
       } else {
-        setBuildStage(job, 'cover', 'Creating cover art…', 82);
-        coverPromise = generateCover(meta.title, job.prompt);
+        attachCoverLater(id, meta.title, job.prompt);
       }
-      return coverPromise.then(function(cover){
-        if(buildJob!==job) return;
-        if(cover) meta.cover = cover;
-        lastBuild = {id:id, html:finalHtml, meta:meta};
-        return finishBuild(lastBuild, job);
-      });
+      lastBuild = {id:id, html:finalHtml, meta:meta};
+      return finishBuild(lastBuild, job);
     }
     lastBuild = {id:job.game.id, html:finalHtml, meta:job.game};
     return finishBuild(lastBuild, job);
@@ -3619,7 +3671,7 @@ function init(){
     if(!currentGame) return;
     var btn = this;
     btn.disabled = true;
-    $('#coverStatus').textContent = 'Remy is painting…';
+    $('#coverStatus').textContent = 'Remy is painting real AI art — this can take up to a minute…';
     generateCover(currentGame.title, currentGame.prompt || currentGame.title).then(function(cover){
       btn.disabled = false;
       if(cover){

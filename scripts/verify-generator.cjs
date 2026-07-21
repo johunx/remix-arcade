@@ -36,7 +36,7 @@ const sample2D = [
 
 const sample3D = [
   "var cube,shots;",
-  "function resetGame(){enableFPSControls();setHud('HEALTH 100 | FIND THE EXIT');shots=0;cube=new THREE.Mesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshBasicMaterial());world.add(cube);}",
+  "function resetGame(){enableFPSControls();setActionLabels({fire:'SCAN',ability:'INSPECT'});setHud('HEALTH 100 | FIND THE EXIT');shots=0;cube=new THREE.Mesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshBasicMaterial());world.add(cube);}",
   "function update(dt){cube.rotation.y+=0.01*dt;if(actions.firePressed)shots++;if(actions.abilityPressed)cube.scale.setScalar(1.2);}",
 ].join("\n");
 
@@ -138,6 +138,14 @@ assert(workerSource.includes("fetchUpstreamWithRetry"), "The worker does not ret
 const workflowSource = fs.readFileSync(path.join(__dirname, "..", "worker", "generation-workflow.ts"), "utf8");
 assert(workflowSource.includes("NonRetryableError"), "The workflow retries refusals and content-filter stops.");
 assert(/retries:\s*\{\s*limit:\s*4/.test(workflowSource), "The workflow does not retry transient provider failures.");
+assert(source.includes("/api/images/cover"), "Covers do not use the AI image generator.");
+assert(source.includes("function generateCoverSvg"), "The SVG cover fallback was removed.");
+assert(source.includes("function shrinkCoverImage"), "Generated covers are not shrunk before storage.");
+assert(workerSource.includes("handleCoverImage"), "The worker has no cover image endpoint.");
+assert(serverSource.includes("/api/images/cover"), "The local server has no cover image endpoint.");
+assert(generatorSource.includes("function setActionLabels"), "The 3D engine cannot relabel its action buttons.");
+assert(generatorSource.includes("setActionLabels({fire:'SHOOT', ability:'DASH'})"), "The 3D prompt does not tell the model to adapt button labels.");
+assert(source.includes("function attachCoverLater"), "Covers still block publishing.");
 
 if (process.argv.includes("--serve")) {
   const port = Number(process.env.GENERATOR_TEST_PORT || 3011);
