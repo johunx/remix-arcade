@@ -831,7 +831,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 <script>
 (function(){
 
-var BUILD = 'v87';
+var BUILD = 'v88';
 var GENERATION_JOB_KEY = 'ra-active-generation-v1';
 var HORIZONTAL_SWIPE = new URLSearchParams(location.search).get('nav')==='horizontal';
 document.body.classList.toggle('horizontal-swipe', HORIZONTAL_SWIPE);
@@ -2982,7 +2982,7 @@ function pollGenerationJob(job){
 }
 function backgroundGame(system,userMsg,job,tier){
   if(job.serverJobId) return pollGenerationJob(job);
-  return fetch('/api/generation/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({modelTier:tier==='3d'?'3d':'default',max_tokens:16000,system:system,messages:[{role:'user',content:userMsg}]})}).then(function(resp){
+  return fetch('/api/generation/jobs',{method:'POST',headers:{'Content-Type':'application/json'},keepalive:true,body:JSON.stringify({modelTier:tier==='3d'?'3d':'default',max_tokens:16000,system:system,messages:[{role:'user',content:userMsg}]})}).then(function(resp){
     if(!resp.ok) return resp.text().then(function(raw){ throw mappedGenerationError(resp.status,raw); });
     return resp.json();
   }).then(function(data){
@@ -3066,9 +3066,9 @@ function runCreateJob(job){
   job.publishWithoutValidation = null;
   job.generatedCode = null;
   setBuildStage(job, 'building', use3D ? 'Building the 3D game…' : 'Building the game…', 4);
-  var generation = use3D
-    ? backgroundGame(SYS_3D_JS, buildUserMessage('create', job.prompt, job.about, null), job, '3d')
-    : generateGameCode(SYS_JS, buildUserMessage('create', job.prompt, job.about, null), 3500, 'default', job);
+  /* Every new game starts as a durable server job. The phone only polls it,
+     so locking the screen or switching apps cannot interrupt AI generation. */
+  var generation = backgroundGame(use3D ? SYS_3D_JS : SYS_JS, buildUserMessage('create', job.prompt, job.about, null), job, use3D ? '3d' : 'default');
   generation.then(function(code){
     if(buildJob!==job) return;
     job.generatedCode = code;

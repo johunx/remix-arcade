@@ -153,6 +153,8 @@ assert.strictEqual(context.mappedGenerationError(400, '{"error":"content_filter"
 assert.strictEqual(context.mappedGenerationError(402, '{"error":"insufficient balance"}').code, "provider_credit", "Provider credit failures are not identified.");
 assert(source.includes("function generateGameCode"), "Stream failures do not fail over to the background builder.");
 assert(source.includes("STREAM_FAILOVER_CODES"), "The failover path does not filter for transient errors.");
+assert(source.includes("var generation = backgroundGame(use3D ? SYS_3D_JS : SYS_JS"), "New 2D and 3D games are not both created as durable server jobs.");
+assert(source.includes("keepalive:true"), "Starting a background build is not protected when the phone immediately sleeps.");
 assert(workerSource.includes("fetchUpstreamWithRetry"), "The worker does not retry flaky upstream connections.");
 const workflowSource = fs.readFileSync(path.join(__dirname, "..", "worker", "generation-workflow.ts"), "utf8");
 assert(workflowSource.includes("NonRetryableError"), "The workflow retries refusals and content-filter stops.");
