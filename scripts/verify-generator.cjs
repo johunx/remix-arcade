@@ -165,6 +165,10 @@ assert(source.includes("/api/images/cover"), "Covers do not use the AI image gen
 assert(source.includes("function generateCoverSvg"), "The SVG cover fallback was removed.");
 assert(source.includes(`return '<article class="card" data-id="'+escapeHtml(m.id)+'">'`), "Compact cards still paint the cover behind their title and stats.");
 assert(source.includes("function shrinkCoverImage"), "Generated covers are not shrunk before storage.");
+assert(source.includes("body.detail-game-mode #screens"), "Browse game playback does not reserve a stable near-full-screen area.");
+assert(source.includes('id="gameDetailInfo"'), "The near-full-screen game view has no information control.");
+assert(source.includes("$('#gameDetailInfo').addEventListener('click', openGameInfo)"), "The game information control does not open the details sheet.");
+assert(source.includes('id="gameInfoEdit"') && source.includes('id="gameInfoCover"'), "Creator edit and cover actions were lost from the compact game view.");
 assert(workerSource.includes("handleCoverImage"), "The worker has no cover image endpoint.");
 assert(serverSource.includes("/api/images/cover"), "The local server has no cover image endpoint.");
 assert(generatorSource.includes("function setActionLabels"), "The 3D engine cannot relabel its action buttons.");

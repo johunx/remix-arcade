@@ -224,9 +224,19 @@ body.gameplay-mode .build-status[data-state="building"]{display:none;}
 .build-status[data-state="error"]{border-color:rgba(255,84,112,0.48);}
 .build-status[data-state="error"] .build-status-symbol{background:rgba(255,84,112,0.12);color:var(--coral);}
 
-/* game view */
-.gameframe-wrap{border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--glass-border);box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 26px 60px -22px rgba(0,0,0,0.8),0 0 0 1px rgba(255,154,95,0.06);background:#000;margin-bottom:14px;}
-.gameframe-wrap iframe{width:100%;aspect-ratio:9/13;display:block;background:#000;border:0;}
+/* Browse game view: a stable play area above the permanent app dock. */
+body.detail-game-mode #screens{padding-bottom:0;overflow:hidden;}
+#screen-game{--detail-toolbar-h:calc(48px + env(safe-area-inset-top));padding:0;height:calc(100vh - var(--playbar-h));height:calc(100dvh - var(--playbar-h) - env(safe-area-inset-bottom));position:relative;animation:none;background:#000;}
+.game-detail-toolbar{height:var(--detail-toolbar-h);display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:center;gap:8px;padding:calc(4px + env(safe-area-inset-top)) 8px 4px;background:rgba(25,12,17,.98);border-bottom:1px solid rgba(255,205,170,.12);}
+.game-detail-icon{width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:var(--text);}
+.game-detail-icon .ic{width:20px;height:20px;}
+.game-detail-heading{min-width:0;text-align:center;}
+.game-detail-heading b,.game-detail-heading span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.game-detail-heading b{font-size:12px;line-height:16px;}
+.game-detail-heading span{font-size:10px;line-height:14px;color:var(--text-faint);}
+.gameframe-wrap{height:calc(100% - var(--detail-toolbar-h));overflow:hidden;background:#000;}
+.gameframe-wrap iframe{width:100%;height:100%;display:block;background:#000;border:0;}
+.game-detail-data{display:none!important;}
 .lineage-bar{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--blue);margin-bottom:12px;padding:11px 14px;background:linear-gradient(160deg,rgba(255,255,255,0.04),rgba(255,255,255,0.005)),var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:var(--r-sm);border:1px solid var(--glass-border);box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);}
 .lineage-bar .lineage-title{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .lineage-bar.link{cursor:pointer;border-color:rgba(127,184,255,0.4);transition:transform .18s var(--spring),filter .18s ease;}
@@ -616,19 +626,17 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
     </section>
 
     <section id="screen-game" class="screen hidden">
-      <div class="topbar"><button class="btn btn-ghost" id="backToFeed">← Back</button></div>
-      <div class="creator-bar"><span class="creator-name" id="gameCreator"></span><button class="follow-btn hidden" id="followBtn">Follow</button></div>
-      <div id="lineageBar" class="lineage-bar hidden"></div>
-      <div class="gameframe-wrap"><iframe id="gameFrame" sandbox="allow-scripts"></iframe></div>
-      <div class="stat-row">
-        <div class="stat-pill"><b id="statPlays">0</b><span>PLAYS</span></div>
-        <div class="stat-pill"><b id="statLikes">0</b><span>LIKES</span></div>
-        <div class="stat-pill"><b id="statVersions">0</b><span>VERSIONS</span></div>
+      <div class="game-detail-toolbar">
+        <button class="game-detail-icon" id="backToFeed" aria-label="Back to Browse" title="Back to Browse"><svg class="ic" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+        <div class="game-detail-heading"><b id="gameDetailTitle">Game</b><span id="gameDetailCreator"></span></div>
+        <button class="game-detail-icon" id="gameDetailInfo" aria-label="Game information" title="Game information"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.2v.1"/></svg></button>
       </div>
-      <div class="action-row">
-        <button class="btn btn-blue" id="remixBtn">⑂ Make yours</button>
-        <button class="btn btn-ghost hidden" id="editBtn">✎ Edit</button>
-        <button class="btn btn-ghost hidden" id="coverBtn">✦ Cover</button>
+      <div class="gameframe-wrap"><iframe id="gameFrame" sandbox="allow-scripts"></iframe></div>
+      <div class="game-detail-data" aria-hidden="true">
+        <div class="creator-bar"><span class="creator-name" id="gameCreator"></span><button class="follow-btn hidden" id="followBtn">Follow</button></div>
+        <div id="lineageBar" class="lineage-bar hidden"></div>
+        <div class="stat-row"><div class="stat-pill"><b id="statPlays">0</b><span>PLAYS</span></div><div class="stat-pill"><b id="statLikes">0</b><span>LIKES</span></div><div class="stat-pill"><b id="statVersions">0</b><span>VERSIONS</span></div></div>
+        <div class="action-row"><button class="btn btn-blue" id="remixBtn">⑂ Make yours</button><button class="btn btn-ghost hidden" id="editBtn">✎ Edit</button><button class="btn btn-ghost hidden" id="coverBtn">✦ Cover</button></div>
       </div>
     </section>
 
@@ -717,6 +725,8 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
     <div class="game-info-actions">
       <button class="game-info-action" id="gameInfoLike"><svg class="ic" viewBox="0 0 24 24"><path d="M12 20.3C6.5 16.6 3.5 13.4 3.5 9.9 3.5 7.2 5.6 5 8.2 5c1.5 0 3 .7 3.8 2 .8-1.3 2.3-2 3.8-2 2.6 0 4.7 2.2 4.7 4.9 0 3.5-3 6.7-8.5 10.4z"/></svg><span>Like</span></button>
       <button class="game-info-action" id="gameInfoRemix"><svg class="ic" viewBox="0 0 24 24"><path d="M12 21.5V13M12 13 5.5 6.5M12 13V4.8M12 13l6.5-6.5"/><circle class="dot" cx="5.5" cy="6" r="1.8"/><circle class="dot" cx="12" cy="4.2" r="1.8"/><circle class="dot" cx="18.5" cy="6" r="1.8"/></svg><span>Make yours</span></button>
+      <button class="game-info-action hidden" id="gameInfoEdit"><svg class="ic" viewBox="0 0 24 24"><path d="M4 20h4l11-11-4-4L4 16v4zM13.8 6.2l4 4"/></svg><span>Edit</span></button>
+      <button class="game-info-action hidden" id="gameInfoCover"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l1.3 5.7L19 10l-5.7 1.3L12 17l-1.3-5.7L5 10l5.7-1.3L12 3z"/></svg><span>Cover</span></button>
     </div>
     <div class="game-comments-head"><h3>Comments</h3><span class="game-comments-count" id="gameCommentsCount">0</span></div>
     <div class="game-comments-list" id="gameCommentsList"></div>
@@ -831,7 +841,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 <script>
 (function(){
 
-var BUILD = 'v88';
+var BUILD = 'v89';
 var GENERATION_JOB_KEY = 'ra-active-generation-v1';
 var HORIZONTAL_SWIPE = new URLSearchParams(location.search).get('nav')==='horizontal';
 document.body.classList.toggle('horizontal-swipe', HORIZONTAL_SWIPE);
@@ -1679,8 +1689,10 @@ function showScreen(name){
       detailFrame.src = 'about:blank';
     }
   }
-  $all('.tab').forEach(function(t){ t.classList.toggle('active', t.dataset.screen===name); });
+  var activeTabScreen = name==='game' ? 'feed' : name;
+  $all('.tab').forEach(function(t){ t.classList.toggle('active', t.dataset.screen===activeTabScreen); });
   document.body.classList.toggle('swipe-mode', name==='swipe');
+  document.body.classList.toggle('detail-game-mode', name==='game');
   document.body.classList.toggle('gameplay-mode', name==='swipe' || name==='game');
   if(window.setRemixAmbientActive) window.setRemixAmbientActive(name!=='swipe');
   if(name==='swipe') buildSwipe();
@@ -1795,6 +1807,8 @@ function renderGameInfo(){
   var like = $('#gameInfoLike');
   like.classList.toggle('on', isLikedByMe(meta));
   like.querySelector('span').textContent = isLikedByMe(meta) ? 'Liked' : 'Like';
+  $('#gameInfoEdit').classList.toggle('hidden', meta.creator!==myName);
+  $('#gameInfoCover').classList.toggle('hidden', meta.creator!==myName);
   var lineageEl = $('#gameInfoLineage');
   if(meta.parentId && lineage.byId[meta.parentId]){
     lineageEl.textContent = '⑂ Remix of '+lineage.byId[meta.parentId].title+' ▸';
@@ -2386,6 +2400,8 @@ function openGame(id){
   var meta = allMetas.filter(function(m){ return m.id===id; })[0];
   if(!meta) return;
   currentGame = meta;
+  $('#gameDetailTitle').textContent = meta.title;
+  $('#gameDetailCreator').textContent = 'by '+meta.creator;
   showScreen('game');
   sGet(CODE_PREFIX+id, true).then(function(code){
     currentGameCode = code;
@@ -3800,6 +3816,8 @@ function init(){
     if(railOpen) renderGameRail();
   });
   $('#gameInfoRemix').addEventListener('click', openCurrentRemix);
+  $('#gameInfoEdit').addEventListener('click', function(){ closeGameInfo(); $('#editBtn').click(); });
+  $('#gameInfoCover').addEventListener('click', function(){ closeGameInfo(); $('#coverBtn').click(); });
   $('#gameCommentPost').addEventListener('click', postGameComment);
 
   $('#railCreator').addEventListener('click', function(){
@@ -3844,6 +3862,7 @@ function init(){
   $('#buildStatusClose').addEventListener('click', dismissBuildJob);
   $('#saveRetry').addEventListener('click', retryBuildJob);
   $('#backToFeed').addEventListener('click', function(){ showScreen('feed'); });
+  $('#gameDetailInfo').addEventListener('click', openGameInfo);
   /* remix-chain navigation: each chip walks one step back to the direct parent */
   function openLineageParent(el){
     var pid = el && el.dataset && el.dataset.parent;
