@@ -163,8 +163,7 @@ body.swipe-mode .rays{animation-play-state:paused;}
 .gate-close{position:absolute;top:10px;right:10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;color:var(--text-dim);background:rgba(255,255,255,0.05);}
 .gate-close .ic{width:17px;height:17px;}
 
-/* Permanent floating dock with stable geometry across screens; Play changes its visual treatment only.
-   --playbar-h reserves the full strip below the game: 12px gap + pill + create-button overhang. */
+/* Permanent floating dock with stable geometry across screens; Play changes its visual treatment only. */
 #tabbar{position:fixed;bottom:calc(12px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:calc(var(--shell-w) - 32px);display:flex;align-items:center;justify-content:space-around;padding:10px 18px;background:linear-gradient(160deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02)),rgba(45,23,31,0.55);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border:1px solid var(--glass-border);box-shadow:inset 0 1px 0 var(--glass-edge),0 22px 50px -16px rgba(0,0,0,0.75),var(--lsx,0px) var(--lsy,18px) var(--lsb,30px) rgb(10 5 8 / var(--lsa,0.5));border-radius:999px;z-index:20;}
 .tab{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;font-weight:600;letter-spacing:.3px;color:var(--text-faint);padding:6px 10px;transition:color .25s ease,transform .25s var(--spring);}
 #playTab{min-width:48px;padding-left:6px;padding-right:6px;}
@@ -226,8 +225,7 @@ body.gameplay-mode .build-status[data-state="building"]{display:none;}
 
 /* Browse game view: a stable play area above the permanent app dock. */
 body.detail-game-mode #screens{padding-bottom:0;overflow:hidden;}
-#screen-game{--detail-toolbar-h:calc(48px + env(safe-area-inset-top));--detail-dock-space:96px;padding:0;height:calc(100vh - var(--detail-dock-space));height:calc(100dvh - var(--detail-dock-space) - env(safe-area-inset-bottom));position:relative;animation:none;background:#000;}
-#screen-game::after{content:'';position:absolute;top:100%;left:0;right:0;height:16px;z-index:2;pointer-events:none;background:linear-gradient(180deg,#000 0%,rgba(25,12,17,.58) 68%,transparent 100%);}
+#screen-game{--detail-toolbar-h:calc(48px + env(safe-area-inset-top));padding:0;height:var(--gameplay-height,calc(100dvh - var(--playbar-h) - env(safe-area-inset-bottom)));position:relative;animation:none;background:#000;}
 .game-detail-toolbar{height:var(--detail-toolbar-h);display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:center;gap:8px;padding:calc(4px + env(safe-area-inset-top)) 8px 4px;background:rgba(25,12,17,.98);border-bottom:1px solid rgba(255,205,170,.12);}
 .game-detail-icon{width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:var(--text);}
 .game-detail-icon .ic{width:20px;height:20px;}
@@ -359,7 +357,7 @@ body.detail-game-mode #screens{padding-bottom:0;overflow:hidden;}
 
 /* swipe game mode */
 body.swipe-mode #screens{padding-bottom:0;overflow:hidden;}
-.screen.swipe{padding:0;height:calc(100vh - var(--playbar-h));height:calc(100dvh - var(--playbar-h) - env(safe-area-inset-bottom));position:relative;animation:none;}
+.screen.swipe{padding:0;height:var(--gameplay-height,calc(100dvh - var(--playbar-h) - env(safe-area-inset-bottom)));position:relative;animation:none;}
 .swipe-pager{width:calc(100% - var(--swipe-lane-w));height:100%;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none;overscroll-behavior:contain;}
 .swipe-pager::-webkit-scrollbar{display:none;}
 .swipe-slide{height:100%;scroll-snap-align:start;scroll-snap-stop:always;position:relative;background:#000;overflow:hidden;contain:layout paint;}
@@ -842,7 +840,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 <script>
 (function(){
 
-var BUILD = 'v90';
+var BUILD = 'v91';
 var GENERATION_JOB_KEY = 'ra-active-generation-v1';
 var HORIZONTAL_SWIPE = new URLSearchParams(location.search).get('nav')==='horizontal';
 document.body.classList.toggle('horizontal-swipe', HORIZONTAL_SWIPE);
@@ -1679,6 +1677,21 @@ function renderFriends(){
   }).join('');
 }
 
+var gameplayViewportRaf = 0;
+var gameplayDockObserver = null;
+function syncGameplayViewport(){
+  gameplayViewportRaf = 0;
+  var dock = $('#tabbar');
+  if(!dock) return;
+  /* Measure the real dock after safe-area and mode styles instead of guessing its allowance. */
+  var dockTop = Math.max(320, Math.ceil(dock.getBoundingClientRect().top));
+  document.documentElement.style.setProperty('--gameplay-height', dockTop+'px');
+}
+function scheduleGameplayViewport(){
+  if(gameplayViewportRaf) cancelAnimationFrame(gameplayViewportRaf);
+  gameplayViewportRaf = requestAnimationFrame(syncGameplayViewport);
+}
+
 function showScreen(name){
   $all('.screen').forEach(function(s){ s.classList.add('hidden'); });
   $('#screen-'+name).classList.remove('hidden');
@@ -1695,6 +1708,7 @@ function showScreen(name){
   document.body.classList.toggle('swipe-mode', name==='swipe');
   document.body.classList.toggle('detail-game-mode', name==='game');
   document.body.classList.toggle('gameplay-mode', name==='swipe' || name==='game');
+  syncGameplayViewport();
   if(window.setRemixAmbientActive) window.setRemixAmbientActive(name!=='swipe');
   if(name==='swipe') buildSwipe();
   if(name==='friends') renderFriends();
@@ -3377,6 +3391,13 @@ function initLightFX(){
 function init(){
   try{ console.log('[Remix Arcade] build '+BUILD); }catch(e){}
   initLightFX();
+  syncGameplayViewport();
+  addEventListener('resize', scheduleGameplayViewport);
+  if(window.visualViewport) window.visualViewport.addEventListener('resize', scheduleGameplayViewport);
+  if('ResizeObserver' in window){
+    gameplayDockObserver = new ResizeObserver(scheduleGameplayViewport);
+    gameplayDockObserver.observe($('#tabbar'));
+  }
   setTimeout(function(){ $('#boot').classList.add('fade'); setTimeout(function(){ $('#boot').style.display='none'; },450); }, 1150);
 
   var appRevealed = false;

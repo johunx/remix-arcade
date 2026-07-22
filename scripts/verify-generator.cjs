@@ -166,7 +166,7 @@ assert(source.includes("function generateCoverSvg"), "The SVG cover fallback was
 assert(source.includes(`return '<article class="card" data-id="'+escapeHtml(m.id)+'">'`), "Compact cards still paint the cover behind their title and stats.");
 assert(source.includes("function shrinkCoverImage"), "Generated covers are not shrunk before storage.");
 assert(source.includes("body.detail-game-mode #screens"), "Browse game playback does not reserve a stable near-full-screen area.");
-assert(source.includes("--detail-dock-space:96px") && source.includes("#screen-game::after"), "The Browse game still leaves a hard oversized gap above the dock.");
+assert(source.includes("--gameplay-height") && source.includes("function syncGameplayViewport()") && source.includes("getBoundingClientRect().top"), "Gameplay height is not aligned to the real dock position.");
 assert(source.includes('id="gameDetailInfo"'), "The near-full-screen game view has no information control.");
 assert(source.includes("$('#gameDetailInfo').addEventListener('click', openGameInfo)"), "The game information control does not open the details sheet.");
 assert(source.includes('id="gameInfoEdit"') && source.includes('id="gameInfoCover"'), "Creator edit and cover actions were lost from the compact game view.");
