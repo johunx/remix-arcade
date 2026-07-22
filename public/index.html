@@ -831,7 +831,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 <script>
 (function(){
 
-var BUILD = 'v78';
+var BUILD = 'v86';
 var GENERATION_JOB_KEY = 'ra-active-generation-v1';
 var HORIZONTAL_SWIPE = new URLSearchParams(location.search).get('nav')==='horizontal';
 document.body.classList.toggle('horizontal-swipe', HORIZONTAL_SWIPE);
@@ -969,7 +969,7 @@ BRAND RITUAL (mandatory, exact):
 Return nothing but the HTML document.`;
 
 var THREE_SRC = 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js';
-var SYS_3D = `You generate complete, single-file HTML5 3D browser games rendered with three.js (WebGL). A game can be any interactive 3D genre, not only an arcade game.
+var SYS_3D = `You generate complete, single-file HTML5 3D mobile games rendered with three.js (WebGL). Every game is played primarily inside a portrait touchscreen phone, not on a desktop. A game can be any interactive 3D genre, not only an arcade game.
 
 OUTPUT RULES (critical):
 - Respond with ONLY a complete HTML document, starting with <!DOCTYPE html> and ending with </html>. No markdown code fences, no commentary before or after.
@@ -977,6 +977,9 @@ OUTPUT RULES (critical):
 - Never use localStorage, sessionStorage, cookies, fetch, or any other network or persistence. The game runs in a sandboxed iframe.
 
 3D GAME REQUIREMENTS:
+- MOBILE-FIRST PLAY CONTRACT: Design for a portrait touchscreen phone from the first line of code. The entire game must be playable using touch alone, with no keyboard, mouse hover, right-click, pointer lock, tilt sensor, or hidden gesture required. Desktop controls are optional secondary conveniences.
+- Put visible, comfortably sized controls where thumbs can reach them and label action buttons with what they do. Keep movement controls in the lower-left, action controls in the lower-right, and important HUD information clear of both. Support simultaneous touches, pointercancel/touchcancel, device resizing, and safe-area insets. Never make a generic tap perform several ambiguous actions.
+- Keep menus, text, aiming feedback, interaction targets, and important objects readable on a narrow portrait viewport. Avoid tiny buttons, wide desktop layouts, hover-only information, controls at the extreme screen edge, and instructions that cover gameplay.
 - Treat the creator's prompt as a contract. Implement the requested genre, perspective, spatial layout, core activity, camera, controls, mood, and progression directly. Never turn a requested shooter, exploration game, driving game, builder, or puzzle into an endless runner or tap-to-shoot box gallery.
 - Valid forms include first- or third-person exploration, arena shooter, driving, platforming, puzzle, strategy, builder, sandbox, simulation, creative toy, mystery, or a simple 3D arcade game when requested.
 - Controls must be touch-first and genre-appropriate, plus keyboard support where relevant. A first-person game requires a visible left movement joystick, right-side drag to look, and a clear fire/interact control; desktop uses WASD plus mouse drag or arrows.
@@ -1041,7 +1044,7 @@ function assembleGame3D(js){
   return ADAPTIVE_SHELL3D_TOP + '\n' + GAME_START + '\n' + js + '\n' + GAME_END + ADAPTIVE_SHELL3D_BOTTOM;
 }
 
-var SYS_3D_JS = `You create the game-logic layer for an adaptive three.js browser-game engine. The engine handles WebGL setup, the renderer, scene, camera, base lights, resizing, input, optional score and game-over UI, particles, camera shake, sound, the boot flash, and crash recovery. You write ONLY the JavaScript game logic that plugs into it.
+var SYS_3D_JS = `You create the game-logic layer for an adaptive three.js mobile-game engine. Every game is played primarily inside a portrait touchscreen phone, not on a desktop. The engine handles WebGL setup, the renderer, scene, camera, base lights, resizing, input, optional score and game-over UI, particles, camera shake, sound, the boot flash, and crash recovery. You write ONLY the JavaScript game logic that plugs into it.
 
 OUTPUT RULES (critical):
 - Respond with ONLY JavaScript code. No HTML, no markdown code fences, no commentary before or after.
@@ -1066,6 +1069,12 @@ ENGINE GLOBALS AND HELPERS AVAILABLE TO YOU:
 
 - enableDrivingControls(), drive — {steer, throttle, brake}: complete visible mobile driving controls. Calling it adds a left steering stick plus large GAS and BRAKE buttons. Desktop arrows/WASD feed the same drive values.
 - enableHeroControls(), hero, ground, heroSpawn(x,y,z), setHeroStats(speed,jumpPower,fallY), heroOnGround, actions.jump/jumpPressed — a complete engine-owned third-person character controller, described below.
+
+MOBILE-FIRST PLAY CONTRACT - HIGHEST PRIORITY:
+- The finished game must be fully playable using touch alone. Keyboard input is only a desktop convenience and may never be required to move, aim, steer, interact, attack, jump, open a menu, start, retry, or complete the game.
+- For every game with free character or vehicle movement, call the matching engine control setup in resetGame(): enableFPSControls(), enableDrivingControls(), or enableHeroControls(). For touch-driven puzzle, strategy, builder, or creative games, use clear direct tap/drag interactions instead.
+- Use the engine-owned visible controls and relabel their action buttons to match the game. Never cover them, recreate them with custom DOM, require invisible gestures, or place essential HUD information beneath them.
+- Assume a narrow portrait viewport and two thumbs. Keep important objects large enough to recognize, objectives and HUD text concise, interactions forgiving, and gameplay understandable without keyboard instructions or hover tooltips.
 
 FIRST-PERSON MODE (mandatory for FPS/first-person prompts; also the default for a 3D shooter unless the creator explicitly asks for third-person, top-down, or another perspective):
 - Call enableFPSControls() once inside resetGame(). The engine provides a visible left movement joystick, right-side drag-to-look area, center crosshair, and two round action buttons (defaults FIRE and ABILITY). Never recreate or cover these controls with custom DOM.

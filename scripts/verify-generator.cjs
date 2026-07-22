@@ -126,6 +126,9 @@ assert(games["/3d"].includes('makeActionButton("ABILITY"'), "The 3D shell is mis
 assert(games["/3d"].includes("actions.firePressed=false"), "FPS action presses are not reset each frame.");
 assert(games["/3d"].includes('if(!fpsControlsOn&&!heroControlsOn&&typeof onTap==="function")'), "Aim touches can still trigger FPS or hero actions.");
 assert(generatorSource.includes("Never use a generic screen tap or onTap as the primary FPS fire control"), "The 3D prompt still permits ambiguous tap-to-fire controls.");
+assert(generatorSource.includes("MOBILE-FIRST PLAY CONTRACT"), "The 3D generator is missing its mobile-first play contract.");
+assert(generatorSource.includes("Every game is played primarily inside a portrait touchscreen phone, not on a desktop"), "The 3D generator no longer targets portrait touchscreen phones explicitly.");
+assert(generatorSource.includes("The finished game must be fully playable using touch alone"), "Engine-based 3D games can still depend on desktop controls.");
 assert(generatorSource.includes("Do not default to an arcade structure"), "The 3D prompt still defaults to arcade structure.");
 assert(generatorSource.includes("A sandbox or open-world shooter may intentionally have no mission"), "Open-world games are still forced into mission structure.");
 assert(source.includes("function validateEngineCode"), "The generated-code quality gate is missing.");
