@@ -831,7 +831,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 <script>
 (function(){
 
-var BUILD = 'v86';
+var BUILD = 'v87';
 var GENERATION_JOB_KEY = 'ra-active-generation-v1';
 var HORIZONTAL_SWIPE = new URLSearchParams(location.search).get('nav')==='horizontal';
 document.body.classList.toggle('horizontal-swipe', HORIZONTAL_SWIPE);
@@ -1549,7 +1549,7 @@ function cardHtml(m){
   var hot = hotCount(m,86400000) >= 3;
   var lineageLine = '';
   if(m.parentId && lineage.byId[m.parentId]) lineageLine = '<p class="card-lineage">⑂ Remix of '+escapeHtml(lineage.byId[m.parentId].title)+'</p>';
-  return '<article class="card" data-id="'+escapeHtml(m.id)+'" style="'+coverStyleFor(m)+'">'
+  return '<article class="card" data-id="'+escapeHtml(m.id)+'">'
     +'<div class="card-cover" style="'+coverStyleFor(m)+'">'+(hot?'<span class="badge-hot">🔥 HOT</span>':'')+(m.parentId?'<span class="badge-remix">⑂ REMIX</span>':'')+(m.cover?'':'<span class="card-glyph">'+glyphFor(m.id)+'</span>')+'</div>'
     +'<div class="card-body"><h3>'+escapeHtml(m.title)+'</h3>'+creatorLine(m)
     +lineageLine

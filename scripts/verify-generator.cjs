@@ -161,6 +161,7 @@ assert(workflowSource.includes("controller.abort()"), "Hung provider streams are
 assert(workflowSource.includes("clearInterval(watchdog)"), "The stall watchdog timer is never cleaned up.");
 assert(source.includes("/api/images/cover"), "Covers do not use the AI image generator.");
 assert(source.includes("function generateCoverSvg"), "The SVG cover fallback was removed.");
+assert(source.includes(`return '<article class="card" data-id="'+escapeHtml(m.id)+'">'`), "Compact cards still paint the cover behind their title and stats.");
 assert(source.includes("function shrinkCoverImage"), "Generated covers are not shrunk before storage.");
 assert(workerSource.includes("handleCoverImage"), "The worker has no cover image endpoint.");
 assert(serverSource.includes("/api/images/cover"), "The local server has no cover image endpoint.");
