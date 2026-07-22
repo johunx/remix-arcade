@@ -226,7 +226,8 @@ body.gameplay-mode .build-status[data-state="building"]{display:none;}
 
 /* Browse game view: a stable play area above the permanent app dock. */
 body.detail-game-mode #screens{padding-bottom:0;overflow:hidden;}
-#screen-game{--detail-toolbar-h:calc(48px + env(safe-area-inset-top));padding:0;height:calc(100vh - var(--playbar-h));height:calc(100dvh - var(--playbar-h) - env(safe-area-inset-bottom));position:relative;animation:none;background:#000;}
+#screen-game{--detail-toolbar-h:calc(48px + env(safe-area-inset-top));--detail-dock-space:96px;padding:0;height:calc(100vh - var(--detail-dock-space));height:calc(100dvh - var(--detail-dock-space) - env(safe-area-inset-bottom));position:relative;animation:none;background:#000;}
+#screen-game::after{content:'';position:absolute;top:100%;left:0;right:0;height:16px;z-index:2;pointer-events:none;background:linear-gradient(180deg,#000 0%,rgba(25,12,17,.58) 68%,transparent 100%);}
 .game-detail-toolbar{height:var(--detail-toolbar-h);display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:center;gap:8px;padding:calc(4px + env(safe-area-inset-top)) 8px 4px;background:rgba(25,12,17,.98);border-bottom:1px solid rgba(255,205,170,.12);}
 .game-detail-icon{width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:var(--text);}
 .game-detail-icon .ic{width:20px;height:20px;}
@@ -841,7 +842,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 <script>
 (function(){
 
-var BUILD = 'v89';
+var BUILD = 'v90';
 var GENERATION_JOB_KEY = 'ra-active-generation-v1';
 var HORIZONTAL_SWIPE = new URLSearchParams(location.search).get('nav')==='horizontal';
 document.body.classList.toggle('horizontal-swipe', HORIZONTAL_SWIPE);
