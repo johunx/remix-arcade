@@ -299,6 +299,13 @@ body.detail-game-mode #screens{padding-bottom:0;overflow:hidden;}
 @keyframes glyphFloat{0%,100%{transform:translateY(0) rotate(-2deg);}50%{transform:translateY(-7px) rotate(2deg);}}
 .create-hero h2{font-family:var(--font-d);font-size:15px;line-height:1.8;margin:12px 0 8px;}
 .create-hero p{font-size:13px;color:var(--text-dim);}
+.dimension-field{margin-bottom:14px;}
+.dimension-label{display:block;margin:0 0 7px;font-size:12px;color:var(--text-dim);}
+.dimension-control{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border:1px solid var(--glass-border);border-radius:8px;background:rgba(20,10,15,.48);box-shadow:inset 0 1px 5px rgba(0,0,0,.28);}
+.dimension-option{height:46px;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:6px;color:var(--text-dim);font-size:14px;font-weight:700;transition:background .2s ease,color .2s ease,box-shadow .2s ease,transform .2s var(--spring);}
+.dimension-option:active{transform:scale(.97);}
+.dimension-option.active{background:linear-gradient(165deg,#FFBE8F 0%,#FF9A5F 55%,#E97C3B 100%);color:var(--mint-ink);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 5px 14px -7px rgba(255,154,95,.75);}
+.dimension-beta{padding:3px 6px;border:1px solid currentColor;border-radius:5px;font-size:8px;font-weight:800;line-height:1;text-transform:uppercase;opacity:.78;}
 .prompt-field{position:relative;margin-bottom:10px;}
 .prompt-field textarea{min-height:96px;font-size:16px;line-height:1.5;padding:15px 16px;}
 .tab-hint{position:absolute;bottom:10px;right:12px;font-size:10.5px;color:var(--text-faint);pointer-events:none;opacity:0;transition:opacity .25s ease;}
@@ -590,6 +597,13 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
         <p>Describe your game. One sentence is enough — more is fine too.</p>
       </div>
       <div id="createForm">
+        <div class="dimension-field">
+          <span class="dimension-label">Game type</span>
+          <div class="dimension-control" id="gameDimension" role="radiogroup" aria-label="Game type">
+            <button class="dimension-option active" type="button" data-dimension="2d" role="radio" aria-checked="true">2D</button>
+            <button class="dimension-option" type="button" data-dimension="3d" role="radio" aria-checked="false" tabindex="-1"><span>3D</span><span class="dimension-beta">Beta</span></button>
+          </div>
+        </div>
         <div class="field prompt-field">
           <textarea id="promptInput" rows="3" placeholder=""></textarea>
           <div class="tab-hint" id="tabHint"><kbd>Tab</kbd> to use this idea</div>
@@ -840,7 +854,7 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 <script>
 (function(){
 
-var BUILD = 'v91';
+var BUILD = 'v92';
 var GENERATION_JOB_KEY = 'ra-active-generation-v1';
 var HORIZONTAL_SWIPE = new URLSearchParams(location.search).get('nav')==='horizontal';
 document.body.classList.toggle('horizontal-swipe', HORIZONTAL_SWIPE);
@@ -1006,11 +1020,6 @@ BRAND RITUAL (mandatory, exact):
 
 Return nothing but the HTML document.`;
 
-function wants3D(text){
-  var value = String(text||'');
-  if(/\b2[\s-]?d\b/i.test(value) && !/\b3[\s-]?d\b/i.test(value)) return false;
-  return /\b3[\s-]?d\b|\bthree[\s.-]?js\b|\bfirst[\s-]?person\b|\bthird[\s-]?person\b|\bfps\b|\bdoom(?:like)?\b|\bvoxel\b|\bgta(?:[\s-]?style)?\b|\bgrand\s+theft\s+auto\b|\bopen[\s-]?world\b|\bfree[\s-]?roam(?:ing)?\b/i.test(value);
-}
 function is3DGameHtml(html){
   return !!html && (html.indexOf('three.min.js')>-1 || /\bTHREE\./.test(html));
 }
@@ -2560,6 +2569,16 @@ function renderCreateMode(){
   $('#createForm').classList.toggle('hidden', details);
   $('#buildView').classList.toggle('hidden', !details);
 }
+var createDimension = '2d';
+function setCreateDimension(value){
+  createDimension = value==='3d' ? '3d' : '2d';
+  $all('#gameDimension .dimension-option').forEach(function(option){
+    var active = option.dataset.dimension===createDimension;
+    option.classList.toggle('active', active);
+    option.setAttribute('aria-checked', active ? 'true' : 'false');
+    option.tabIndex = active ? 0 : -1;
+  });
+}
 function updateBuildProgress(value){
   if(!buildJob) return;
   buildJob.progress = Math.max(0, Math.min(100, value||0));
@@ -2646,6 +2665,7 @@ function retryBuildJob(){
     if(job.kind==='create'){
       $('#promptInput').value = job.prompt;
       $('#aboutInput').value = job.about;
+      setCreateDimension(job.use3D ? '3d' : '2d');
       dismissBuildJob();
       showScreen('create');
     } else {
@@ -2690,6 +2710,7 @@ function dismissBuildJob(){
   if(buildJob.state==='error' && buildJob.kind==='create'){
     $('#promptInput').value = buildJob.prompt;
     $('#aboutInput').value = buildJob.about;
+    setCreateDimension(buildJob.use3D ? '3d' : '2d');
   }
   buildJob = null;
   lastBuild = null;
@@ -2974,7 +2995,7 @@ function streamGame(system, userMsg, denom, modelTier){
 
 function saveGenerationJob(job, code){
   if(!job || !job.serverJobId || job.kind!=='create') return;
-  try{ localStorage.setItem(GENERATION_JOB_KEY, JSON.stringify({id:job.serverJobId,kind:'create',use3D:job.use3D!==false,title:job.title,prompt:job.prompt,about:job.about||'',creator:job.creator||'',code:code||'',startedAt:job.startedAt||Date.now()})); }catch(e){}
+  try{ localStorage.setItem(GENERATION_JOB_KEY, JSON.stringify({id:job.serverJobId,kind:'create',dimension:job.use3D?'3d':'2d',use3D:job.use3D===true,title:job.title,prompt:job.prompt,about:job.about||'',creator:job.creator||'',code:code||'',startedAt:job.startedAt||Date.now()})); }catch(e){}
 }
 function clearGenerationJob(job){
   if(!job || !job.serverJobId) return;
@@ -3087,7 +3108,7 @@ function finishCreateFromCode(job, code, use3D, skipPreflight){
   });
 }
 function runCreateJob(job){
-  var use3D = wants3D(job.prompt+' '+(job.about||''));
+  var use3D = job.use3D===true;
   job.use3D = use3D;
   job.fpsRequired = requiresFPSControls(job.prompt+' '+(job.about||''), use3D);
   job.drivingRequired = requiresDrivingControls(job.prompt+' '+(job.about||''), use3D);
@@ -3096,7 +3117,7 @@ function runCreateJob(job){
   job.retryWithoutGeneration = null;
   job.publishWithoutValidation = null;
   job.generatedCode = null;
-  setBuildStage(job, 'building', use3D ? 'Building the 3D game…' : 'Building the game…', 4);
+  setBuildStage(job, 'building', use3D ? 'Building the 3D Beta game…' : 'Building the 2D game…', 4);
   /* Every new game starts as a durable server job. The phone only polls it,
      so locking the screen or switching apps cannot interrupt AI generation. */
   var generation = backgroundGame(use3D ? SYS_3D_JS : SYS_JS, buildUserMessage('create', job.prompt, job.about, null), job, use3D ? '3d' : 'default');
@@ -3114,8 +3135,8 @@ function restoreGenerationJob(){
   var saved;
   try{ saved=JSON.parse(localStorage.getItem(GENERATION_JOB_KEY)||'null'); }catch(e){ return; }
   if(!saved||!saved.id||saved.kind!=='create'||buildJobIsActive()) return;
-  var use3D=saved.use3D!==false;
-  var job={kind:'create',use3D:use3D,title:saved.title||titleFromPrompt(saved.prompt||'3D game'),prompt:saved.prompt||'',about:saved.about||'',creator:saved.creator||myName||'Guest',serverJobId:saved.id,startedAt:saved.startedAt||Date.now()};
+  var use3D=saved.dimension ? saved.dimension==='3d' : saved.use3D===true;
+  var job={kind:'create',use3D:use3D,title:saved.title||titleFromPrompt(saved.prompt||'Game'),prompt:saved.prompt||'',about:saved.about||'',creator:saved.creator||myName||'Guest',serverJobId:saved.id,startedAt:saved.startedAt||Date.now()};
   job.runner=function(){
     job.fpsRequired=requiresFPSControls(job.prompt+' '+job.about,use3D);
     job.drivingRequired=requiresDrivingControls(job.prompt+' '+job.about,use3D);
@@ -3137,7 +3158,7 @@ function handleCreate(){
   if(!prompt) return;
   if(!myName){ requestCreatorName(handleCreate); return; }
   if(buildJobIsActive()){ openBuildPanel(); return; }
-  var job = {kind:'create', title:titleFromPrompt(prompt), prompt:prompt, about:$('#aboutInput').value.trim(), creator:myName};
+  var job = {kind:'create', use3D:createDimension==='3d', title:titleFromPrompt(prompt), prompt:prompt, about:$('#aboutInput').value.trim(), creator:myName};
   job.runner = function(){ runCreateJob(job); };
   if(beginBuildJob(job)){
     $('#promptInput').value='';
@@ -3866,6 +3887,17 @@ function init(){
   $('#railScores').addEventListener('click', openScoresModal);
   $('#gameCommentInput').addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); postGameComment(); } });
 
+  $('#gameDimension').addEventListener('click', function(e){
+    var option = e.target.closest('.dimension-option');
+    if(option) setCreateDimension(option.dataset.dimension);
+  });
+  $('#gameDimension').addEventListener('keydown', function(e){
+    if(e.key!=='ArrowLeft' && e.key!=='ArrowRight') return;
+    e.preventDefault();
+    setCreateDimension(createDimension==='2d' ? '3d' : '2d');
+    var active = this.querySelector('.dimension-option.active');
+    if(active) active.focus();
+  });
   $('#createGo').addEventListener('click', handleCreate);
   $('#demoDismiss').addEventListener('click', function(){ $('#demoBanner').classList.add('hidden'); });
   $('#buildBrowse').addEventListener('click', function(){ showScreen('feed'); });

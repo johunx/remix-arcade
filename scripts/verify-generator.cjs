@@ -89,10 +89,6 @@ for (const [name, html] of Object.entries(games)) {
 games["/validate-2d"] = validationFixture(games["/2d"]);
 games["/validate-3d"] = validationFixture(games["/3d"]);
 
-assert(context.wants3D("a Doomlike maze shooter"), "Doomlike prompts should select 3D.");
-assert(context.wants3D("a GTA-style free-roaming city"), "Strong open-world prompts should select 3D.");
-assert(!context.wants3D("a cozy 2D pet"), "Explicit 2D prompts should remain 2D.");
-assert(!context.wants3D("a 2D open-world driving game"), "Explicit 2D intent should override genre inference.");
 assert(context.requiresFPSControls("a 3D portal shooter", true), "3D shooters should require full FPS controls.");
 assert(!context.requiresFPSControls("a 3D third-person shooter", true), "Third-person games should not be forced into FPS controls.");
 assert(context.requiresDrivingControls("a 3D car driving game", true), "Car games should require driving controls.");
@@ -154,6 +150,9 @@ assert.strictEqual(context.mappedGenerationError(402, '{"error":"insufficient ba
 assert(source.includes("function generateGameCode"), "Stream failures do not fail over to the background builder.");
 assert(source.includes("STREAM_FAILOVER_CODES"), "The failover path does not filter for transient errors.");
 assert(source.includes("var generation = backgroundGame(use3D ? SYS_3D_JS : SYS_JS"), "New 2D and 3D games are not both created as durable server jobs.");
+assert(source.includes('id="gameDimension"') && source.includes('class="dimension-beta">Beta'), "The creator does not offer an explicit 2D / 3D Beta choice.");
+assert(source.includes("var use3D = job.use3D===true;") && !source.includes("function wants3D("), "New game format is still guessed from prompt keywords.");
+assert(source.includes("dimension:job.use3D?'3d':'2d'"), "Background builds do not preserve the selected game format.");
 assert(source.includes("keepalive:true"), "Starting a background build is not protected when the phone immediately sleeps.");
 assert(workerSource.includes("fetchUpstreamWithRetry"), "The worker does not retry flaky upstream connections.");
 const workflowSource = fs.readFileSync(path.join(__dirname, "..", "worker", "generation-workflow.ts"), "utf8");
