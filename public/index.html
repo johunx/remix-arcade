@@ -9,6 +9,12 @@
 <meta name="apple-mobile-web-app-title" content="Remix Arcade">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="application-name" content="Remix Arcade">
+<meta name="description" content="Play, create, share, and remix instantly playable AI-generated games.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Remix Arcade">
+<meta property="og:description" content="Every game is playable. Every game can become your version.">
+<meta property="og:url" content="https://remix-arcade.johunx.workers.dev/">
+<meta name="twitter:card" content="summary">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icon.svg">
@@ -265,10 +271,12 @@ body.detail-game-mode #screens{padding-bottom:0;overflow:hidden;}
 .game-info-sheet{width:100%;max-width:var(--shell-w);max-height:min(78dvh,680px);margin-bottom:0;border-radius:18px 18px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom));overflow-y:auto;}
 .game-info-handle{width:38px;height:4px;border-radius:99px;background:rgba(255,255,255,0.2);margin:0 auto 16px;}
 .game-info-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:start;margin-bottom:14px;}
+.game-info-head-actions{display:flex;gap:7px;}
 .game-info-title{font-size:18px;font-weight:700;line-height:1.3;margin-bottom:5px;}
 .game-info-creator{display:inline-flex;align-items:center;color:var(--text-dim);font-size:13px;}
 .game-info-close{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(255,255,255,0.06);color:var(--text-dim);}
 .game-info-close .ic{width:16px;height:16px;}
+.game-info-share{color:var(--text);}
 .game-info-follow{margin-bottom:14px;}
 .game-info-stats{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--glass-border);border-bottom:1px solid var(--glass-border);margin-bottom:14px;}
 .game-info-stat{padding:12px 6px;text-align:center;}
@@ -292,6 +300,17 @@ body.detail-game-mode #screens{padding-bottom:0;overflow:hidden;}
 .game-comment-compose{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;}
 .game-comment-compose input{min-width:0;background:rgba(255,255,255,0.05);border:1px solid var(--glass-border);border-radius:8px;padding:11px 12px;font-size:13px;}
 .game-comment-post{padding:10px 14px;border-radius:8px;background:var(--mint);color:var(--mint-ink);font-size:12px;font-weight:700;}
+.game-info-report{display:block;margin:15px auto 0;padding:7px;color:var(--text-faint);font-size:11px;text-decoration:underline;text-underline-offset:3px;}
+.report-copy{margin:-5px 0 15px;color:var(--text-dim);font-size:12.5px;line-height:1.5;}
+.report-options{display:grid;gap:8px;}
+.report-option{width:100%;min-height:44px;padding:10px 12px;border:1px solid var(--glass-border);border-radius:8px;background:rgba(255,255,255,.05);text-align:left;font-size:13px;font-weight:600;}
+.report-cancel{margin-top:10px;}
+.report-status{min-height:18px;margin-top:10px;color:var(--text-dim);font-size:12px;text-align:center;}
+.beta-link{display:block;margin:2px auto 18px;padding:8px;color:var(--text-faint);font-size:11.5px;text-decoration:underline;text-underline-offset:3px;}
+.beta-notice-copy{display:grid;gap:12px;color:var(--text-dim);font-size:13px;line-height:1.5;}
+.beta-notice-copy strong{color:var(--text);}
+.app-toast{position:fixed;left:50%;bottom:calc(98px + env(safe-area-inset-bottom));z-index:90;max-width:calc(100% - 40px);padding:10px 14px;border:1px solid var(--glass-border);border-radius:8px;background:rgba(30,15,22,.96);box-shadow:0 12px 30px rgba(0,0,0,.45);color:var(--text);font-size:12.5px;font-weight:600;opacity:0;transform:translate(-50%,8px);pointer-events:none;transition:opacity .18s ease,transform .18s ease;}
+.app-toast.show{opacity:1;transform:translate(-50%,0);}
 
 /* create screen */
 .create-hero{text-align:center;padding:26px 8px 22px;}
@@ -694,7 +713,8 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
         <div class="follow-chips" id="followingList"></div>
       </div>
       <div class="feed-grid" id="profGrid"></div>
-      <p class="build-tag">Remix Arcade · build v76</p>
+      <button class="beta-link" id="betaNoticeOpen">Public beta and safety</button>
+      <p class="build-tag">Remix Arcade | build v93</p>
     </section>
 
   </main>
@@ -726,7 +746,10 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
     <div class="game-info-handle"></div>
     <div class="game-info-head">
       <div><div class="game-info-title" id="gameInfoTitle"></div><button class="game-info-creator" id="gameInfoCreator"></button></div>
-      <button class="game-info-close" id="gameInfoClose" aria-label="Close"><svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      <div class="game-info-head-actions">
+        <button class="game-info-close game-info-share" id="gameInfoShare" aria-label="Share game" title="Share game"><svg class="ic" viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.5M8.2 13.2l7.6 4.5"/></svg></button>
+        <button class="game-info-close" id="gameInfoClose" aria-label="Close"><svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </div>
     </div>
     <button class="follow-btn game-info-follow hidden" id="gameInfoFollow">Follow</button>
     <div class="game-info-stats">
@@ -744,8 +767,39 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
     <div class="game-comments-head"><h3>Comments</h3><span class="game-comments-count" id="gameCommentsCount">0</span></div>
     <div class="game-comments-list" id="gameCommentsList"></div>
     <div class="game-comment-compose"><input id="gameCommentInput" maxlength="240" placeholder="Add a comment" autocomplete="off"><button class="game-comment-post" id="gameCommentPost">Post</button></div>
+    <button class="game-info-report" id="gameInfoReport">Report this game</button>
   </div>
 </div>
+
+<div id="reportModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
+  <div class="modal-sheet">
+    <h2 id="reportTitle">REPORT THIS GAME</h2>
+    <p class="report-copy">Choose the main reason. Your report is private and helps keep the beta safe.</p>
+    <div class="report-options">
+      <button class="report-option" data-reason="broken">Broken or unplayable</button>
+      <button class="report-option" data-reason="unsafe">Unsafe or inappropriate</button>
+      <button class="report-option" data-reason="copyright">Uses someone else's work</button>
+      <button class="report-option" data-reason="spam">Spam or misleading</button>
+    </div>
+    <button class="btn btn-ghost btn-block report-cancel" id="reportCancel">Cancel</button>
+    <p class="report-status" id="reportStatus" aria-live="polite"></p>
+  </div>
+</div>
+
+<div id="betaNoticeModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="betaNoticeTitle">
+  <div class="modal-sheet">
+    <h2 id="betaNoticeTitle">PUBLIC BETA</h2>
+    <div class="beta-notice-copy">
+      <p><strong>For beta testers age 16 and over.</strong> Accounts and parental controls are not ready yet.</p>
+      <p>Games, creator names, scores, and comments are public. Do not post personal information or content that is hateful, sexual, illegal, or copied from someone else.</p>
+      <p>The app stores a random on-device ID and anonymous usage events so we can learn what works. It does not ask for your email or password.</p>
+      <p>AI games can be broken or unexpected. Report anything unsafe and we may remove it from the beta.</p>
+    </div>
+    <button class="btn btn-primary btn-block" id="betaNoticeClose" style="margin-top:18px;">Got it</button>
+  </div>
+</div>
+
+<div class="app-toast" id="appToast" role="status" aria-live="polite"></div>
 
 <div id="remixModal" class="modal hidden">
   <div class="modal-sheet">
@@ -854,9 +908,12 @@ body.swipe-mode .swipe-pager,body.swipe-mode .screen.swipe{box-shadow:0 0 0 1px 
 <script>
 (function(){
 
-var BUILD = 'v92';
+var BUILD = 'v93';
 var GENERATION_JOB_KEY = 'ra-active-generation-v1';
-var HORIZONTAL_SWIPE = new URLSearchParams(location.search).get('nav')==='horizontal';
+var LAUNCH_PARAMS = new URLSearchParams(location.search);
+var HORIZONTAL_SWIPE = LAUNCH_PARAMS.get('nav')==='horizontal';
+var DIRECT_GAME_ID = String(LAUNCH_PARAMS.get('game')||'').replace(/[^\w-]/g,'').slice(0,80);
+var TRAFFIC_SOURCE = String(LAUNCH_PARAMS.get('ref')||LAUNCH_PARAMS.get('utm_source')||'direct').replace(/[^\w-]/g,'').slice(0,40) || 'direct';
 document.body.classList.toggle('horizontal-swipe', HORIZONTAL_SWIPE);
 var META_PREFIX = 'ra-meta-';
 var CODE_PREFIX = 'ra-code-';
@@ -1371,12 +1428,137 @@ function escapeHtml(s){
   if(s==null) return '';
   return String(s).replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; });
 }
+function serializeMeta(meta){
+  var clean = {};
+  Object.keys(meta||{}).forEach(function(key){ if(key.charAt(0)!=='_') clean[key]=meta[key]; });
+  return JSON.stringify(clean);
+}
 function hashCode(str){ var h=0; for(var i=0;i<str.length;i++){ h=(h<<5)-h+str.charCodeAt(i); h|=0; } return Math.abs(h); }
 function sunsetHue(n){ var b = n%130; return b<70 ? (b-10+360)%360 : 306+Math.round((b-70)*0.7); }
 function gradientFor(id){ var h=hashCode(id), h1=sunsetHue(h), h2=sunsetHue(h>>3); return 'linear-gradient(135deg, hsl('+h1+',58%,24%), hsl('+h2+',55%,13%))'; }
 function glyphFor(id){ return GLYPHS[hashCode(id)%GLYPHS.length]; }
 function fmt(n){ n=n||0; if(n>=1000) return (n/1000).toFixed(1).replace(/\.0$/,'')+'k'; return String(n); }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+
+var analyticsSessionId = 's-'+uid();
+var analyticsQueue = [];
+var analyticsTimer = 0;
+var analyticsDisabled = navigator.doNotTrack==='1';
+var interactedGames = {};
+var toastTimer = 0;
+function showToast(message){
+  var toast = $('#appToast');
+  if(!toast) return;
+  toast.textContent = message;
+  toast.classList.add('show');
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ toast.classList.remove('show'); }, 2200);
+}
+function flushAnalytics(useBeacon){
+  if(analyticsDisabled || !analyticsQueue.length) return;
+  var events = analyticsQueue.splice(0,20);
+  var payload = JSON.stringify({
+    viewerId:viewerId||'',
+    sessionId:analyticsSessionId,
+    source:TRAFFIC_SOURCE,
+    events:events
+  });
+  if(useBeacon && navigator.sendBeacon){
+    navigator.sendBeacon('/api/events', new Blob([payload], {type:'application/json'}));
+    return;
+  }
+  fetch('/api/events', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:payload,
+    keepalive:true
+  }).catch(function(){});
+}
+function trackEvent(name, game, metadata){
+  if(analyticsDisabled) return;
+  analyticsQueue.push({
+    name:name,
+    gameId:game && game.id ? game.id : '',
+    metadata:metadata||{}
+  });
+  if(analyticsQueue.length>=8) flushAnalytics(false);
+  else if(!analyticsTimer) analyticsTimer = setTimeout(function(){ analyticsTimer=0; flushAnalytics(false); }, 1800);
+}
+function gameUrl(meta){
+  var url = new URL(location.origin+location.pathname);
+  if(HORIZONTAL_SWIPE) url.searchParams.set('nav','horizontal');
+  url.searchParams.set('game',meta.id);
+  url.searchParams.set('ref','share');
+  return url.toString();
+}
+function syncGameUrl(id){
+  try{
+    var url = new URL(location.href);
+    url.searchParams.set('game',id);
+    url.searchParams.delete('refresh');
+    history.replaceState(null,'',url.pathname+url.search);
+  }catch(e){}
+}
+function clearGameUrl(){
+  try{
+    var url = new URL(location.href);
+    if(!url.searchParams.has('game')) return;
+    url.searchParams.delete('game');
+    url.searchParams.delete('ref');
+    history.replaceState(null,'',url.pathname+(url.searchParams.toString()?'?'+url.searchParams.toString():''));
+  }catch(e){}
+}
+function shareCurrentGame(){
+  if(!currentGame) return;
+  var meta = currentGame;
+  var data = {
+    title:meta.title+' on Remix Arcade',
+    text:'Play "'+meta.title+'" by '+meta.creator+', then make your own version.',
+    url:gameUrl(meta)
+  };
+  function shared(){
+    trackEvent('share',meta,{screen:document.body.classList.contains('swipe-mode')?'swipe':'game'});
+  }
+  if(navigator.share){
+    navigator.share(data).then(shared).catch(function(error){
+      if(error && error.name!=='AbortError') showToast('Sharing was not available.');
+    });
+    return;
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(data.url).then(function(){ shared(); showToast('Game link copied'); }).catch(function(){ showToast(data.url); });
+  } else {
+    showToast(data.url);
+  }
+}
+function openReportGame(){
+  if(!currentGame) return;
+  $('#reportStatus').textContent = '';
+  $('#reportModal').classList.remove('hidden');
+}
+function closeReportGame(){
+  $('#reportModal').classList.add('hidden');
+  $all('#reportModal .report-option').forEach(function(button){ button.disabled=false; });
+}
+function submitGameReport(reason){
+  if(!currentGame) return;
+  var reported = currentGame;
+  $all('#reportModal .report-option').forEach(function(button){ button.disabled=true; });
+  $('#reportStatus').textContent = 'Sending report...';
+  fetch('/api/reports',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({targetType:'game',targetId:reported.id,reason:reason,viewerId:viewerId||''})
+  }).then(function(response){
+    if(!response.ok) throw new Error('report_failed');
+    trackEvent('report',reported,{kind:reason});
+    $('#reportStatus').textContent = 'Report received. Thank you.';
+    setTimeout(function(){ closeReportGame(); closeGameInfo(); },900);
+  }).catch(function(){
+    $('#reportStatus').textContent = 'Could not send the report. Please try again.';
+    $all('#reportModal .report-option').forEach(function(button){ button.disabled=false; });
+  });
+}
 
 var memStore = {};
 var storageDegraded = false;
@@ -1509,7 +1691,7 @@ function seedIfEmpty(){
   var chain = Promise.resolve();
   seeds.forEach(function(s){
     chain = chain.then(function(){ return sSet(CODE_PREFIX+s.id, s.code, true); })
-                 .then(function(){ return sSet(META_PREFIX+s.id, JSON.stringify(s.meta), true); });
+                 .then(function(){ return sSet(META_PREFIX+s.id, serializeMeta(s.meta), true); });
   });
   return chain.then(refreshData).then(function(){
     if(allMetas.length===0){ noteDegraded(); useLocalSeedGames(); }
@@ -1704,6 +1886,7 @@ function scheduleGameplayViewport(){
 function showScreen(name){
   $all('.screen').forEach(function(s){ s.classList.add('hidden'); });
   $('#screen-'+name).classList.remove('hidden');
+  if(name!=='game') clearGameUrl();
   if(name!=='swipe'){ closeGameInfo(); closeGameRail(); releaseSwipeFrames(); cancelDockHandDemo(false); }
   if(name!=='game'){
     var detailFrame = $('#gameFrame');
@@ -1725,6 +1908,7 @@ function showScreen(name){
   if(name==='profile') renderProfile();
   if(name==='create') renderCreateMode();
   $('#screens').scrollTop = 0;
+  trackEvent('screen_view',null,{screen:name,nav:HORIZONTAL_SWIPE?'horizontal':'vertical'});
 }
 
 function animateNumber(el, target){
@@ -1910,7 +2094,8 @@ function postGameComment(){
     comments.push({by:myName, text:text, t:Date.now()});
     currentGame.comments = comments;
     $('#gameCommentInput').value = '';
-    sSet(META_PREFIX+currentGame.id, JSON.stringify(currentGame), true);
+    sSet(META_PREFIX+currentGame.id, serializeMeta(currentGame), true);
+    trackEvent('comment',currentGame,{screen:document.body.classList.contains('swipe-mode')?'swipe':'game'});
     renderGameInfo();
     if(railOpen) renderGameRail();
   };
@@ -2006,6 +2191,7 @@ function setActiveSlide(i){
   if(!slides.length) return;
   i = Math.max(0, Math.min(slides.length-1, i));
   if(i===swipeActive) return;
+  var previousIndex = swipeActive;
   swipeActive = i;
   for(var k=0;k<slides.length;k++){
     var s = slides[k];
@@ -2021,7 +2207,7 @@ function setActiveSlide(i){
               if(!swipeList[swipeActive] || slide.dataset.id!==swipeList[swipeActive].id) return;
               focusActiveGame();
             };
-            frame.srcdoc = injectCrashGuard(injectScoreReporter(code));
+            frame.srcdoc = injectCrashGuard(injectInteractionReporter(injectScoreReporter(code)));
             slide.dataset.loaded = '1';
           }
           slide.classList.add('live');
@@ -2038,7 +2224,14 @@ function setActiveSlide(i){
   currentGameCode = codeCache[meta.id] || null;
   renderPlayCreatorIdentity(meta);
   var active = slides[i];
-  if(!active.dataset.counted){ active.dataset.counted = '1'; trackPlay(meta); }
+  if(!active.dataset.counted){
+    active.dataset.counted = '1';
+    trackPlay(meta);
+    trackEvent('game_play',meta,{screen:'swipe',nav:HORIZONTAL_SWIPE?'horizontal':'vertical'});
+  }
+  if(previousIndex>=0){
+    trackEvent('game_swipe',meta,{nav:HORIZONTAL_SWIPE?'horizontal':'vertical'});
+  }
   flashGameStats(meta);
   var originTag = $('#gameOriginTag');
   if(originTag){
@@ -2288,6 +2481,12 @@ function injectScoreReporter(html){
     'function gameOver(){if(!over){over=true;shake(14);beep(110,0.4);fsEl.textContent="SCORE "+Math.floor(score);overEl.style.display="flex";'+report+'}}');
   return html;
 }
+function injectInteractionReporter(html){
+  if(!html || html.indexOf('ra-interaction')>-1) return html;
+  var reporter = '<scr'+'ipt>(function(){var sent=false;function ping(){if(sent)return;sent=true;try{parent.postMessage({type:"ra-interaction"},"*");}catch(e){}removeEventListener("pointerdown",ping,true);removeEventListener("keydown",ping,true)}addEventListener("pointerdown",ping,true);addEventListener("keydown",ping,true)})()<\/scr'+'ipt>';
+  if(/<\/body>/i.test(html)) return html.replace(/<\/body>/i,reporter+'</body>');
+  return html+reporter;
+}
 function scoreKey(id){ return 'ra-scores-'+id; }
 function playerLabel(){
   if(myName) return myName;
@@ -2404,7 +2603,7 @@ function trackPlay(meta){
   var last = log[log.length-1];
   if(myName && !(last && last.by===myName && now-last.t<3600000)) log.push({by:myName, t:now});
   meta.playLog = log.slice(-20);
-  return sSet(META_PREFIX+meta.id, JSON.stringify(meta), true);
+  return sSet(META_PREFIX+meta.id, serializeMeta(meta), true);
 }
 function isLikedByMe(m){
   return (m.likedBy||[]).some(likeIdentityMatches);
@@ -2416,7 +2615,8 @@ function toggleLike(meta){
   else lb = lb.concat([{by:myName||viewerId, t:Date.now()}]).slice(-40);
   meta.likedBy = lb;
   meta.likes = lb.length;
-  sSet(META_PREFIX+meta.id, JSON.stringify(meta), true);
+  sSet(META_PREFIX+meta.id, serializeMeta(meta), true);
+  trackEvent('like',meta,{kind:mine?'remove':'add'});
   return !mine;
 }
 
@@ -2427,9 +2627,10 @@ function openGame(id){
   $('#gameDetailTitle').textContent = meta.title;
   $('#gameDetailCreator').textContent = 'by '+meta.creator;
   showScreen('game');
+  syncGameUrl(id);
   sGet(CODE_PREFIX+id, true).then(function(code){
     currentGameCode = code;
-    $('#gameFrame').srcdoc = injectCrashGuard(injectScoreReporter(code)||'<body style="background:#1E0F16"></body>');
+    $('#gameFrame').srcdoc = injectCrashGuard(injectInteractionReporter(injectScoreReporter(code))||'<body style="background:#1E0F16"></body>');
     $('#statPlays').textContent = fmt(meta.plays);
     $('#statLikes').textContent = fmt((meta.likedBy||[]).length);
     $('#statVersions').textContent = fmt(meta._descendants);
@@ -2460,6 +2661,7 @@ function openGame(id){
     $('#coverBtn').classList.toggle('hidden', meta.creator!==myName);
     $('#remixModal').dataset.mode = 'remix';
     trackPlay(meta);
+    trackEvent('game_play',meta,{screen:'game',nav:HORIZONTAL_SWIPE?'horizontal':'vertical'});
   });
 }
 
@@ -2537,14 +2739,14 @@ function attachCoverLater(id, title, promptText){
     var meta = allMetas.filter(function(m){ return m.id===id; })[0];
     if(meta){
       meta.cover = cover;
-      sSet(META_PREFIX+id, JSON.stringify(meta), true);
+      sSet(META_PREFIX+id, serializeMeta(meta), true);
     } else {
       sGet(META_PREFIX+id, true).then(function(raw){
         try{
           var m = JSON.parse(raw||'null');
           if(!m) return;
           m.cover = cover;
-          sSet(META_PREFIX+id, JSON.stringify(m), true);
+          sSet(META_PREFIX+id, serializeMeta(m), true);
         }catch(e){}
       });
     }
@@ -2727,7 +2929,7 @@ function trySave(b){
   return sSet(CODE_PREFIX+b.id, b.html, true).then(function(r1){
     if(r1===null) return false;
     if(r1 && r1.denied) return 'denied';
-    return sSet(META_PREFIX+b.id, JSON.stringify(b.meta), true).then(function(r2){
+    return sSet(META_PREFIX+b.id, serializeMeta(b.meta), true).then(function(r2){
       if(r2===null) return false;
       if(r2 && r2.denied) return 'denied';
       return true;
@@ -2747,6 +2949,7 @@ function finishBuild(b, job){
         job.state = 'ready';
         job.stage = job.kind==='edit' ? 'Your update is ready' : 'Tap Play to try it';
         job.progress = 100;
+        if(job.kind!=='edit') trackEvent('game_published',b.meta,{kind:job.kind,dimension:job.use3D||job.is3D?'3d':'2d'});
         updateBuildUI();
       });
     }
@@ -3159,6 +3362,7 @@ function handleCreate(){
   if(!myName){ requestCreatorName(handleCreate); return; }
   if(buildJobIsActive()){ openBuildPanel(); return; }
   var job = {kind:'create', use3D:createDimension==='3d', title:titleFromPrompt(prompt), prompt:prompt, about:$('#aboutInput').value.trim(), creator:myName};
+  trackEvent('create_start',null,{dimension:job.use3D?'3d':'2d'});
   job.runner = function(){ runCreateJob(job); };
   if(beginBuildJob(job)){
     $('#promptInput').value='';
@@ -3224,6 +3428,7 @@ function handleRemixOrEdit(mode){
     return;
   }
   var game = currentGame;
+  if(mode==='remix') trackEvent('remix_start',game,{screen:document.body.classList.contains('swipe-mode')?'swipe':'game'});
   var innerJs = currentGameCode ? extractGameJs(currentGameCode) : null;
   var isEngine = !!innerJs;
   var is3D = is3DGameHtml(currentGameCode);
@@ -3411,6 +3616,8 @@ function initLightFX(){
 
 function init(){
   try{ console.log('[Remix Arcade] build '+BUILD); }catch(e){}
+  var buildTag = document.querySelector('.build-tag');
+  if(buildTag) buildTag.textContent = 'Remix Arcade | build '+BUILD;
   initLightFX();
   syncGameplayViewport();
   addEventListener('resize', scheduleGameplayViewport);
@@ -3422,12 +3629,22 @@ function init(){
   setTimeout(function(){ $('#boot').classList.add('fade'); setTimeout(function(){ $('#boot').style.display='none'; },450); }, 1150);
 
   var appRevealed = false;
+  function openDirectGameIfReady(){
+    if(!DIRECT_GAME_ID) return false;
+    var found = allMetas.some(function(meta){ return meta.id===DIRECT_GAME_ID; });
+    if(!found) return false;
+    var id = DIRECT_GAME_ID;
+    DIRECT_GAME_ID = '';
+    openGame(id);
+    return true;
+  }
   function revealApp(degraded){
     if(appRevealed) return;
     if(degraded){ noteDegraded(); useLocalSeedGames(); }
     appRevealed = true;
     $('#app').classList.remove('hidden');
-    showScreen(firstVisit ? 'feed' : 'swipe');
+    if(!openDirectGameIfReady()) showScreen(firstVisit ? 'feed' : 'swipe');
+    trackEvent('app_open',null,{nav:HORIZONTAL_SWIPE?'horizontal':'vertical',source:TRAFFIC_SOURCE});
   }
   var startupGuard = setTimeout(function(){
     console.warn('[Remix Arcade '+BUILD+'] startup data was slow; opening with local games.');
@@ -3457,6 +3674,10 @@ function init(){
   }).then(function(){
     clearTimeout(startupGuard);
     revealApp(false);
+    if(!openDirectGameIfReady() && DIRECT_GAME_ID){
+      DIRECT_GAME_ID = '';
+      showToast('That shared game is no longer available.');
+    }
     restoreGenerationJob();
   }).catch(function(error){
     clearTimeout(startupGuard);
@@ -3599,13 +3820,20 @@ function init(){
     if(currentGame.cover) return;
     if(typeof d.data!=='string' || d.data.indexOf('data:image/jpeg;base64,')!==0 || d.data.length>380000) return;
     currentGame.cover = d.data;
-    sSet(META_PREFIX+currentGame.id, JSON.stringify(currentGame), true);
+    sSet(META_PREFIX+currentGame.id, serializeMeta(currentGame), true);
   });
   window.addEventListener('message', function(e){
     var d = e.data;
     if(gameValidationFrame && e.source===gameValidationFrame.contentWindow) return;
-    if(!d || d.type!=='ra-score' || !currentGame) return;
-    recordScore(currentGame, d.score);
+    if(!d || !currentGame) return;
+    if(d.type==='ra-score'){
+      recordScore(currentGame, d.score);
+      return;
+    }
+    if(d.type==='ra-interaction' && !interactedGames[currentGame.id]){
+      interactedGames[currentGame.id] = true;
+      trackEvent('game_interaction',currentGame,{screen:document.body.classList.contains('swipe-mode')?'swipe':'game'});
+    }
   });
 
   var SCROLL_KEYS = ['ArrowUp','ArrowDown',' ','PageUp','PageDown','Home','End'];
@@ -3824,7 +4052,7 @@ function init(){
       btn.disabled = false;
       if(cover){
         currentGame.cover = cover;
-        sSet(META_PREFIX+currentGame.id, JSON.stringify(currentGame), true);
+        sSet(META_PREFIX+currentGame.id, serializeMeta(currentGame), true);
         $('#coverStatus').textContent = 'New cover saved ✦';
         setTimeout(function(){ $('#coverModal').classList.add('hidden'); }, 900);
       } else {
@@ -3835,13 +4063,24 @@ function init(){
   $('#coverSnap').addEventListener('click', function(){
     if(!currentGame) return;
     delete currentGame.cover;
-    sSet(META_PREFIX+currentGame.id, JSON.stringify(currentGame), true);
+    sSet(META_PREFIX+currentGame.id, serializeMeta(currentGame), true);
     $('#coverStatus').textContent = 'Play your game for a few seconds — I\'ll grab a shot automatically.';
     setTimeout(function(){ $('#coverModal').classList.add('hidden'); }, 1600);
   });
 
   $('#gameInfoClose').addEventListener('click', closeGameInfo);
+  $('#gameInfoShare').addEventListener('click', shareCurrentGame);
+  $('#gameInfoReport').addEventListener('click', openReportGame);
   $('#gameInfoModal').addEventListener('click', function(e){ if(e.target.id==='gameInfoModal') closeGameInfo(); });
+  $('#reportCancel').addEventListener('click', closeReportGame);
+  $('#reportModal').addEventListener('click', function(e){
+    if(e.target.id==='reportModal'){ closeReportGame(); return; }
+    var option = e.target.closest('.report-option');
+    if(option) submitGameReport(option.dataset.reason);
+  });
+  $('#betaNoticeOpen').addEventListener('click', function(){ $('#betaNoticeModal').classList.remove('hidden'); });
+  $('#betaNoticeClose').addEventListener('click', function(){ $('#betaNoticeModal').classList.add('hidden'); });
+  $('#betaNoticeModal').addEventListener('click', function(e){ if(e.target.id==='betaNoticeModal') e.target.classList.add('hidden'); });
   $('#gameInfoCreator').addEventListener('click', function(){
     if(!currentGame) return;
     var creator = currentGame.creator;
@@ -3969,6 +4208,8 @@ function init(){
       if(amb) amb.style.transform = 'translateY('+(sc*0.15)+'px)';
     });
   }
+  addEventListener('pagehide', function(){ flushAnalytics(true); });
+  document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden') flushAnalytics(true); });
 }
 
 document.addEventListener('DOMContentLoaded', init);

@@ -47,13 +47,29 @@ function isEngagementOnlyChange(oldStr, newStr) {
     return false;
   }
   if (!a || !b || typeof a !== 'object' || typeof b !== 'object' || Array.isArray(a) || Array.isArray(b)) return false;
-  const frozen = ['id', 'title', 'prompt', 'desc', 'parentId', 'creator', 'createdAt'];
-  for (const field of frozen) {
+  const allowed = new Set(['plays', 'recentPlays', 'playLog', 'likedBy', 'likes', 'comments', 'cover']);
+  const fields = new Set([...Object.keys(a), ...Object.keys(b)]);
+  for (const field of fields) {
+    if (allowed.has(field) || field.startsWith('_')) continue;
     const oldValue = a[field] === undefined ? null : a[field];
     const newValue = b[field] === undefined ? null : b[field];
     if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) return false;
   }
+  if (!Number.isFinite(Number(b.plays)) || Number(b.plays) < 0 || Number(b.plays) > 1_000_000_000) return false;
+  if (b.recentPlays !== undefined && (!Array.isArray(b.recentPlays) || b.recentPlays.length > 300)) return false;
+  if (b.playLog !== undefined && (!Array.isArray(b.playLog) || b.playLog.length > 20)) return false;
+  if (b.likedBy !== undefined && (!Array.isArray(b.likedBy) || b.likedBy.length > 40)) return false;
+  if (b.comments !== undefined) {
+    if (!Array.isArray(b.comments) || b.comments.length > 100) return false;
+    for (const comment of b.comments) {
+      if (!comment || typeof comment !== 'object') return false;
+      if (typeof comment.by !== 'string' || comment.by.length > 24) return false;
+      if (typeof comment.text !== 'string' || !comment.text.trim() || comment.text.length > 240) return false;
+      if (!Number.isFinite(Number(comment.t))) return false;
+    }
+  }
   if (a.cover && b.cover !== a.cover) return false;
+  if (!a.cover && b.cover !== undefined && (typeof b.cover !== 'string' || b.cover.length > 950_000)) return false;
   return true;
 }
 
@@ -374,6 +390,54 @@ app.get('/api/ai/status', (req, res) => {
       maxTokens: Number(process.env.AI_MAX_TOKENS || 8000)
     }
   });
+});
+
+const analyticsEvents = new Set([
+  'app_open', 'screen_view', 'game_play', 'game_interaction', 'game_swipe',
+  'like', 'comment', 'share', 'remix_start', 'create_start', 'game_published', 'report'
+]);
+const reportReasons = new Set(['broken', 'unsafe', 'copyright', 'spam']);
+
+app.post('/api/events', async (req, res, next) => {
+  try {
+    const body = req.body || {};
+    const events = Array.isArray(body.events) ? body.events.slice(0, 20) : [];
+    const accepted = events.filter((event) => event && analyticsEvents.has(event.name)).map((event) => ({
+      name: event.name,
+      gameId: String(event.gameId || '').replace(/[^\w-]/g, '').slice(0, 80),
+      viewerHash: body.viewerId ? sha256Hex(String(body.viewerId).slice(0, 160)).slice(0, 24) : null,
+      sessionId: String(body.sessionId || '').replace(/[^\w-]/g, '').slice(0, 64),
+      source: String(body.source || '').replace(/[^\w-]/g, '').slice(0, 40),
+      createdAt: Date.now()
+    }));
+    await writeStore((store) => {
+      if (!Array.isArray(store.analytics)) store.analytics = [];
+      store.analytics = store.analytics.concat(accepted).slice(-5000);
+    });
+    return res.json({ ok: true, accepted: accepted.length });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.post('/api/reports', async (req, res, next) => {
+  try {
+    const body = req.body || {};
+    const targetId = String(body.targetId || '').replace(/[^\w-]/g, '').slice(0, 80);
+    const reason = String(body.reason || '');
+    if (body.targetType !== 'game' || !targetId || !reportReasons.has(reason)) return res.status(400).json({ error: 'Invalid report.' });
+    const store = await readStore();
+    if (!Object.prototype.hasOwnProperty.call(store.shared, `ra-meta-${targetId}`)) return res.status(404).json({ error: 'Game not found.' });
+    const reporterHash = body.viewerId ? sha256Hex(String(body.viewerId).slice(0, 160)).slice(0, 24) : null;
+    await writeStore((current) => {
+      if (!Array.isArray(current.reports)) current.reports = [];
+      const duplicate = current.reports.some((report) => report.targetId === targetId && report.reporterHash === reporterHash && report.reason === reason);
+      if (!duplicate) current.reports.push({ targetType: 'game', targetId, reporterHash, reason, status: 'open', createdAt: Date.now() });
+    });
+    return res.json({ ok: true });
+  } catch (error) {
+    return next(error);
+  }
 });
 
 app.get('/api/storage', async (req, res, next) => {

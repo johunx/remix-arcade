@@ -40,13 +40,29 @@ function isEngagementOnlyChange(oldStr, newStr) {
     return false;
   }
   if (!a || !b || typeof a !== "object" || typeof b !== "object" || Array.isArray(a) || Array.isArray(b)) return false;
-  const frozen = ["id", "title", "prompt", "desc", "parentId", "creator", "createdAt"];
-  for (const field of frozen) {
+  const allowed = new Set(["plays", "recentPlays", "playLog", "likedBy", "likes", "comments", "cover"]);
+  const fields = new Set([...Object.keys(a), ...Object.keys(b)]);
+  for (const field of fields) {
+    if (allowed.has(field) || field.startsWith("_")) continue;
     const oldValue = a[field] === undefined ? null : a[field];
     const newValue = b[field] === undefined ? null : b[field];
     if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) return false;
   }
+  if (!Number.isFinite(Number(b.plays)) || Number(b.plays) < 0 || Number(b.plays) > 1_000_000_000) return false;
+  if (b.recentPlays !== undefined && (!Array.isArray(b.recentPlays) || b.recentPlays.length > 300)) return false;
+  if (b.playLog !== undefined && (!Array.isArray(b.playLog) || b.playLog.length > 20)) return false;
+  if (b.likedBy !== undefined && (!Array.isArray(b.likedBy) || b.likedBy.length > 40)) return false;
+  if (b.comments !== undefined) {
+    if (!Array.isArray(b.comments) || b.comments.length > 100) return false;
+    for (const comment of b.comments) {
+      if (!comment || typeof comment !== "object") return false;
+      if (typeof comment.by !== "string" || comment.by.length > 24) return false;
+      if (typeof comment.text !== "string" || !comment.text.trim() || comment.text.length > 240) return false;
+      if (!Number.isFinite(Number(comment.t))) return false;
+    }
+  }
   if (a.cover && b.cover !== a.cover) return false;
+  if (!a.cover && b.cover !== undefined && (typeof b.cover !== "string" || b.cover.length > 950_000)) return false;
   return true;
 }
 
@@ -66,6 +82,29 @@ async function ensureSchema(env) {
           count INTEGER NOT NULL,
           reset_at INTEGER NOT NULL
         )`),
+        env.DB.prepare(`CREATE TABLE IF NOT EXISTS analytics_events (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          event_name TEXT NOT NULL,
+          game_id TEXT,
+          viewer_hash TEXT,
+          session_id TEXT,
+          source TEXT,
+          metadata TEXT,
+          created_at INTEGER NOT NULL
+        )`),
+        env.DB.prepare(`CREATE TABLE IF NOT EXISTS content_reports (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          target_type TEXT NOT NULL,
+          target_id TEXT NOT NULL,
+          reporter_hash TEXT,
+          reason TEXT NOT NULL,
+          status TEXT NOT NULL DEFAULT 'open',
+          created_at INTEGER NOT NULL
+        )`),
+        env.DB.prepare("CREATE INDEX IF NOT EXISTS analytics_events_created_idx ON analytics_events(created_at)"),
+        env.DB.prepare("CREATE INDEX IF NOT EXISTS analytics_events_name_idx ON analytics_events(event_name, created_at)"),
+        env.DB.prepare("CREATE INDEX IF NOT EXISTS content_reports_status_idx ON content_reports(status, created_at)"),
+        env.DB.prepare("CREATE UNIQUE INDEX IF NOT EXISTS content_reports_once_idx ON content_reports(target_type, target_id, reporter_hash, reason)"),
       ]);
       await env.DB.prepare("ALTER TABLE storage ADD COLUMN owner TEXT").run().catch(() => {});
       const metaCount = await env.DB.prepare("SELECT COUNT(*) AS count FROM storage WHERE key LIKE 'ra-meta-%'").first();
@@ -151,6 +190,93 @@ async function handleStorage(request, env) {
   }
 
   return json({ error: "Method not allowed." }, 405, { allow: "GET, POST" });
+}
+
+const ANALYTICS_EVENTS = new Set([
+  "app_open",
+  "screen_view",
+  "game_play",
+  "game_interaction",
+  "game_swipe",
+  "like",
+  "comment",
+  "share",
+  "remix_start",
+  "create_start",
+  "game_published",
+  "report",
+]);
+const REPORT_REASONS = new Set(["broken", "unsafe", "copyright", "spam"]);
+
+function cleanShort(value, max = 80) {
+  return typeof value === "string" ? value.replace(/[^\w:./-]/g, "").slice(0, max) : "";
+}
+
+async function anonymousHash(value) {
+  if (!value) return null;
+  return (await sha256Hex(String(value).slice(0, 160))).slice(0, 24);
+}
+
+function cleanAnalyticsMetadata(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const clean = {};
+  for (const key of ["screen", "nav", "dimension", "source", "kind"]) {
+    if (typeof value[key] === "string") clean[key] = value[key].slice(0, 40);
+  }
+  return Object.keys(clean).length ? JSON.stringify(clean) : null;
+}
+
+async function handleAnalytics(request, env) {
+  if (request.method !== "POST") return json({ error: "Method not allowed." }, 405, { allow: "POST" });
+  await ensureSchema(env);
+  const rawText = await request.text();
+  if (encoder.encode(rawText).byteLength > 20_000) return json({ error: "Analytics payload is too large." }, 413);
+  let body;
+  try { body = JSON.parse(rawText); } catch { return json({ error: "Invalid JSON." }, 400); }
+  const events = Array.isArray(body && body.events) ? body.events.slice(0, 20) : [];
+  if (!events.length) return json({ ok: true, accepted: 0 });
+  const viewerHash = await anonymousHash(body.viewerId);
+  const sessionId = cleanShort(body.sessionId, 64) || null;
+  const source = cleanShort(body.source, 40) || null;
+  const now = Date.now();
+  const statements = [];
+  for (const event of events) {
+    if (!event || !ANALYTICS_EVENTS.has(event.name)) continue;
+    statements.push(env.DB.prepare(
+      "INSERT INTO analytics_events (event_name, game_id, viewer_hash, session_id, source, metadata, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+    ).bind(
+      event.name,
+      cleanShort(event.gameId, 80) || null,
+      viewerHash,
+      sessionId,
+      source,
+      cleanAnalyticsMetadata(event.metadata),
+      now
+    ));
+  }
+  if (statements.length) await env.DB.batch(statements);
+  return json({ ok: true, accepted: statements.length });
+}
+
+async function handleReports(request, env) {
+  if (request.method !== "POST") return json({ error: "Method not allowed." }, 405, { allow: "POST" });
+  await ensureSchema(env);
+  const rawText = await request.text();
+  if (encoder.encode(rawText).byteLength > 4_000) return json({ error: "Report payload is too large." }, 413);
+  let body;
+  try { body = JSON.parse(rawText); } catch { return json({ error: "Invalid JSON." }, 400); }
+  const targetType = body && body.targetType === "game" ? "game" : "";
+  const targetId = cleanShort(body && body.targetId, 80);
+  const reason = cleanShort(body && body.reason, 24);
+  if (!targetType || !targetId || !REPORT_REASONS.has(reason)) return json({ error: "Invalid report." }, 400);
+  const exists = await env.DB.prepare("SELECT 1 AS found FROM storage WHERE key = ?")
+    .bind(`ra-meta-${targetId}`).first();
+  if (!exists) return json({ error: "Game not found." }, 404);
+  const reporterHash = await anonymousHash(body && body.viewerId);
+  await env.DB.prepare(
+    "INSERT OR IGNORE INTO content_reports (target_type, target_id, reporter_hash, reason, status, created_at) VALUES (?, ?, ?, ?, 'open', ?)"
+  ).bind(targetType, targetId, reporterHash, reason, Date.now()).run();
+  return json({ ok: true });
 }
 
 function textFromContent(content) {
@@ -525,6 +651,8 @@ export const apiWorker = {
       if (url.pathname === "/healthz") return json({ ok: true });
       if (url.pathname === "/api/ai/status") return aiStatus(env);
       if (url.pathname === "/api/storage") return await handleStorage(request, env);
+      if (url.pathname === "/api/events") return await handleAnalytics(request, env);
+      if (url.pathname === "/api/reports") return await handleReports(request, env);
       if (url.pathname === "/api/generation/jobs") return await handleGenerationJobs(request, env);
       if (url.pathname === "/api/images/cover") return await handleCoverImage(request, env);
       if (url.pathname === "/api/anthropic/messages") return await handleAi(request, env);
