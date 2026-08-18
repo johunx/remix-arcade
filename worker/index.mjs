@@ -492,7 +492,7 @@ async function callAnthropic(body, env) {
       "x-api-key": apiKey,
       "anthropic-version": env.ANTHROPIC_VERSION || "2023-06-01",
     },
-    body: JSON.stringify({ ...body, model: env.ANTHROPIC_MODEL || env.AI_MODEL || "claude-sonnet-5" }),
+    body: JSON.stringify({ ...body, model: env.ANTHROPIC_MODEL || env.AI_MODEL || "claude-opus-5" }),
   });
   return copyUpstream(upstream);
 }
@@ -515,8 +515,8 @@ async function handleAi(request, env) {
       apiKey,
       baseUrl: env.YUNWU_BASE_URL || "https://yunwu.ai/v1",
       model: body.modelTier === "3d"
-        ? (env.YUNWU_3D_MODEL || "gpt-5.6-sol")
-        : (env.YUNWU_MODEL || env.AI_MODEL || "gpt-4o-mini"),
+        ? (env.YUNWU_3D_MODEL || "claude-opus-5")
+        : (env.YUNWU_MODEL || env.AI_MODEL || "claude-opus-5"),
       includeEffort: true,
       reasoningFormat: env.YUNWU_REASONING_FORMAT,
     });
@@ -618,10 +618,10 @@ async function handleGenerationJobs(request, env) {
 function aiStatus(env) {
   const provider = ["yunwu", "meta"].includes(String(env.AI_PROVIDER || "").toLowerCase()) ? String(env.AI_PROVIDER).toLowerCase() : "anthropic";
   const model = provider === "yunwu"
-    ? (env.YUNWU_MODEL || env.AI_MODEL || "gpt-4o-mini")
+    ? (env.YUNWU_MODEL || env.AI_MODEL || "claude-opus-5")
     : provider === "meta"
       ? (env.META_MODEL || env.AI_MODEL || "muse-spark-1.1")
-      : (env.ANTHROPIC_MODEL || env.AI_MODEL || "claude-sonnet-5");
+      : (env.ANTHROPIC_MODEL || env.AI_MODEL || "claude-opus-5");
   const configured = provider === "yunwu"
     ? Boolean(env.YUNWU_API_KEY || env.OPENAI_API_KEY)
     : provider === "meta"
@@ -632,8 +632,8 @@ function aiStatus(env) {
     provider,
     model,
     models: provider === "yunwu" ? {
-      default: env.YUNWU_MODEL || env.AI_MODEL || "gpt-4o-mini",
-      threeD: env.YUNWU_3D_MODEL || "gpt-5.6-sol",
+      default: env.YUNWU_MODEL || env.AI_MODEL || "claude-opus-5",
+      threeD: env.YUNWU_3D_MODEL || "claude-opus-5",
     } : { default: model },
     configured,
     limits: {

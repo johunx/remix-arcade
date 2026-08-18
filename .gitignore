@@ -1,5 +1,6 @@
 node_modules/
 dist/
+.next/
 .wrangler/
 .env
 data/storage.json
@@ -7,3 +8,5 @@ data/*.tmp
 npm-debug.log*
 .DS_Store
 .generation-evals/
+.claude/
+.codex-remote-attachments/

@@ -176,13 +176,13 @@ function chatCompletionsUrl(baseUrl) {
 }
 
 function anthropicModel() {
-  return process.env.ANTHROPIC_MODEL || process.env.AI_MODEL || 'claude-sonnet-5';
+  return process.env.ANTHROPIC_MODEL || process.env.AI_MODEL || 'claude-opus-5';
 }
 
 function yunwuModel(modelTier) {
   return modelTier === '3d'
-    ? (process.env.YUNWU_3D_MODEL || 'gpt-5.6-sol')
-    : (process.env.YUNWU_MODEL || process.env.AI_MODEL || 'gpt-4o-mini');
+    ? (process.env.YUNWU_3D_MODEL || 'claude-opus-5')
+    : (process.env.YUNWU_MODEL || process.env.AI_MODEL || 'claude-opus-5');
 }
 
 function metaModel() {

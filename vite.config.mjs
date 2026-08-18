@@ -19,8 +19,8 @@ export default defineConfig({
         vars: {
           AI_PROVIDER: "yunwu",
           YUNWU_BASE_URL: "https://yunwu.ai/v1",
-          YUNWU_MODEL: "gpt-5.6-terra",
-          YUNWU_3D_MODEL: "gpt-5.6-sol",
+          YUNWU_MODEL: "claude-opus-5",
+          YUNWU_3D_MODEL: "claude-opus-5",
           YUNWU_IMAGE_MODEL: "gpt-image-2",
           YUNWU_IMAGE_QUALITY: "medium",
           AI_EFFORT: "high",

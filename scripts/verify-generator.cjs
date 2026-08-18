@@ -140,9 +140,9 @@ assert(source.includes("Publishing without another AI call"), "The free validati
 assert(workerSource.includes('code: "provider_refusal"'), "The deployed worker does not relay provider refusals.");
 assert(workerSource.includes('finishReason === "content_filter"'), "The deployed worker does not relay content filtering.");
 assert(workerSource.includes('body.modelTier === "3d"'), "The worker does not allowlist 3D model routing.");
-assert(workerSource.includes('env.YUNWU_3D_MODEL || "gpt-5.6-sol"'), "The worker does not route 3D games to Sol.");
+assert(workerSource.includes('env.YUNWU_3D_MODEL || "claude-opus-5"'), "The worker does not route 3D games to the 3D model.");
 assert(serverSource.includes("code: 'provider_refusal'"), "The local server does not relay provider refusals.");
-assert(serverSource.includes("process.env.YUNWU_3D_MODEL || 'gpt-5.6-sol'"), "The local server does not mirror Sol routing.");
+assert(serverSource.includes("process.env.YUNWU_3D_MODEL || 'claude-opus-5'"), "The local server does not mirror 3D model routing.");
 assert(source.includes("modelTier:modelTier==='3d'?'3d':'default'"), "The client does not label 3D generation requests.");
 assert.strictEqual(context.mappedGenerationError(429, '{"error":"Too many AI requests"}').retryKind, "wait", "Hourly limits should not offer a paid retry.");
 assert.strictEqual(context.mappedGenerationError(400, '{"error":"content_filter"}').code, "provider_policy", "Content-policy failures are not identified.");

@@ -51,7 +51,7 @@ async function generate(params: GenerationParams, env: Env): Promise<{ code: str
     headers: { "content-type": "application/json", authorization: `Bearer ${apiKey}` },
     signal: controller.signal,
     body: JSON.stringify({
-      model: params.modelTier === "3d" ? (env.YUNWU_3D_MODEL || "gpt-5.6-sol") : (env.YUNWU_MODEL || "gpt-5.6-terra"),
+      model: params.modelTier === "3d" ? (env.YUNWU_3D_MODEL || "claude-opus-5") : (env.YUNWU_MODEL || "claude-opus-5"),
       messages,
       max_tokens: params.maxTokens,
       stream: true,
